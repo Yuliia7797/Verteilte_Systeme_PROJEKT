@@ -1,7 +1,0 @@
-module golang-client-server-with-database/server
-
-go 1.25
-
-require github.com/go-sql-driver/mysql v1.9.3
-
-require filippo.io/edwards25519 v1.1.1 // indirect
