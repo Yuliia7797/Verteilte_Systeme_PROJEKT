@@ -1,11 +1,3 @@
-Mit den Beispielen kannst du insbesondere üben:
-
-- Aufbau von **Client-Server-Architekturen**
-- Entwicklung von **REST-APIs**
-- Einbindung von **SQL-Datenbanken**
-- Nutzung von **Docker** und `docker-compose`
-- Vergleich verschiedener Sprachen/Frameworks für denselben Use Case
-
 ## Schnellstart
 
 1. Repository klonen.
