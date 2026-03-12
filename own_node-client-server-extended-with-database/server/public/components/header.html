@@ -1,0 +1,63 @@
+<!--
+  Wiederverwendbarer Header für alle Seiten.
+  Diese Datei wird per JavaScript in die einzelnen HTML-Seiten eingefügt.
+-->
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <!-- Logo-Bereich links -->
+    <a class="navbar-brand" href="index.html">
+      <img src="images/myshop-logo.png" alt="MyShop Logo" class="logo-img">
+    </a>
+
+    <!-- Burger-Menü für mobile Geräte -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      aria-label="Navigation umschalten"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navigationsinhalt -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <!-- Linke Hauptnavigation -->
+      <ul class="navbar-nav me-auto ms-lg-4">
+        <li class="nav-item">
+          <a class="nav-link active" href="index.html">Startseite</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="kategorien.html">Kategorien</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="mein-konto.html">Mein Konto</a>
+        </li>
+      </ul>
+
+      <!-- Suchformular -->
+      <form class="d-flex me-3" role="search">
+        <input
+          class="form-control me-2 search-input"
+          type="search"
+          placeholder="Suche nach Produkten..."
+          aria-label="Suche"
+        >
+        <button class="btn search-btn" type="submit">Suchen</button>
+      </form>
+
+      <!-- Rechte Aktionsbuttons -->
+      <a href="login.html" class="btn btn-light-custom me-2">Login</a>
+      <a href="registrieren.html" class="btn btn-main me-2">Registrieren</a>
+
+      <!-- Warenkorb-Link mit echtem Warenkorb-Symbol -->
+      <a href="warenkorb.html" class="cart-link ms-2">
+        <i class="bi bi-cart3"></i>
+        <span>Warenkorb</span>
+      </a>
+    </div>
+  </div>
+</nav>

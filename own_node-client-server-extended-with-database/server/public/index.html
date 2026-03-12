@@ -1,92 +1,152 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="de">
 <head>
-    <title>My cool page</title>
-    <!-- The following is bootstrap: https://getbootstrap.com/docs/4.3/getting-started/introduction/ -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-        crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-        crossorigin="anonymous"></script>
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyShop</title>
 
+  <!-- Bootstrap CSS für Layout, Grid und responsive Komponenten -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Bootstrap Icons für Symbole wie den Warenkorb -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+  >
+
+  <!-- Eigene zentrale CSS-Datei -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
 <body>
 
-    <!-- The container is for the theme / deisgn -->
-    <main role="main" class="container">
+  <!--
+    Platzhalter für den Header.
+    Der Inhalt wird später per JavaScript aus components/header.html geladen.
+  -->
+  <div id="header-placeholder"></div>
 
+  <!-- Hauptinhalt der Startseite -->
+  <main>
+    <!-- Banner-Bereich -->
+    <section class="hero-banner py-4">
+      <div class="container">
+        <div class="banner-box">
+          <img
+            src="images/banner-universal.png"
+            alt="Universeller Shop Banner"
+            class="img-fluid banner-img"
+          >
 
-        <h1>I'm a static file</h1>
-        <p>Here could be more...</p>
-        <hr>
+          <!-- Text liegt über dem Bannerbild -->
+          <div class="banner-overlay">
+            <h1>Schnell, bequem, alles in einem Shop</h1>
+            <p>
+              Einfach auswählen und bequem online bestellen.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <!-- Link to the Database Sample -->
-        <h2>Link to the Database sample</h2>
-        <p>All database related functions are in a separate file. Follow the following link:</p>
-        <a href="database.html">database.html</a>
+    <!-- Kategorien-Bereich -->
+    <section class="py-5">
+      <div class="container">
+        <h2 class="section-title text-center">Unsere Kategorien</h2>
 
-        <!-- Link to the Static File Sample -->
-        <hr>
-        <h2>Link to the Static File Sample</h2>
-        <p>All static files related functions are in a separate file. Follow the following link:</p>
-        <a href="static.html">static.html</a>
-
-        <!-- Button 1 example with plain HTML -->
-        <hr>
-        <h2>This is the button 1 example</h2>
-        <p>The following is an HTML formular with a button:</p>
-        <form action="/button1_name/" method="post">
-            <div class="form-group">
-                <label for="name">Enter name: </label>
-                <input id="name" type="text" name="name" class="form-control" value="Default name">
+        <div class="row g-4">
+          <div class="col-md-3">
+            <div class="category-card">
+              <h5>Bücher</h5>
+              <p>Romane, Sachbücher und mehr</p>
+              <a href="#" class="btn btn-sm btn-main">Ansehen</a>
             </div>
-            <input type="submit" class="btn btn-primary" value="OK - Send to server.js">
+          </div>
 
-        </form>
-        <div class="alert alert-info" role="alert">
-            More information here: <a
-                href="https://developer.mozilla.org/en-US/docs/Learn/Server-side/Express_Nodejs/forms">https://developer.mozilla.org/en-US/docs/Learn/Server-side/Express_Nodejs/forms</a>
+          <div class="col-md-3">
+            <div class="category-card">
+              <h5>Technik</h5>
+              <p>Geräte und praktisches Zubehör</p>
+              <a href="#" class="btn btn-sm btn-main">Ansehen</a>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="category-card">
+              <h5>Kosmetik</h5>
+              <p>Pflege, Beauty und Trends</p>
+              <a href="#" class="btn btn-sm btn-main">Ansehen</a>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="category-card">
+              <h5>Home</h5>
+              <p>Schöne Dinge für dein Zuhause</p>
+              <a href="#" class="btn btn-sm btn-main">Ansehen</a>
+            </div>
+          </div>
         </div>
-        <!-- End of Button 1 example -->
+      </div>
+    </section>
 
-        <!-- Button 2 example with AJAX -->
-        <hr>
-        <h2>This is the button 2 example</h2>
-        <p>The following is a browser JS AJAX example:</p>
-        <button type="button" onclick="loadDoc()" class="btn btn-primary">Load random number from Server.js - press
-            multiple times</button>
-        <br><br>
-        <div id="target" class="alert alert-secondary">
-            Press the button above and take a look at the server.js logs
+    <!-- Beliebte Produkte -->
+    <section class="pb-5">
+      <div class="container">
+        <h2 class="section-title text-center">Beliebte Produkte</h2>
+
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="card h-100">
+              <img src="https://via.placeholder.com/400x250" alt="Produkt 1">
+              <div class="card-body">
+                <h5 class="card-title">Notebook</h5>
+                <p class="card-text">Praktisch für Alltag, Arbeit und Studium.</p>
+                <p class="fw-bold">599,99 €</p>
+                <a href="#" class="btn btn-main">In den Warenkorb</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card h-100">
+              <img src="https://via.placeholder.com/400x250" alt="Produkt 2">
+              <div class="card-body">
+                <h5 class="card-title">Buch-Set</h5>
+                <p class="card-text">Spannende Titel für gemütliche Lesestunden.</p>
+                <p class="fw-bold">24,99 €</p>
+                <a href="#" class="btn btn-main">In den Warenkorb</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card h-100">
+              <img src="https://via.placeholder.com/400x250" alt="Produkt 3">
+              <div class="card-body">
+                <h5 class="card-title">Pflegeset</h5>
+                <p class="card-text">Sanfte Pflege für jeden Tag.</p>
+                <p class="fw-bold">19,99 €</p>
+                <a href="#" class="btn btn-main">In den Warenkorb</a>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
 
-        <div class="alert alert-info" role="alert">
-            More information here: <a
-                href="https://www.w3schools.com/xml/ajax_intro.asp">https://www.w3schools.com/xml/ajax_intro.asp</a>
-        </div>
+  <!--
+    Platzhalter für den Footer.
+    Der Inhalt wird später per JavaScript aus components/footer.html geladen.
+  -->
+  <div id="footer-placeholder"></div>
 
-        <script>
-            function loadDoc() {
-                var xhttp = new XMLHttpRequest();
-                xhttp.onreadystatechange = function () {
-                    if (this.readyState == 4 && this.status == 200) {
-                        document.getElementById("target").innerHTML =
-                            this.responseText;
-                    }
-                };
-                // the "../" is required because we're in "static" folder!
-                xhttp.open("GET", "../button2", true);
-                xhttp.send();
-            }
-        </script>
+  <!-- JavaScript zum Einfügen von Header und Footer -->
+  <script src="js/include.js"></script>
 
-    </main><!-- /.container -->
+  <!-- Bootstrap JavaScript für Navbar, Collapse usw. -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
