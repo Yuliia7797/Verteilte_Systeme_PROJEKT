@@ -6,21 +6,21 @@ services:
       - "8080:8080"
     restart: always
     environment:
-      MYSQL_DATABASE: testdb
+      MYSQL_DATABASE: onlinebestellsystem
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
-      MYSQL_HOSTNAME: testdb
+      MYSQL_HOSTNAME: onlinebestellsystem
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 10000
     depends_on:
-      - testdb
-  testdb:
+      - onlinebestellsystem
+  onlinebestellsystem:
     # Use of a modified datbase in 'db'-folder.
     # See README.md for more information.
     build: db
     restart: always
     environment:
-      MYSQL_DATABASE: testdb
+      MYSQL_DATABASE: onlinebestellsystem
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_ROOT_PASSWORD: rootpw #user name is: root
@@ -30,7 +30,7 @@ services:
     ports:
       - 8085:80
     environment:
-      PMA_HOST: testdb
+      PMA_HOST: onlinebestellsystem
       
 
       
