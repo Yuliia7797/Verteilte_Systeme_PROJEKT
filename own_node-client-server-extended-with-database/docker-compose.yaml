@@ -14,16 +14,28 @@ services:
       RATE_LIMIT_MAX: 10000
     depends_on:
       - onlinebestellsystem
+
+  worker:
+    build: server
+    command: node worker.js
+    restart: always
+    environment:
+      MYSQL_DATABASE: onlinebestellsystem
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_HOSTNAME: onlinebestellsystem
+    depends_on:
+      - onlinebestellsystem
+
   onlinebestellsystem:
-    # Use of a modified datbase in 'db'-folder.
-    # See README.md for more information.
     build: db
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
-      MYSQL_ROOT_PASSWORD: rootpw #user name is: root
+      MYSQL_ROOT_PASSWORD: rootpw #user name is root
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     restart: always
@@ -31,6 +43,3 @@ services:
       - 8085:80
     environment:
       PMA_HOST: onlinebestellsystem
-      
-
-      
