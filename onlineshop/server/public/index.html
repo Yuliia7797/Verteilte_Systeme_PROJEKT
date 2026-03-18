@@ -92,61 +92,34 @@
       </div>
     </section>
 
-    <!-- Beliebte Produkte -->
-    <section class="pb-5">
-      <div class="container">
-        <h2 class="section-title text-center">Beliebte Produkte</h2>
+<!-- Bereich für beliebte Produkte -->
+<section class="pb-5">
+  <div class="container">
+    <!-- Überschrift des Produktbereichs -->
+    <h2 class="section-title text-center">Beliebte Produkte</h2>
 
-        <div class="row g-4">
-          <div class="col-md-4">
-            <div class="card h-100">
-              <img src="https://via.placeholder.com/400x250" alt="Produkt 1">
-              <div class="card-body">
-                <h5 class="card-title">Notebook</h5>
-                <p class="card-text">Praktisch für Alltag, Arbeit und Studium.</p>
-                <p class="fw-bold">599,99 €</p>
-                <a href="#" class="btn btn-main">In den Warenkorb</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="card h-100">
-              <img src="https://via.placeholder.com/400x250" alt="Produkt 2">
-              <div class="card-body">
-                <h5 class="card-title">Buch-Set</h5>
-                <p class="card-text">Spannende Titel für gemütliche Lesestunden.</p>
-                <p class="fw-bold">24,99 €</p>
-                <a href="#" class="btn btn-main">In den Warenkorb</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="card h-100">
-              <img src="https://via.placeholder.com/400x250" alt="Produkt 3">
-              <div class="card-body">
-                <h5 class="card-title">Pflegeset</h5>
-                <p class="card-text">Sanfte Pflege für jeden Tag.</p>
-                <p class="fw-bold">19,99 €</p>
-                <a href="#" class="btn btn-main">In den Warenkorb</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
+    <!--
+      Dieser Container bleibt am Anfang leer.
+      Die Produktkarten werden später per JavaScript
+      dynamisch aus der Datenbank geladen und hier eingefügt.
+    -->
+    <div id="products-container" class="row g-4"></div>
+  </div>
+</section>
+</main>
   <!--
     Platzhalter für den Footer.
     Der Inhalt wird später per JavaScript aus components/footer.html geladen.
   -->
   <div id="footer-placeholder"></div>
 
-  <!-- JavaScript zum Einfügen von Header und Footer -->
-  <script src="js/include.js"></script>
+ <!-- JavaScript für Header und Footer -->
+<script src="js/include.js"></script>
 
-  <!-- Bootstrap JavaScript für Navbar, Collapse usw. -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- JavaScript zum Laden der Produkte aus der Datenbank -->
+<script src="js/products.js"></script>
+
+<!-- Bootstrap JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

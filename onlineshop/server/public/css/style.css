@@ -343,3 +343,14 @@ body {
     font-size: 14px;
   }
 }
+
+/* Einheitliche Darstellung der Produktbilder */
+.card img {
+  width: 100%;
+  height: 250px;
+  object-fit: contain;
+  background-color: #f8f8f8;
+  padding: 10px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+}

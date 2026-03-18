@@ -4,6 +4,8 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const mysql = require('mysql');
 
+const artikelRoutes = require('./routes/artikelRoutes');
+
 // ─── Datenbankverbindung ────────────────────────────────────────────────────
 var dbInfo = {
     connectionLimit: 10,
@@ -34,6 +36,9 @@ const app  = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Produkt-Routen einbinden
+app.use('/products', artikelRoutes);
 
 // Rate Limiter (DoS-Schutz)
 const limiter = rateLimit({
