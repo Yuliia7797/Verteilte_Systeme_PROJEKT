@@ -3,16 +3,21 @@
   wie Header und Footer automatisch in die Seite ein.
 */
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadComponent("header-placeholder", "components/header.html");
-  loadComponent("footer-placeholder", "components/footer.html");
+document.addEventListener("DOMContentLoaded", async () => {
+  // Header und Footer nacheinander laden
+  await loadComponent("header-placeholder", "components/header.html");
+  await loadComponent("footer-placeholder", "components/footer.html");
+
+  // Ereignis auslösen, damit andere JavaScript-Dateien wissen,
+  // dass Header und Footer vollständig eingefügt wurden
+  document.dispatchEvent(new Event("includesLoaded"));
 });
 
 /*
   Funktion zum Laden einer externen HTML-Datei
   und Einfügen in ein bestimmtes Element.
 */
-function loadComponent(placeholderId, filePath) {
+async function loadComponent(placeholderId, filePath) {
   const placeholder = document.getElementById(placeholderId);
 
   if (!placeholder) {
@@ -20,17 +25,16 @@ function loadComponent(placeholderId, filePath) {
     return;
   }
 
-  fetch(filePath)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Datei konnte nicht geladen werden: ${filePath}`);
-      }
-      return response.text();
-    })
-    .then(data => {
-      placeholder.innerHTML = data;
-    })
-    .catch(error => {
-      console.error("Fehler beim Laden der Komponente:", error);
-    });
+  try {
+    const response = await fetch(filePath);
+
+    if (!response.ok) {
+      throw new Error(`Datei konnte nicht geladen werden: ${filePath}`);
+    }
+
+    const data = await response.text();
+    placeholder.innerHTML = data;
+  } catch (error) {
+    console.error("Fehler beim Laden der Komponente:", error);
+  }
 }

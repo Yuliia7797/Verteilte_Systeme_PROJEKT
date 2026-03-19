@@ -4,7 +4,8 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const mysql = require('mysql');
 
-const artikelRoutes = require('./routes/artikelRoutes');
+const artikelRoutes = require('./routes/artikelRoutes'); // Routen für Artikel einbinden
+const kategorienRoutes = require('./routes/kategorienRoutes'); // Routen für Kategorien einbinden
 
 // ─── Datenbankverbindung ────────────────────────────────────────────────────
 var dbInfo = {
@@ -37,9 +38,6 @@ const app  = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Produkt-Routen einbinden
-app.use('/products', artikelRoutes);
-
 // Rate Limiter (DoS-Schutz)
 const limiter = rateLimit({
     windowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000", 10),
@@ -63,105 +61,15 @@ app.use('/static', express.static('public'));
 // ARTIKEL
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /artikel  →  alle Artikel abrufen
-// Beispiel: GET http://localhost:8080/artikel
-app.get('/artikel', (req, res) => {
-    console.log("Alle Artikel abrufen");
-    connection.query(
-        `SELECT a.id, a.bezeichnung, a.beschreibung, a.preis, a.bild_url,
-                k.bezeichnung AS kategorie
-         FROM artikel a
-         JOIN kategorie k ON a.kategorie_id = k.id`,
-        function (error, results) {
-            if (error) {
-                console.error(error);
-                return res.status(500).json({ message: "Datenbankfehler beim Abrufen der Artikel" });
-            }
-            res.status(200).json(results);
-        }
-    );
-});
-
-// GET /artikel/:id  →  einen einzelnen Artikel abrufen
-// Beispiel: GET http://localhost:8080/artikel/3
-app.get('/artikel/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) {
-        return res.status(400).json({ message: "Ungültige Artikel-ID" });
-    }
-    connection.query(
-        `SELECT a.*, k.bezeichnung AS kategorie, l.anzahl AS lagerbestand
-         FROM artikel a
-         JOIN kategorie k ON a.kategorie_id = k.id
-         LEFT JOIN lagerbestand l ON a.id = l.artikel_id
-         WHERE a.id = ?`,
-        [id],
-        function (error, results) {
-            if (error) {
-                console.error(error);
-                return res.status(500).json({ message: "Datenbankfehler" });
-            }
-            if (results.length === 0) {
-                return res.status(404).json({ message: "Artikel nicht gefunden" });
-            }
-            res.status(200).json(results[0]);
-        }
-    );
-});
-
-// POST /artikel  →  neuen Artikel anlegen (Admin)
-// Beispiel-Body: { "kategorie_id": 1, "bezeichnung": "T-Shirt", "beschreibung": "...", "preis": 19.99, "bild_url": "..." }
-app.post('/artikel', (req, res) => {
-    const { kategorie_id, bezeichnung, beschreibung, preis, bild_url } = req.body;
-    if (!kategorie_id || !bezeichnung || !preis) {
-        return res.status(400).json({ message: "kategorie_id, bezeichnung und preis sind Pflichtfelder" });
-    }
-    connection.query(
-        "INSERT INTO artikel (kategorie_id, bezeichnung, beschreibung, preis, bild_url) VALUES (?, ?, ?, ?, ?)",
-        [kategorie_id, bezeichnung, beschreibung || null, preis, bild_url || null],
-        function (error, results) {
-            if (error) {
-                console.error(error);
-                return res.status(500).json({ message: "Fehler beim Anlegen des Artikels" });
-            }
-            res.status(201).json({ message: "Artikel angelegt", id: results.insertId });
-        }
-    );
-});
-
-// DELETE /artikel/:id  →  Artikel löschen (Admin)
-// Beispiel: DELETE http://localhost:8080/artikel/3
-app.delete('/artikel/:id', (req, res) => {
-    const id = Number.parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) {
-        return res.status(400).json({ message: "Ungültige ID" });
-    }
-    connection.query("DELETE FROM artikel WHERE id = ?", [id], function (error, results) {
-        if (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Fehler beim Löschen" });
-        }
-        res.status(200).json({ message: "Artikel gelöscht" });
-    });
-});
-
+// Artikel-Routen einbinden
+app.use('/artikel', artikelRoutes);
 
 // ════════════════════════════════════════════════════════════════════════════
 // KATEGORIEN
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /kategorien  →  alle Kategorien abrufen
-// Beispiel: GET http://localhost:8080/kategorien
-app.get('/kategorien', (req, res) => {
-    connection.query("SELECT * FROM kategorie", function (error, results) {
-        if (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Datenbankfehler" });
-        }
-        res.status(200).json(results);
-    });
-});
-
+// Kategorien-Routen einbinden
+app.use('/kategorien', kategorienRoutes);
 
 // ════════════════════════════════════════════════════════════════════════════
 // WARENKORB

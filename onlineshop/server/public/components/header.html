@@ -30,9 +30,28 @@
         <li class="nav-item">
           <a class="nav-link active" href="index.html">Startseite</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="kategorien.html">Kategorien</a>
+
+        <!--
+          Eigener Dropdown-Bereich für Kategorien.
+          Die Kategorien werden später per JavaScript in die Liste eingefügt.
+        -->
+        <li class="nav-item kategorien-dropdown-wrapper">
+          <button
+            type="button"
+            class="nav-link kategorien-dropdown-toggle"
+            id="kategorienDropdownToggle"
+          >
+            Kategorien
+          </button>
+
+          <!--
+            Diese Liste bleibt am Anfang leer.
+            Die Kategorien aus der Datenbank werden später
+            per JavaScript hier eingefügt.
+          -->
+          <ul class="kategorien-dropdown-menu" id="kategorien-dropdown-list"></ul>
         </li>
+
         <li class="nav-item">
           <a class="nav-link" href="mein-konto.html">Mein Konto</a>
         </li>
@@ -43,7 +62,7 @@
         <input
           class="form-control me-2 search-input"
           type="search"
-          placeholder="Suche nach Produkten..."
+          placeholder="Suche nach Artikeln..."
           aria-label="Suche"
         >
         <button class="btn search-btn" type="submit">Suchen</button>
