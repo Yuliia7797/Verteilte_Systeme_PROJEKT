@@ -1,20 +1,15 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql');
+const connection = require('../db');
 
-const dbInfo = {
-  connectionLimit: 10,
-  host: process.env.MYSQL_HOSTNAME,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE
-};
-
-const connection = mysql.createPool(dbInfo);
-
-// GET /kategorien
+/*
+  GET /kategorien
+  Lädt alle Kategorien aus der Datenbank.
+*/
 router.get('/', (req, res) => {
-  // Alle Kategorien aus der Datenbank laden
+  // Alle Kategorien aus der Tabelle "kategorie" laden
   connection.query('SELECT * FROM kategorie', (error, results) => {
     if (error) {
       console.error(error);

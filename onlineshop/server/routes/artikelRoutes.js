@@ -1,21 +1,17 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql');
+const connection = require('../db');
 
-const dbInfo = {
-  connectionLimit: 10,
-  host: process.env.MYSQL_HOSTNAME,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE
-};
-
-const connection = mysql.createPool(dbInfo);
-
-// GET /artikel
+/*
+  GET /artikel
+  Lädt alle Artikel.
+  Optional kann nach Kategorie gefiltert werden:
+  Beispiel: /artikel?kategorie_id=2
+*/
 router.get('/', (req, res) => {
   // Kategorie-ID aus der URL lesen, falls vorhanden
-  // Beispiel: /artikel?kategorie_id=2
   const kategorieId = req.query.kategorie_id;
 
   // Standardmäßig werden alle Artikel geladen
@@ -39,10 +35,14 @@ router.get('/', (req, res) => {
   });
 });
 
-// GET /artikel/:id
+/*
+  GET /artikel/:id
+  Lädt einen einzelnen Artikel mit Kategorie und Lagerbestand.
+*/
 router.get('/:id', (req, res) => {
   const artikelId = Number.parseInt(req.params.id, 10);
 
+  // Prüfen, ob die Artikel-ID gültig ist
   if (!Number.isInteger(artikelId)) {
     return res.status(400).json({ message: 'Ungültige Artikel-ID' });
   }
@@ -69,6 +69,7 @@ router.get('/:id', (req, res) => {
       return res.status(500).json({ message: 'Datenbankabfrage fehlgeschlagen' });
     }
 
+    // Falls kein Artikel gefunden wurde
     if (results.length === 0) {
       return res.status(404).json({ message: 'Artikel nicht gefunden' });
     }
@@ -77,14 +78,19 @@ router.get('/:id', (req, res) => {
   });
 });
 
-// POST /artikel
+/*
+  POST /artikel
+  Legt einen neuen Artikel an.
+*/
 router.post('/', (req, res) => {
   // Daten für den neuen Artikel aus dem Request-Body lesen
   const { kategorie_id, bezeichnung, beschreibung, preis, bild_url } = req.body;
 
   // Prüfen, ob die Pflichtfelder vorhanden sind
   if (!kategorie_id || !bezeichnung || !preis) {
-    return res.status(400).json({ message: 'kategorie_id, bezeichnung und preis sind Pflichtfelder' });
+    return res.status(400).json({
+      message: 'kategorie_id, bezeichnung und preis sind Pflichtfelder'
+    });
   }
 
   connection.query(
@@ -101,7 +107,10 @@ router.post('/', (req, res) => {
   );
 });
 
-// DELETE /artikel/:id
+/*
+  DELETE /artikel/:id
+  Löscht einen Artikel anhand seiner ID.
+*/
 router.delete('/:id', (req, res) => {
   // Artikel-ID aus der URL lesen
   const artikelId = Number.parseInt(req.params.id, 10);
