@@ -245,15 +245,6 @@ CREATE TABLE `worker` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
--- Daten für Tabelle `worker`
---
-
-INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(1, 'allgemein', 'aktiv', '2026-03-18 18:31:50', '2026-03-18 18:11:50'),
-(2, 'allgemein', 'aktiv', '2026-03-18 20:02:57', '2026-03-18 19:16:57'),
-(3, 'allgemein', 'aktiv', '2026-03-18 20:10:49', '2026-03-18 20:05:49');
-
---
 -- Indizes der exportierten Tabellen
 --
 

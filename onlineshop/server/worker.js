@@ -2,7 +2,6 @@
 
 const mysql = require('mysql');
 
-// ─── Datenbankverbindung ────────────────────────────────────────────────────
 const dbInfo = {
     connectionLimit: 10,
     host:     process.env.MYSQL_HOSTNAME,
@@ -11,27 +10,46 @@ const dbInfo = {
     database: process.env.MYSQL_DATABASE
 };
 
-const connection = mysql.createPool(dbInfo);
+const pool = mysql.createPool(dbInfo);
 console.log("Worker startet und verbindet sich mit der Datenbank...");
 
-// ─── Hilfsfunktion: SQL als Promise ────────────────────────────────────────
-// Der normale mysql-Pool arbeitet mit Callbacks. Diese Funktion macht daraus
-// ein Promise, damit wir async/await verwenden können (sauberer, lesbarer).
+// ─── Hilfsfunktion: einfache SQL-Abfrage ───────────────────────────────────
 function query(sql, params = []) {
     return new Promise((resolve, reject) => {
-        connection.query(sql, params, function (error, results) {
+        pool.query(sql, params, function (error, results) {
             if (error) reject(error);
             else resolve(results);
         });
     });
 }
 
-// ─── Worker in Datenbank registrieren ──────────────────────────────────────
-// Beim Start trägt sich der Worker in die worker-Tabelle ein,
-// damit die Admin-Oberfläche ihn anzeigen kann.
+// ─── Hilfsfunktion: Transaktion über eine dedizierte Verbindung ─────────────
+// Pool unterstützt kein beginTransaction direkt — wir holen eine
+// einzelne Verbindung aus dem Pool und geben sie danach zurück.
+function getConnection() {
+    return new Promise((resolve, reject) => {
+        pool.getConnection(function(err, connection) {
+            if (err) reject(err);
+            else resolve(connection);
+        });
+    });
+}
+
 let workerId = null;
 
 async function registerWorker() {
+    // Nur inaktive Worker löschen — aktive Worker die gerade laufen
+    // werden nicht angefasst
+    await query(
+        `UPDATE aufgabe SET worker_id = NULL
+         WHERE worker_id IN (
+             SELECT id FROM worker WHERE status = 'inaktiv'
+         )`
+    );
+    await query(
+        "DELETE FROM worker WHERE status = 'inaktiv'"
+    );
+
     const result = await query(
         "INSERT INTO worker (typ, status, letzter_heartbeat) VALUES ('allgemein', 'aktiv', NOW())"
     );
@@ -39,7 +57,6 @@ async function registerWorker() {
     console.log("Worker registriert mit ID:", workerId);
 }
 
-// ─── Heartbeat: Worker meldet sich alle 30 Sek. als aktiv ──────────────────
 async function sendHeartbeat() {
     if (workerId) {
         await query(
@@ -49,21 +66,61 @@ async function sendHeartbeat() {
     }
 }
 
-// ─── Nächste offene Aufgabe holen ──────────────────────────────────────────
-async function getNextTask() {
-    const results = await query(
-        "SELECT * FROM aufgabe WHERE status = 'wartend' ORDER BY id ASC LIMIT 1"
+// Erkennt Worker die seit mehr als 60 Sekunden keinen Heartbeat geschickt haben
+// und setzt sie auf inaktiv — passiert wenn ein Worker abstürzt oder gestoppt wird
+async function markInaktiveWorker() {
+    await query(
+        `UPDATE worker
+         SET status = 'inaktiv'
+         WHERE status = 'aktiv'
+         AND id != ?
+         AND letzter_heartbeat < DATE_SUB(NOW(), INTERVAL 60 SECOND)`,
+        [workerId]
     );
-    if (results.length === 0) return null;
-    return results[0];
 }
 
-// ─── Aufgabenstatus setzen ──────────────────────────────────────────────────
-async function markAsRunning(taskId) {
-    await query(
-        "UPDATE aufgabe SET status = 'in_bearbeitung', worker_id = ?, startzeitpunkt = NOW() WHERE id = ?",
-        [workerId, taskId]
-    );
+// ─── Nächste offene Aufgabe holen (mit Transaktion) ─────────────────────────
+// FOR UPDATE sperrt die Zeile damit kein anderer Worker
+// gleichzeitig dieselbe Aufgabe greift.
+async function getNextTask() {
+    const conn = await getConnection();
+
+    return new Promise((resolve, reject) => {
+        conn.beginTransaction(function(err) {
+            if (err) {
+                conn.release();
+                return reject(err);
+            }
+
+            conn.query(
+                "SELECT * FROM aufgabe WHERE status = 'wartend' ORDER BY id ASC LIMIT 1 FOR UPDATE",
+                function(err, results) {
+                    if (err) {
+                        return conn.rollback(() => { conn.release(); reject(err); });
+                    }
+                    if (results.length === 0) {
+                        return conn.rollback(() => { conn.release(); resolve(null); });
+                    }
+
+                    const task = results[0];
+                    conn.query(
+                        "UPDATE aufgabe SET status = 'in_bearbeitung', worker_id = ?, startzeitpunkt = NOW() WHERE id = ?",
+                        [workerId, task.id],
+                        function(err) {
+                            if (err) {
+                                return conn.rollback(() => { conn.release(); reject(err); });
+                            }
+                            conn.commit(function(err) {
+                                conn.release();
+                                if (err) return reject(err);
+                                resolve(task);
+                            });
+                        }
+                    );
+                }
+            );
+        });
+    });
 }
 
 async function markAsDone(taskId) {
@@ -80,36 +137,27 @@ async function markAsFailed(taskId, fehlermeldung) {
     );
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// AUFGABEN-VERARBEITUNG
-// Hier wird je nach Aufgaben-Typ die passende Logik ausgeführt.
-// ════════════════════════════════════════════════════════════════════════════
-
-// Aufgabe: Zahlung prüfen
-// Setzt zahlungsstatus der Bestellung auf 'bezahlt'
-async function zahlungPruefen(bestellungId) {
-    console.log("  → Zahlung prüfen für Bestellung:", bestellungId);
-
-    // Simulierte Prüfung (in echtem System: Zahlungsanbieter-API aufrufen)
-    // Hier wird die Zahlung immer als erfolgreich gewertet
+async function resetHaengengebliebeneAufgaben() {
     await query(
-        "UPDATE bestellung SET zahlungsstatus = 'bezahlt' WHERE id = ?",
-        [bestellungId]
+        `UPDATE aufgabe
+         SET status = 'wartend', worker_id = NULL
+         WHERE status = 'in_bearbeitung'
+         AND startzeitpunkt < DATE_SUB(NOW(), INTERVAL 5 MINUTE)`
     );
+}
+
+async function zahlungPruefen(bestellungId) {
+    console.log("  -> Zahlung prüfen für Bestellung:", bestellungId);
+    await query("UPDATE bestellung SET zahlungsstatus = 'bezahlt' WHERE id = ?", [bestellungId]);
     console.log("  ✓ Zahlung bestätigt für Bestellung:", bestellungId);
 }
 
-// Aufgabe: Lagerbestand aktualisieren
-// Reduziert den Lagerbestand für jeden bestellten Artikel
 async function lagerAktualisieren(bestellungId) {
-    console.log("  → Lagerbestand aktualisieren für Bestellung:", bestellungId);
-
-    // Alle Positionen dieser Bestellung laden
+    console.log("  -> Lagerbestand aktualisieren für Bestellung:", bestellungId);
     const positionen = await query(
         "SELECT artikel_id, anzahl FROM bestellposition WHERE bestellung_id = ?",
         [bestellungId]
     );
-
     for (const pos of positionen) {
         await query(
             "UPDATE lagerbestand SET anzahl = anzahl - ? WHERE artikel_id = ?",
@@ -119,98 +167,62 @@ async function lagerAktualisieren(bestellungId) {
     }
 }
 
-// Aufgabe: Bestellbestätigung senden
-// Setzt bestellstatus auf 'bestaetigt'
 async function bestaetigungSenden(bestellungId) {
-    console.log("  → Bestellbestätigung senden für Bestellung:", bestellungId);
-
-    await query(
-        "UPDATE bestellung SET bestellstatus = 'bestaetigt' WHERE id = ?",
-        [bestellungId]
-    );
-
-    // In echtem System: E-Mail über einen Mail-Service senden
+    console.log("  -> Bestellbestätigung senden für Bestellung:", bestellungId);
+    await query("UPDATE bestellung SET bestellstatus = 'bestaetigt' WHERE id = ?", [bestellungId]);
     console.log("  ✓ Bestellbestätigung gespeichert für Bestellung:", bestellungId);
 }
 
-// ─── Einzelne Aufgabe verarbeiten ──────────────────────────────────────────
 async function processTask(task) {
     console.log("Verarbeite Aufgabe ID:", task.id, "| Typ:", task.typ, "| Bestellung:", task.bestellung_id);
-
-    await markAsRunning(task.id);
-
     try {
-        // Je nach Aufgaben-Typ die passende Funktion aufrufen
         switch (task.typ) {
-            case 'zahlung_pruefen':
-                await zahlungPruefen(task.bestellung_id);
-                break;
-
-            case 'lager_aktualisieren':
-                await lagerAktualisieren(task.bestellung_id);
-                break;
-
-            case 'bestaetigung_senden':
-                await bestaetigungSenden(task.bestellung_id);
-                break;
-
-            default:
-                console.warn("  ⚠ Unbekannter Aufgaben-Typ:", task.typ);
+            case 'zahlung_pruefen':     await zahlungPruefen(task.bestellung_id);     break;
+            case 'lager_aktualisieren': await lagerAktualisieren(task.bestellung_id); break;
+            case 'bestaetigung_senden': await bestaetigungSenden(task.bestellung_id); break;
+            default: console.warn("  Unbekannter Aufgaben-Typ:", task.typ);
         }
-
         await markAsDone(task.id);
         console.log("✓ Aufgabe", task.id, "abgeschlossen");
-
     } catch (error) {
-        // Fehler bei der Verarbeitung → als fehlgeschlagen markieren
-        console.error("✗ Aufgabe", task.id, "fehlgeschlagen:", error.message);
+        console.error("Aufgabe", task.id, "fehlgeschlagen:", error.message);
         await markAsFailed(task.id, error.message);
     }
 }
 
-// ─── Haupt-Loop ────────────────────────────────────────────────────────────
-// Der Worker prüft alle 5 Sekunden ob eine neue Aufgabe wartet.
-// Das ist das "verteilte" Herzstück: Server legt Aufgaben an,
-// Worker arbeitet sie unabhängig davon ab.
 async function workerLoop() {
     console.log("Worker-Loop gestartet. Prüfe alle 5 Sekunden auf neue Aufgaben...");
-
+    await resetHaengengebliebeneAufgaben();
     while (true) {
         try {
             const task = await getNextTask();
-
             if (task) {
                 await processTask(task);
             } else {
-                // Keine Aufgabe vorhanden → kurz warten
-                process.stdout.write(".");  // Punkt im Terminal als Lebenszeichen
+                process.stdout.write(".");
             }
         } catch (error) {
             console.error("Fehler im Worker-Loop:", error.message);
         }
-
-        // 5 Sekunden warten bis zur nächsten Prüfung
         await new Promise(resolve => setTimeout(resolve, 5000));
     }
 }
 
-// ─── Worker starten ────────────────────────────────────────────────────────
 async function start() {
-    try {
-        // Kurz warten bis Datenbank bereit ist (Docker-Startzeit)
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        await registerWorker();
-
-        // Heartbeat alle 30 Sekunden senden
-        setInterval(sendHeartbeat, 30000);
-
-        // Haupt-Loop starten
-        await workerLoop();
-
-    } catch (error) {
-        console.error("Worker konnte nicht starten:", error.message);
-        process.exit(1);
+    let versuch = 0;
+    while (true) {
+        try {
+            versuch++;
+            console.log(`Verbindungsversuch ${versuch}...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            await registerWorker();
+            setInterval(async () => { await sendHeartbeat(); await markInaktiveWorker(); }, 30000);
+            await workerLoop();
+        } catch (error) {
+            console.error(`Versuch ${versuch} fehlgeschlagen: ${error.message}`);
+            console.log("Warte 5 Sekunden und versuche erneut...");
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
     }
 }
 

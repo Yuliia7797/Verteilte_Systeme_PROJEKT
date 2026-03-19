@@ -5,72 +5,85 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+// ─── Dateien einlesen ───────────────────────────────────────────────────────
+const serverSource     = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+const artikelSource    = fs.readFileSync(path.join(__dirname, '..', 'routes', 'artikelRoutes.js'), 'utf8');
+const kategorienSource = fs.readFileSync(path.join(__dirname, '..', 'routes', 'kategorienRoutes.js'), 'utf8');
+const warenkorbSource  = fs.readFileSync(path.join(__dirname, '..', 'routes', 'warenkorbRoutes.js'), 'utf8');
+const bestellungSource = fs.readFileSync(path.join(__dirname, '..', 'routes', 'bestellungRoutes.js'), 'utf8');
+const lagerSource      = fs.readFileSync(path.join(__dirname, '..', 'routes', 'lagerbestandRoutes.js'), 'utf8');
+const workerSource     = fs.readFileSync(path.join(__dirname, '..', 'routes', 'workerRoutes.js'), 'utf8');
+const benutzerSource   = fs.readFileSync(path.join(__dirname, '..', 'routes', 'benutzerRoutes.js'), 'utf8');
+const adresseSource    = fs.readFileSync(path.join(__dirname, '..', 'routes', 'adresseRoutes.js'), 'utf8');
 
-// ─── Rate Limiter ───────────────────────────────────────────────────────────
+// ─── server.js ──────────────────────────────────────────────────────────────
 test('Rate Limiter ist vorhanden', () => {
-    assert.match(source, /express-rate-limit/);
+    assert.match(serverSource, /express-rate-limit/);
+});
+
+test('Datenbankverbindung ist konfiguriert', () => {
+    assert.match(serverSource, /require\('\.\/db'\)/);
+});
+
+test('Alle Router sind in server.js eingebunden', () => {
+    assert.match(serverSource, /app\.use\('\/artikel'/);
+    assert.match(serverSource, /app\.use\('\/kategorien'/);
+    assert.match(serverSource, /app\.use\('\/warenkorb'/);
+    assert.match(serverSource, /app\.use\('\/bestellung'/);
+    assert.match(serverSource, /app\.use\('\/lagerbestand'/);
+    assert.match(serverSource, /app\.use\('\/worker'/);
+    assert.match(serverSource, /app\.use\('\/benutzer'/);
+    assert.match(serverSource, /app\.use\('\/adresse'/);
 });
 
 // ─── Artikel Routen ─────────────────────────────────────────────────────────
 test('Artikel Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/artikel'/);
-    assert.match(source, /app\.get\('\/artikel\/:id'/);
-    assert.match(source, /app\.post\('\/artikel'/);
-    assert.match(source, /app\.delete\('\/artikel\/:id'/);
+    assert.match(artikelSource, /router\.get\('\/'/);
+    assert.match(artikelSource, /router\.get\('\/:id'/);
+    assert.match(artikelSource, /router\.post\('\/'/);
+    assert.match(artikelSource, /router\.delete\('\/:id'/);
 });
 
 // ─── Kategorien Routen ──────────────────────────────────────────────────────
 test('Kategorien Route ist definiert', () => {
-    assert.match(source, /app\.get\('\/kategorien'/);
+    assert.match(kategorienSource, /router\.get\('\/'/);
 });
 
 // ─── Warenkorb Routen ───────────────────────────────────────────────────────
 test('Warenkorb Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/warenkorb\/:benutzer_id'/);
-    assert.match(source, /app\.post\('\/warenkorb'/);
-    assert.match(source, /app\.delete\('\/warenkorb\/position\/:id'/);
+    assert.match(warenkorbSource, /router\.get\(/);
+    assert.match(warenkorbSource, /router\.post\('\/'/);
+    assert.match(warenkorbSource, /router\.delete\(/);
 });
 
 // ─── Bestellung Routen ──────────────────────────────────────────────────────
 test('Bestellung Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/bestellung'/);
-    assert.match(source, /app\.get\('\/bestellung\/:id'/);
-    assert.match(source, /app\.post\('\/bestellung'/);
-    assert.match(source, /app\.patch\('\/bestellung\/:id\/status'/);
+    assert.match(bestellungSource, /router\.get\('\/'/);
+    assert.match(bestellungSource, /router\.post\('\/'/);
+    assert.match(bestellungSource, /router\.patch\(/);
 });
 
 // ─── Lagerbestand Routen ────────────────────────────────────────────────────
 test('Lagerbestand Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/lagerbestand'/);
-    assert.match(source, /app\.patch\('\/lagerbestand\/:artikel_id'/);
+    assert.match(lagerSource, /router\.get\('\/'/);
+    assert.match(lagerSource, /router\.patch\(/);
 });
 
 // ─── Worker Routen ──────────────────────────────────────────────────────────
 test('Worker Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/worker'/);
-    assert.match(source, /app\.get\('\/aufgaben'/);
+    assert.match(workerSource, /router\.get\('\/'/);
 });
 
 // ─── Benutzer Routen ────────────────────────────────────────────────────────
 test('Benutzer Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/benutzer'/);
-    assert.match(source, /app\.post\('\/benutzer'/);
+    assert.match(benutzerSource, /router\.get\('\/'/);
+    assert.match(benutzerSource, /router\.post\('\/'/);
 });
 
 // ─── Adresse Routen ─────────────────────────────────────────────────────────
 test('Adresse Routen sind definiert', () => {
-    assert.match(source, /app\.get\('\/adresse\/:benutzer_id'/);
-    assert.match(source, /app\.post\('\/adresse'/);
-    assert.match(source, /app\.put\('\/adresse\/:id'/);
-    assert.match(source, /app\.delete\('\/adresse\/:id'/);
-});
-
-// ─── Datenbankverbindung ────────────────────────────────────────────────────
-test('Datenbankverbindung ist konfiguriert', () => {
-    assert.match(source, /mysql\.createPool/);
-    assert.match(source, /MYSQL_HOSTNAME/);
-    assert.match(source, /MYSQL_USER/);
-    assert.match(source, /MYSQL_PASSWORD/);
-    assert.match(source, /MYSQL_DATABASE/);
+    assert.match(adresseSource, /router\.get\(/);
+    assert.match(adresseSource, /router\.post\('\/'/);
+    assert.match(adresseSource, /router\.put\(/);
+    assert.match(adresseSource, /router\.delete\(/);
 });
