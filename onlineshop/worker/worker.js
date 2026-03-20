@@ -14,6 +14,8 @@ const pool = mysql.createPool(dbInfo);
 console.log("Worker startet und verbindet sich mit der Datenbank...");
 
 // ─── Hilfsfunktion: einfache SQL-Abfrage ───────────────────────────────────
+// Führt eine SQL-Abfrage über den Connection-Pool aus.
+// Gibt bei Erfolg die Ergebnisse zurück, bei Fehler wird das Promise abgelehnt.
 function query(sql, params = []) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, function (error, results) {
@@ -37,6 +39,10 @@ function getConnection() {
 
 let workerId = null;
 
+// ─── Worker in der Datenbank registrieren ──────────────────────────────────
+// Entfernt zuerst alte inaktive Worker aus der Datenbank und löst deren
+// Zuordnungen von Aufgaben. Danach wird dieser Worker als aktiv eingetragen
+// und seine neue workerId gespeichert.
 async function registerWorker() {
     // Nur inaktive Worker löschen — aktive Worker die gerade laufen
     // werden nicht angefasst
@@ -57,6 +63,10 @@ async function registerWorker() {
     console.log("Worker registriert mit ID:", workerId);
 }
 
+// ─── Worker in der Datenbank registrieren ──────────────────────────────────
+// Entfernt zuerst alte inaktive Worker aus der Datenbank und löst deren
+// Zuordnungen von Aufgaben. Danach wird dieser Worker als aktiv eingetragen
+// und seine neue workerId gespeichert.
 async function sendHeartbeat() {
     if (workerId) {
         await query(
@@ -66,8 +76,9 @@ async function sendHeartbeat() {
     }
 }
 
-// Erkennt Worker die seit mehr als 60 Sekunden keinen Heartbeat geschickt haben
-// und setzt sie auf inaktiv — passiert wenn ein Worker abstürzt oder gestoppt wird
+// ─── Inaktive Worker erkennen und markieren ────────────────────────────────
+// Setzt Worker auf 'inaktiv', wenn deren letzter Heartbeat älter als
+// 60 Sekunden ist. Der aktuelle Worker selbst wird dabei ausgeschlossen.
 async function markInaktiveWorker() {
     await query(
         `UPDATE worker
@@ -79,10 +90,27 @@ async function markInaktiveWorker() {
     );
 }
 
+// ─── Dem Worker zugewiesene Aufgabe holen ──────────────────────────────────
+// Sucht die nächste Aufgabe, die diesem Worker bereits vom Controller
+// zugewiesen wurde. Es werden nur Aufgaben mit Status 'zugewiesen' geholt.
+async function getAssignedTask() {
+    const results = await query(
+        `SELECT * FROM aufgabe
+         WHERE worker_id = ?
+         AND status = 'zugewiesen'
+         ORDER BY id ASC
+         LIMIT 1`,
+        [workerId]
+    );
+
+    return results.length ? results[0] : null;
+}
+
 // ─── Nächste offene Aufgabe holen (mit Transaktion) ─────────────────────────
 // FOR UPDATE sperrt die Zeile damit kein anderer Worker
 // gleichzeitig dieselbe Aufgabe greift.
-async function getNextTask() {
+
+/* async function getNextTask() {
     const conn = await getConnection();
 
     return new Promise((resolve, reject) => {
@@ -93,7 +121,7 @@ async function getNextTask() {
             }
 
             conn.query(
-                "SELECT * FROM aufgabe WHERE status = 'wartend' ORDER BY id ASC LIMIT 1 FOR UPDATE",
+                "SELECT * FROM aufgabe WHERE worker_id = 'wartend' ORDER BY id ASC LIMIT 1 FOR UPDATE",
                 function(err, results) {
                     if (err) {
                         return conn.rollback(() => { conn.release(); reject(err); });
@@ -121,8 +149,11 @@ async function getNextTask() {
             );
         });
     });
-}
+} */
 
+// ─── Aufgabe als abgeschlossen markieren ───────────────────────────────────
+// Setzt den Status der Aufgabe auf 'abgeschlossen' und speichert den
+// Endzeitpunkt der Bearbeitung.
 async function markAsDone(taskId) {
     await query(
         "UPDATE aufgabe SET status = 'abgeschlossen', endzeitpunkt = NOW() WHERE id = ?",
@@ -130,6 +161,9 @@ async function markAsDone(taskId) {
     );
 }
 
+// ─── Aufgabe als fehlgeschlagen markieren ──────────────────────────────────
+// Setzt den Status der Aufgabe auf 'fehlgeschlagen', speichert die
+// Fehlermeldung, setzt den Endzeitpunkt und erhöht die Versuchszahl.
 async function markAsFailed(taskId, fehlermeldung) {
     await query(
         "UPDATE aufgabe SET status = 'fehlgeschlagen', fehlermeldung = ?, endzeitpunkt = NOW(), versuch_anzahl = versuch_anzahl + 1 WHERE id = ?",
@@ -137,6 +171,9 @@ async function markAsFailed(taskId, fehlermeldung) {
     );
 }
 
+// ─── Hängengebliebene Aufgaben zurücksetzen ────────────────────────────────
+// Setzt Aufgaben zurück auf 'wartend', wenn sie länger als 5 Minuten
+// auf 'in_bearbeitung' stehen. So können sie später neu verteilt werden.
 async function resetHaengengebliebeneAufgaben() {
     await query(
         `UPDATE aufgabe
@@ -146,12 +183,18 @@ async function resetHaengengebliebeneAufgaben() {
     );
 }
 
+// ─── Zahlung einer Bestellung prüfen ───────────────────────────────────────
+// Simuliert die Prüfung der Zahlung und setzt den Zahlungsstatus der
+// Bestellung in der Datenbank auf 'bezahlt'.
 async function zahlungPruefen(bestellungId) {
     console.log("  -> Zahlung prüfen für Bestellung:", bestellungId);
     await query("UPDATE bestellung SET zahlungsstatus = 'bezahlt' WHERE id = ?", [bestellungId]);
     console.log("  ✓ Zahlung bestätigt für Bestellung:", bestellungId);
 }
 
+// ─── Lagerbestand für eine Bestellung aktualisieren ────────────────────────
+// Liest alle Positionen der Bestellung aus und reduziert den Lagerbestand
+// der jeweiligen Artikel um die bestellte Menge.
 async function lagerAktualisieren(bestellungId) {
     console.log("  -> Lagerbestand aktualisieren für Bestellung:", bestellungId);
     const positionen = await query(
@@ -167,12 +210,18 @@ async function lagerAktualisieren(bestellungId) {
     }
 }
 
+// ─── Bestellbestätigung verarbeiten ────────────────────────────────────────
+// Simuliert das Senden einer Bestellbestätigung, indem der Bestellstatus
+// in der Datenbank auf 'bestaetigt' gesetzt wird.
 async function bestaetigungSenden(bestellungId) {
     console.log("  -> Bestellbestätigung senden für Bestellung:", bestellungId);
     await query("UPDATE bestellung SET bestellstatus = 'bestaetigt' WHERE id = ?", [bestellungId]);
     console.log("  ✓ Bestellbestätigung gespeichert für Bestellung:", bestellungId);
 }
 
+// ─── Zugewiesene Aufgabe verarbeiten ───────────────────────────────────────
+// Führt abhängig vom Typ der Aufgabe die passende Bearbeitungsfunktion aus.
+// Bei Erfolg wird die Aufgabe abgeschlossen, bei Fehler als fehlgeschlagen markiert.
 async function processTask(task) {
     console.log("Verarbeite Aufgabe ID:", task.id, "| Typ:", task.typ, "| Bestellung:", task.bestellung_id);
     try {
@@ -190,13 +239,17 @@ async function processTask(task) {
     }
 }
 
+// ─── Hauptschleife des Workers ─────────────────────────────────────────────
+// Prüft regelmäßig, ob diesem Worker eine Aufgabe vom Controller
+// zugewiesen wurde. Falls ja, wird sie gestartet und verarbeitet.
 async function workerLoop() {
     console.log("Worker-Loop gestartet. Prüfe alle 5 Sekunden auf neue Aufgaben...");
     await resetHaengengebliebeneAufgaben();
     while (true) {
         try {
-            const task = await getNextTask();
+            const task = await getAssignedTask();
             if (task) {
+                await startTask(task.id);
                 await processTask(task);
             } else {
                 process.stdout.write(".");
@@ -208,6 +261,23 @@ async function workerLoop() {
     }
 }
 
+// ─── Zugewiesene Aufgabe starten ───────────────────────────────────────────
+// Setzt eine dem Worker zugewiesene Aufgabe auf 'in_bearbeitung' und
+// speichert den Startzeitpunkt. Nur Aufgaben dieses Workers werden geändert.
+async function startTask(taskId) {
+    await query(
+        `UPDATE aufgabe
+         SET status = 'in_bearbeitung', startzeitpunkt = NOW()
+         WHERE id = ?
+         AND worker_id = ?`,
+        [taskId, workerId]
+    );
+}
+
+// ─── Worker-Prozess starten und überwachen ─────────────────────────────────
+// Versucht wiederholt, den Worker zu registrieren und danach die
+// Heartbeats sowie die Verarbeitungsschleife zu starten.
+// Bei Fehlern wird nach kurzer Wartezeit ein neuer Versuch gestartet.
 async function start() {
     let versuch = 0;
     while (true) {
