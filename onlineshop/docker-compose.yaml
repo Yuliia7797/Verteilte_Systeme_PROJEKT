@@ -86,6 +86,20 @@ services:
     depends_on:
       - onlinebestellsystem
 
+   # ── Controller ─────────────────────────────────────────────────────────────
+  controller:
+    container_name: controller
+    build: controller
+    command: node controller.js
+    restart: always
+    environment:
+      MYSQL_DATABASE: onlinebestellsystem
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_HOSTNAME: onlinebestellsystem
+    depends_on:
+      - onlinebestellsystem
+
   # ── Datenbank ──────────────────────────────────────────────────────────────
   onlinebestellsystem:
     container_name: onlinebestellsystem
