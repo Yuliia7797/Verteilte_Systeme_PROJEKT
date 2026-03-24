@@ -3,20 +3,18 @@ services:
 
   # ── Load Balancer ──────────────────────────────────────────────────────────
   nginx:
-    container_name: nginx
     image: nginx:alpine
+    container_name: nginx
     ports:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - server1
-      - server2
+      - server
     restart: always
 
-  # ── Server 1 ───────────────────────────────────────────────────────────────
-  server1:
-    container_name: server1
+  # ── Server ───────────────────────────────────────────────────────────────
+  server:
     build: server
     restart: always
     environment:
@@ -28,27 +26,14 @@ services:
       RATE_LIMIT_MAX: 10000
     depends_on:
       - onlinebestellsystem
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
-  # ── Server 2 ───────────────────────────────────────────────────────────────
-  server2:
-    container_name: server2
-    build: server
-    restart: always
-    environment:
-      MYSQL_DATABASE: onlinebestellsystem
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
-      MYSQL_HOSTNAME: onlinebestellsystem
-      RATE_LIMIT_WINDOW_MS: 60000
-      RATE_LIMIT_MAX: 10000
-    depends_on:
-      - onlinebestellsystem
-
-  # ── Worker 1 ───────────────────────────────────────────────────────────────
-  worker1:
-    container_name: worker1
-    build: server
-    command: node worker.js
+  # ── Worker ───────────────────────────────────────────────────────────────
+  worker:
+    build: worker
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
@@ -57,40 +42,15 @@ services:
       MYSQL_HOSTNAME: onlinebestellsystem
     depends_on:
       - onlinebestellsystem
-
-  # ── Worker 2 ───────────────────────────────────────────────────────────────
-  worker2:
-    container_name: worker2
-    build: server
-    command: node worker.js
-    restart: always
-    environment:
-      MYSQL_DATABASE: onlinebestellsystem
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
-      MYSQL_HOSTNAME: onlinebestellsystem
-    depends_on:
-      - onlinebestellsystem
-
-  # ── Worker 3 ───────────────────────────────────────────────────────────────
-  worker3:
-    container_name: worker3
-    build: server
-    command: node worker.js
-    restart: always
-    environment:
-      MYSQL_DATABASE: onlinebestellsystem
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
-      MYSQL_HOSTNAME: onlinebestellsystem
-    depends_on:
-      - onlinebestellsystem
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
    # ── Controller ─────────────────────────────────────────────────────────────
   controller:
     container_name: controller
     build: controller
-    command: node controller.js
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
@@ -120,3 +80,5 @@ services:
       - "8085:80"
     environment:
       PMA_HOST: onlinebestellsystem
+    depends_on:
+      - onlinebestellsystem
