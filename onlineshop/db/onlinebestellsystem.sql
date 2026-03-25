@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 18. Mrz 2026 um 20:11
--- Server-Version: 12.0.2-MariaDB-ubu2404
+-- Erstellungszeit: 25. Mrz 2026 um 19:04
+-- Server-Version: 12.2.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -209,6 +209,7 @@ INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`)
 CREATE TABLE `warenkorb` (
   `id` int(11) NOT NULL,
   `benutzer_id` int(11) NOT NULL,
+  `gesamtpreis` decimal(10,2) NOT NULL DEFAULT 0.00,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -243,6 +244,15 @@ CREATE TABLE `worker` (
   `letzter_heartbeat` timestamp NULL DEFAULT NULL,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `worker`
+--
+
+INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
+(4, 'allgemein', 'aktiv', '2026-03-25 19:04:06', '2026-03-25 18:57:36'),
+(5, 'allgemein', 'aktiv', '2026-03-25 19:04:06', '2026-03-25 18:57:36'),
+(6, 'allgemein', 'aktiv', '2026-03-25 19:04:06', '2026-03-25 18:57:36');
 
 --
 -- Indizes der exportierten Tabellen
@@ -395,7 +405,7 @@ ALTER TABLE `warenkorb_position`
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Constraints der exportierten Tabellen
