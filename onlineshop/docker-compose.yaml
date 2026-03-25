@@ -24,6 +24,9 @@ services:
       MYSQL_HOSTNAME: onlinebestellsystem
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 10000
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - onlinebestellsystem
     deploy:
@@ -40,6 +43,9 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_HOSTNAME: onlinebestellsystem
+    volumes:
+      - ./worker:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - onlinebestellsystem
     deploy:
@@ -47,7 +53,7 @@ services:
       restart_policy:
         condition: on-failure
 
-   # ── Controller ─────────────────────────────────────────────────────────────
+  # ── Controller ─────────────────────────────────────────────────────────────
   controller:
     container_name: controller
     build: controller
@@ -57,6 +63,9 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_HOSTNAME: onlinebestellsystem
+    volumes:
+      - ./controller:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - onlinebestellsystem
 
@@ -70,6 +79,8 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_ROOT_PASSWORD: rootpw
+    volumes:
+      - db_data:/var/lib/mysql
 
   # ── phpMyAdmin ─────────────────────────────────────────────────────────────
   phpmyadmin:
@@ -82,3 +93,6 @@ services:
       PMA_HOST: onlinebestellsystem
     depends_on:
       - onlinebestellsystem
+
+volumes:
+  db_data:
