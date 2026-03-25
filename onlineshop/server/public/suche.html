@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artikeldetails - MyShop</title>
+  <title>Suchergebnisse - MyShop</title>
 
   <!-- Bootstrap CSS für Layout und responsive Darstellung -->
   <link
@@ -17,25 +17,46 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
   >
 
-  <!-- Eigene CSS-Datei -->
+  <!-- Eigene zentrale CSS-Datei -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Platzhalter für den Header -->
+  <!--
+    Platzhalter für den Header.
+    Der Inhalt wird später per JavaScript aus components/header.html geladen.
+  -->
   <div id="header-placeholder"></div>
 
+  <!-- Hauptinhalt der Suchseite -->
   <main class="py-5">
     <div class="container">
       <!--
-        Dieser Bereich bleibt zuerst leer.
-        Die Artikeldetails werden später per JavaScript geladen.
+        Überschrift der Suchergebnisseite.
       -->
-      <div id="artikel-detail-container"></div>
+      <h1 class="section-title text-center mb-4">Suchergebnisse</h1>
+
+      <!--
+        Hier wird später per JavaScript angezeigt,
+        wonach gesucht wurde.
+        Beispiel:
+        Ergebnisse für: "Harry"
+      -->
+      <p id="suchbegriff-anzeige" class="text-center mb-5"></p>
+
+      <!--
+        Dieser Container bleibt am Anfang leer.
+        Die gefundenen Artikel werden später per JavaScript
+        dynamisch hier eingefügt.
+      -->
+      <div id="suche-artikel-container" class="row g-4"></div>
     </div>
   </main>
 
-  <!-- Platzhalter für den Footer -->
+  <!--
+    Platzhalter für den Footer.
+    Der Inhalt wird später per JavaScript aus components/footer.html geladen.
+  -->
   <div id="footer-placeholder"></div>
 
   <!-- Header und Footer laden -->
@@ -50,8 +71,10 @@
   <!-- Kategorien für das Dropdown-Menü im Header laden -->
   <script src="js/kategorien.js"></script>
 
-  <!-- Artikeldetails laden -->
-  <script src="js/artikel-detail.js"></script>
+  <!--
+    JavaScript zum Laden und Anzeigen der Suchergebnisse.
+  -->
+  <script src="js/suche-ergebnisse.js"></script>
 
   <!-- Bootstrap JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

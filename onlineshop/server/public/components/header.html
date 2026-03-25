@@ -57,13 +57,17 @@
         </li>
       </ul>
 
-      <!-- Suchformular -->
-      <form class="d-flex me-3" role="search">
+      <!--
+        Suchformular für die Artikelsuche.
+        Dieses Formular wird später per JavaScript verarbeitet.
+      -->
+      <form class="d-flex me-3" role="search" id="search-form">
         <input
           class="form-control me-2 search-input"
           type="search"
           placeholder="Suche nach Artikeln..."
           aria-label="Suche"
+          id="search-input"
         >
         <button class="btn search-btn" type="submit">Suchen</button>
       </form>
