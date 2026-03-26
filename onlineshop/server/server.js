@@ -2,6 +2,8 @@
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const connection = require('./db');
 
 const artikelRoutes = require('./routes/artikelRoutes');
@@ -36,6 +38,28 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Gemeinsamer Session-Store in MariaDB für alle Serverinstanzen
+const sessionStore = new MySQLStore({
+  host: process.env.MYSQL_HOSTNAME,
+  port: 3306,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE
+});
+
+app.use(session({
+  key: 'connect.sid',
+  secret: 'mein_geheimes_login_secret',
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    maxAge: 1000 * 60 * 60
+  }
+}));
 
 // Rate Limiter (DoS-Schutz)
 const limiter = rateLimit({

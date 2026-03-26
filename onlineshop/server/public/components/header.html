@@ -52,7 +52,7 @@
           <ul class="kategorien-dropdown-menu" id="kategorien-dropdown-list"></ul>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item" id="nav-konto-item" style="display: none;">
           <a class="nav-link" href="mein-konto.html">Mein Konto</a>
         </li>
       </ul>
@@ -73,10 +73,13 @@
       </form>
 
       <!-- Rechte Aktionsbuttons -->
-      <a href="login.html" class="btn btn-light-custom me-2">Login</a>
-      <a href="/static/registrieren.html" class="btn btn-main me-2">Registrieren</a> 
+      <div id="auth-buttons-wrapper" style="display: none;">
+        <a href="login.html" class="btn btn-light-custom me-2" id="nav-login-item">Login</a>
+        <a href="/static/registrieren.html" class="btn btn-main me-2" id="nav-registrieren-item">Registrieren</a>
+        <a href="#" class="btn btn-light-custom me-2" id="nav-logout-item" style="display: none;">Logout</a>
+      </div>
 
-      <!-- Warenkorb-Link mit echtem Warenkorb-Symbol -->
+      <!-- Warenkorb-Link mit Warenkorb-Symbol -->
       <a href="warenkorb.html" class="cart-link ms-2">
         <i class="bi bi-cart3"></i>
         <span>Warenkorb</span>

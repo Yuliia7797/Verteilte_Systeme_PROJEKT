@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 25. Mrz 2026 um 19:04
--- Server-Version: 12.2.2-MariaDB-ubu2404
+-- Erstellungszeit: 26. Mrz 2026 um 17:08
+-- Server-Version: 12.0.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -39,6 +39,13 @@ CREATE TABLE `adresse` (
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `adresse`
+--
+
+INSERT INTO `adresse` (`id`, `benutzer_id`, `strasse`, `hausnummer`, `adresszusatz`, `postleitzahl`, `ort`, `land`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
+(1, 1, 'Katharinenstraße', '1', NULL, '111111', 'Stuttgart', 'Deutschland', '2026-03-26 13:26:55', '2026-03-26 13:26:55');
 
 -- --------------------------------------------------------
 
@@ -109,6 +116,13 @@ CREATE TABLE `benutzer` (
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `benutzer`
+--
+
+INSERT INTO `benutzer` (`id`, `vorname`, `nachname`, `email`, `passwort_hash`, `rolle`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
+(1, 'Ana', 'Mav', 'nastu@f', '$2b$10$o4/Gzq.JSpRdDzqamUtl9Og0GUODVvUcc.fbB1vYsmaK4b3KzCvoi', 'kunde', '2026-03-26 13:26:55', '2026-03-26 13:26:55');
 
 -- --------------------------------------------------------
 
@@ -203,13 +217,24 @@ INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`)
 -- --------------------------------------------------------
 
 --
+-- Tabellenstruktur für Tabelle `sessions`
+--
+
+CREATE TABLE `sessions` (
+  `session_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `expires` int(11) UNSIGNED NOT NULL,
+  `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tabellenstruktur für Tabelle `warenkorb`
 --
 
 CREATE TABLE `warenkorb` (
   `id` int(11) NOT NULL,
   `benutzer_id` int(11) NOT NULL,
-  `gesamtpreis` decimal(10,2) NOT NULL DEFAULT 0.00,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -244,7 +269,6 @@ CREATE TABLE `worker` (
   `letzter_heartbeat` timestamp NULL DEFAULT NULL,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
 
 --
 -- Indizes der exportierten Tabellen
@@ -309,6 +333,12 @@ ALTER TABLE `lagerbestand`
   ADD UNIQUE KEY `artikel_id` (`artikel_id`);
 
 --
+-- Indizes für die Tabelle `sessions`
+--
+ALTER TABLE `sessions`
+  ADD PRIMARY KEY (`session_id`);
+
+--
 -- Indizes für die Tabelle `warenkorb`
 --
 ALTER TABLE `warenkorb`
@@ -337,7 +367,7 @@ ALTER TABLE `worker`
 -- AUTO_INCREMENT für Tabelle `adresse`
 --
 ALTER TABLE `adresse`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `artikel`
@@ -355,7 +385,7 @@ ALTER TABLE `aufgabe`
 -- AUTO_INCREMENT für Tabelle `benutzer`
 --
 ALTER TABLE `benutzer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellposition`
@@ -397,7 +427,7 @@ ALTER TABLE `warenkorb_position`
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Constraints der exportierten Tabellen

@@ -43,9 +43,9 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_HOSTNAME: onlinebestellsystem
-    volumes:
-      - ./worker:/usr/src/app
-      - /usr/src/app/node_modules
+    #volumes:
+    #  - ./worker:/usr/src/app
+    #  - /usr/src/app/node_modules 
     depends_on:
       - onlinebestellsystem
     deploy:

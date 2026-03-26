@@ -184,4 +184,97 @@ router.post('/registrieren', async (req, res) => {
   }
 });
 
+/*
+  POST /benutzer/login
+  Prüft E-Mail und Passwort und legt bei Erfolg eine Session an.
+*/
+router.post('/login', (req, res) => {
+  const { email, passwort } = req.body;
+
+  if (!email || !passwort) {
+    return res.status(400).json({
+      message: 'Bitte E-Mail und Passwort eingeben.'
+    });
+  }
+
+  const emailBereinigt = email.trim().toLowerCase();
+
+  connection.query(
+    'SELECT id, vorname, nachname, email, passwort_hash, rolle FROM benutzer WHERE email = ?',
+    [emailBereinigt],
+    async (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Datenbankfehler' });
+      }
+
+      if (results.length === 0) {
+        return res.status(401).json({ message: 'E-Mail oder Passwort ist falsch.' });
+      }
+
+      const benutzer = results[0];
+
+      try {
+        const passwortKorrekt = await bcrypt.compare(passwort, benutzer.passwort_hash);
+
+        if (!passwortKorrekt) {
+          return res.status(401).json({ message: 'E-Mail oder Passwort ist falsch.' });
+        }
+
+        req.session.benutzer = {
+          id: benutzer.id,
+          vorname: benutzer.vorname,
+          nachname: benutzer.nachname,
+          email: benutzer.email,
+          rolle: benutzer.rolle
+        };
+
+        req.session.save((saveError) => {
+          if (saveError) {
+            console.error(saveError);
+            return res.status(500).json({ message: 'Session konnte nicht gespeichert werden' });
+          }
+
+          return res.status(200).json({
+            message: 'Login erfolgreich',
+            benutzer: req.session.benutzer
+          });
+        });
+        
+      } catch (compareError) {
+        console.error(compareError);
+        return res.status(500).json({ message: 'Fehler bei der Passwortprüfung' });
+      }
+    }
+  );
+});
+
+/*
+  GET /benutzer/session
+  Gibt den eingeloggten Benutzer zurück, falls eine Session existiert.
+*/
+router.get('/session', (req, res) => {
+  if (!req.session.benutzer) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
+  }
+
+  return res.status(200).json(req.session.benutzer);
+});
+
+/*
+  POST /benutzer/logout
+  Beendet die Session des Benutzers.
+*/
+router.post('/logout', (req, res) => {
+  req.session.destroy((error) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Logout fehlgeschlagen' });
+    }
+
+    res.clearCookie('connect.sid');
+    return res.status(200).json({ message: 'Logout erfolgreich' });
+  });
+});
+
 module.exports = router;
