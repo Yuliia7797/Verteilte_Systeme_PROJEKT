@@ -1,3 +1,14 @@
+/**
+ * Diese Datei steuert die Artikelübersicht einer einzelnen Kategorie.
+ * Beim Laden der Seite wird die Kategorie-ID aus dem URL-Parameter ausgelesen.
+ * Anschließend werden zwei GET-Requests an das Backend gesendet:
+ * 1. Alle Kategorien laden, um den Namen der aktuellen Kategorie als Seitenüberschrift zu setzen.
+ * 2. Alle Artikel der ausgewählten Kategorie laden und als Cards im Container anzeigen.
+ * Jede Card zeigt Bild, Name, Kurzbeschreibung und Preis und verlinkt auf die Detailseite.
+ * Bei fehlender Kategorie-ID, leerem Ergebnis oder einem Serverfehler wird eine
+ * entsprechende Fehlermeldung im Container angezeigt.
+ */
+
 /*
   Diese Funktion liest die Kategorie-ID aus der URL aus.
   Beispiel: kategorie.html?id=2

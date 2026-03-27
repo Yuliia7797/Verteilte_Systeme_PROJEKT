@@ -1,3 +1,7 @@
+/**
+ * Diese Datei erstellt die zentrale Datenbankverbindung für den gesamten Server.
+ */
+
 'use strict';
 
 const mysql = require('mysql');

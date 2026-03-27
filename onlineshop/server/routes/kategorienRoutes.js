@@ -1,3 +1,9 @@
+/**
+ * Diese Datei definiert die API-Route für Kategorien.
+ * Sie stellt folgenden Endpunkt bereit:
+ * - GET /kategorien – alle Kategorien aus der Datenbank laden
+ */
+
 'use strict';
 
 const express = require('express');

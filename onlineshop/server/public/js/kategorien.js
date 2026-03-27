@@ -1,3 +1,10 @@
+/**
+ * Diese Datei lädt alle Kategorien vom Backend und zeigt sie an zwei Stellen an:
+ * als Karten auf der Startseite und als Einträge im Dropdown-Menü im Header.
+ * Außerdem wird das Dropdown-Menü initialisiert, sodass es per Klick geöffnet
+ * und geschlossen werden kann.
+ */
+
 /*
   Diese Funktion lädt alle Kategorien vom Backend.
   Danach werden die Kategorien auf der Startseite angezeigt

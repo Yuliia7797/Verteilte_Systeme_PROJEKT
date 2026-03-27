@@ -1,3 +1,10 @@
+/**
+ * Diese Datei steuert die Detailansicht eines einzelnen Artikels.
+ * Die geladenen Daten (Bild, Name, Beschreibung, Preis, Lagerbestand, Kategorie)
+ * werden dynamisch als HTML in den Detailcontainer der Seite eingefügt.
+ * Bei fehlender ID oder einem Serverfehler wird eine Fehlermeldung angezeigt.
+ */
+
 /*
   Diese Funktion liest die Artikel-ID aus der URL aus.
   Beispiel: artikel.html?id=3

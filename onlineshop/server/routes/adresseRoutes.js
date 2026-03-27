@@ -1,3 +1,12 @@
+/**
+ * Diese Datei definiert die API-Routen für die Adressverwaltung.
+ * Sie stellt folgende Endpunkte bereit:
+ * - GET    /adresse/:benutzer_id  – alle Adressen eines Benutzers laden
+ * - POST   /adresse               – neue Adresse speichern
+ * - PUT    /adresse/:id           – vorhandene Adresse aktualisieren
+ * - DELETE /adresse/:id           – Adresse löschen
+ */
+
 'use strict';
 
 const express = require('express');

@@ -1,3 +1,13 @@
+/**
+ * Diese Datei definiert die API-Routen für die Bestellverwaltung.
+ * Sie stellt folgende Endpunkte bereit:
+ * - GET   /bestellung              – alle Bestellungen mit Benutzerdaten laden
+ * - GET   /bestellung/:id          – einzelne Bestellung mit Lieferadresse und Positionen laden
+ * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen
+ *                                    und automatisch Worker-Aufgaben anlegen
+ * - PATCH /bestellung/:id/status   – Bestellstatus aktualisieren
+ */
+
 'use strict';
 
 const express = require('express');

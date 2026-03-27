@@ -1,3 +1,10 @@
+/**
+ * Diese Datei definiert die API-Routen für die Worker-Verwaltung.
+ * Sie stellt folgende Endpunkte bereit:
+ * - GET /worker          – alle Worker aus der Datenbank laden
+ * - GET /worker/aufgaben – alle Aufgaben laden, mit zugehörigem Bestellstatus und Worker-Typ
+ */
+
 'use strict';
 
 const express = require('express');

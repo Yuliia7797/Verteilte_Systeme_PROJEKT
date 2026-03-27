@@ -1,3 +1,12 @@
+/**
+ * Diese Datei definiert die API-Routen für die Artikelverwaltung.
+ * Sie stellt folgende Endpunkte bereit:
+ * - GET    /artikel          – alle Artikel laden (optional mit Filter)
+ * - GET    /artikel/:id      – einzelnen Artikel mit Kategorie und Lagerbestand laden
+ * - POST   /artikel          – neuen Artikel anlegen
+ * - DELETE /artikel/:id      – Artikel löschen
+ */
+
 'use strict';
 
 const express = require('express');

@@ -1,3 +1,10 @@
+/**
+ * Diese Datei steuert die Suchergebnisseite.
+ * Der Suchbegriff wird aus dem URL-Parameter ausgelesen, an das Backend gesendet 
+ * und die passenden Artikel werden als Cards angezeigt.
+ * Bei fehlendem Suchbegriff oder keinen Treffern wird eine entsprechende Meldung ausgegeben.
+ */
+
 /*
   Diese Funktion liest den Suchbegriff aus der URL.
 

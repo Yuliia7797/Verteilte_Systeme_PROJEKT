@@ -1,3 +1,11 @@
+/**
+ * Diese Datei definiert die API-Routen für die Lagerverwaltung.
+ * Sie stellt folgende Endpunkte bereit:
+ * - GET   /lagerbestand/:artikel_id  – alle Lagerbestände mit Artikeldaten laden
+ * - PATCH /lagerbestand/:artikel_id  – Lagerbestand eines Artikels aktualisieren
+ *                                      (legt einen neuen Datensatz an, falls noch keiner existiert)
+ */
+
 'use strict';
 
 const express = require('express');

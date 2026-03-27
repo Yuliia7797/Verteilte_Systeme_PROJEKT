@@ -1,3 +1,12 @@
+/**
+ * Diese Datei definiert die API-Routen für die Warenkorb-Verwaltung.
+ * Sie stellt folgende Endpunkte bereit:
+ * - GET    /warenkorb/:benutzer_id   – alle Positionen im Warenkorb eines Benutzers laden
+ * - POST   /warenkorb                – Artikel in den Warenkorb legen
+ *                                      (erstellt automatisch einen Warenkorb, falls noch keiner existiert)
+ * - DELETE /warenkorb/position/:id   – einzelne Position aus dem Warenkorb entfernen
+ */
+
 'use strict';
 
 const express = require('express');
