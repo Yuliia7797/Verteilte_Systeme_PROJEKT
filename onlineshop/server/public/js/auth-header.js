@@ -22,6 +22,7 @@ async function aktualisiereHeader() {
   const loginButton = document.getElementById('nav-login-item');
   const registrierenButton = document.getElementById('nav-registrieren-item');
   const kontoItem = document.getElementById('nav-konto-item');
+  const adminItem = document.getElementById('nav-admin-item');
   const logoutButton = document.getElementById('nav-logout-item');
 
   // Sicherheitsprüfung: Falls ein Element fehlt (z.B. auf Seiten ohne Header), abbrechen
@@ -37,17 +38,33 @@ async function aktualisiereHeader() {
     });
 
     if (response.ok) {
+      const benutzer = await response.json();
+
       // Benutzer ist eingeloggt: Login/Registrieren ausblenden, Konto/Logout einblenden
       loginButton.style.display = 'none';
       registrierenButton.style.display = 'none';
       kontoItem.style.display = '';
       logoutButton.style.display = '';
+
+      // Admin-Link nur anzeigen, wenn der Benutzer die Rolle "admin" hat
+      if (adminItem) {
+        if (benutzer.rolle === 'admin') {
+          adminItem.style.display = '';
+        } else {
+          adminItem.style.display = 'none';
+        }
+      }
     } else {
       // Kein aktiver Login: Login/Registrieren einblenden, Konto/Logout ausblenden
       loginButton.style.display = '';
       registrierenButton.style.display = '';
       kontoItem.style.display = 'none';
       logoutButton.style.display = 'none';
+
+      // Admin-Link für nicht eingeloggte Benutzer ausblenden
+      if (adminItem) {
+        adminItem.style.display = 'none';
+      }
     }
   } catch (error) {
     // Bei Netzwerkfehler: Standardansicht für nicht eingeloggte Benutzer zeigen
@@ -56,6 +73,11 @@ async function aktualisiereHeader() {
     registrierenButton.style.display = '';
     kontoItem.style.display = 'none';
     logoutButton.style.display = 'none';
+
+    // Admin-Link bei Fehler ebenfalls ausblenden
+    if (adminItem) {
+      adminItem.style.display = 'none';
+    }
   }
 
   // Auth-Wrapper sichtbar machen und korrekt ausrichten
