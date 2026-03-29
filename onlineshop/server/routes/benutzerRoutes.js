@@ -1,12 +1,15 @@
 /**
  * Diese Datei definiert die API-Routen für die Benutzerverwaltung und Authentifizierung.
  * Sie stellt folgende Endpunkte bereit:
- * - GET  /benutzer              – alle Benutzer laden 
- * - POST /benutzer              – neuen Benutzer anlegen (Admin)
- * - POST /benutzer/registrieren – Registrierung mit Passwort-Hashing und Adresse
- * - POST /benutzer/login        – Login mit Session-Erstellung
- * - GET  /benutzer/session      – aktive Session abfragen
- * - POST /benutzer/logout       – Session beenden
+ * - GET  /benutzer                    – alle Benutzer laden 
+ * - POST /benutzer                    – neuen Benutzer anlegen (Admin)
+ * - POST /benutzer/registrieren       – Registrierung mit Passwort-Hashing und Adresse
+ * - POST /benutzer/login              – Login mit Session-Erstellung
+ * - GET  /benutzer/session            – aktive Session abfragen
+ * - POST /benutzer/logout             – Session beenden
+ * - GET  /benutzer/mein-konto         – Kontodaten des eingeloggten Benutzers laden
+ * - PUT  /benutzer/mein-konto         – Kontodaten und Adresse aktualisieren, Passwort optional ändern
+ * - GET  /benutzer/meine-bestellungen – alle Bestellungen des eingeloggten Benutzers laden
  */
 
 'use strict';
@@ -314,6 +317,288 @@ router.post('/logout', (req, res) => {
     res.clearCookie('connect.sid');
     return res.status(200).json({ message: 'Logout erfolgreich' });
   });
+});
+
+/*
+  GET /benutzer/mein-konto
+  Lädt die Daten des eingeloggten Benutzers inklusive Adresse.
+*/
+router.get('/mein-konto', (req, res) => {
+  // Session prüfen – nur eingeloggte Benutzer dürfen ihre Daten abrufen
+  if (!req.session.benutzer) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
+  }
+
+  // Benutzer-ID aus der Session lesen
+  const benutzerId = req.session.benutzer.id;
+
+  // Benutzerdaten und Adresse laden – LEFT JOIN, falls noch keine Adresse existiert
+  connection.query(
+    `SELECT
+      b.vorname,
+      b.nachname,
+      b.email,
+      a.strasse,
+      a.hausnummer,
+      a.adresszusatz,
+      a.postleitzahl,
+      a.ort,
+      a.land
+    FROM benutzer b
+    LEFT JOIN adresse a ON b.id = a.benutzer_id
+    WHERE b.id = ?
+    LIMIT 1`,
+    [benutzerId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Kontodaten' });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'Benutzer nicht gefunden' });
+      }
+
+      return res.status(200).json(results[0]);
+    }
+  );
+});
+
+/*
+  PUT /benutzer/mein-konto
+  Aktualisiert die Daten des eingeloggten Benutzers inklusive Adresse
+  und optional das Passwort.
+*/
+router.put('/mein-konto', async (req, res) => {
+  // Session prüfen – nur eingeloggte Benutzer dürfen ihre Daten ändern
+  if (!req.session.benutzer) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
+  }
+
+  // Benutzer-ID aus der Session lesen
+  const benutzerId = req.session.benutzer.id;
+
+  // Alle Felder aus dem Request-Body auslesen (adresszusatz und neuesPasswort sind optional)
+  const {
+    vorname,
+    nachname,
+    email,
+    strasse,
+    hausnummer,
+    adresszusatz,
+    postleitzahl,
+    ort,
+    land,
+    neuesPasswort
+  } = req.body;
+
+  // Pflichtfelder prüfen
+  if (
+    !vorname ||
+    !nachname ||
+    !email ||
+    !strasse ||
+    !hausnummer ||
+    !postleitzahl ||
+    !ort ||
+    !land
+  ) {
+    return res.status(400).json({
+      message: 'Bitte alle Pflichtfelder ausfüllen.'
+    });
+  }
+
+  // E-Mail normalisieren für konsistenten Datenbankvergleich
+  const emailBereinigt = email.trim().toLowerCase();
+  const passwortRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+
+  // Neues Passwort nur validieren, wenn es angegeben wurde
+  if (neuesPasswort && !passwortRegex.test(neuesPasswort)) {
+    return res.status(400).json({
+      message: 'Das neue Passwort muss mindestens 8 Zeichen lang sein und mindestens einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten.'
+    });
+  }
+
+  // Prüfen ob die neue E-Mail bereits von einem anderen Benutzer verwendet wird
+  connection.query(
+    'SELECT id FROM benutzer WHERE email = ? AND id <> ?',
+    [emailBereinigt, benutzerId],
+    async (selectError, selectResults) => {
+      if (selectError) {
+        console.error(selectError);
+        return res.status(500).json({ message: 'Datenbankfehler' });
+      }
+
+      if (selectResults.length > 0) {
+        return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
+      }
+
+      try {
+        let passwortHash = null;
+
+        // Neues Passwort hashen, falls angegeben
+        if (neuesPasswort) {
+          passwortHash = await bcrypt.hash(neuesPasswort, 10);
+        }
+
+        // Query dynamisch zusammensetzen – mit oder ohne Passwort-Update
+        const benutzerQuery = passwortHash
+          ? 'UPDATE benutzer SET vorname = ?, nachname = ?, email = ?, passwort_hash = ? WHERE id = ?'
+          : 'UPDATE benutzer SET vorname = ?, nachname = ?, email = ? WHERE id = ?';
+
+        const benutzerParams = passwortHash
+          ? [vorname, nachname, emailBereinigt, passwortHash, benutzerId]
+          : [vorname, nachname, emailBereinigt, benutzerId];
+
+        // Benutzerdaten in der Tabelle aktualisieren
+        connection.query(
+          benutzerQuery,
+          benutzerParams,
+          (updateBenutzerError) => {
+            if (updateBenutzerError) {
+              console.error(updateBenutzerError);
+              return res.status(500).json({ message: 'Fehler beim Aktualisieren der Benutzerdaten' });
+            }
+
+            // Prüfen ob bereits eine Adresse für diesen Benutzer existiert
+            connection.query(
+              'SELECT id FROM adresse WHERE benutzer_id = ? LIMIT 1',
+              [benutzerId],
+              (selectAdresseError, selectAdresseResults) => {
+                if (selectAdresseError) {
+                  console.error(selectAdresseError);
+                  return res.status(500).json({ message: 'Fehler beim Prüfen der Adresse' });
+                }
+
+                if (selectAdresseResults.length > 0) {
+                  // Adresse existiert bereits → aktualisieren
+                  const adresseId = selectAdresseResults[0].id;
+
+                  connection.query(
+                    `UPDATE adresse
+                     SET strasse = ?, hausnummer = ?, adresszusatz = ?, postleitzahl = ?, ort = ?, land = ?
+                     WHERE id = ?`,
+                    [
+                      strasse,
+                      hausnummer,
+                      adresszusatz || null,
+                      postleitzahl,
+                      ort,
+                      land,
+                      adresseId
+                    ],
+                    (updateAdresseError) => {
+                      if (updateAdresseError) {
+                        console.error(updateAdresseError);
+                        return res.status(500).json({ message: 'Fehler beim Aktualisieren der Adresse' });
+                      }
+
+                      // Session mit den neuen Benutzerdaten aktualisieren
+                      req.session.benutzer.vorname = vorname;
+                      req.session.benutzer.nachname = nachname;
+                      req.session.benutzer.email = emailBereinigt;
+
+                      req.session.save((saveError) => {
+                        if (saveError) {
+                          console.error(saveError);
+                          return res.status(500).json({ message: 'Session konnte nicht aktualisiert werden' });
+                        }
+
+                        return res.status(200).json({ message: 'Kontodaten erfolgreich aktualisiert' });
+                      });
+                    }
+                  );
+                } else {
+                  // Noch keine Adresse vorhanden → neu anlegen
+                  connection.query(
+                    `INSERT INTO adresse
+                    (benutzer_id, strasse, hausnummer, adresszusatz, postleitzahl, ort, land)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                      benutzerId,
+                      strasse,
+                      hausnummer,
+                      adresszusatz || null,
+                      postleitzahl,
+                      ort,
+                      land
+                    ],
+                    (insertAdresseError) => {
+                      if (insertAdresseError) {
+                        console.error(insertAdresseError);
+                        return res.status(500).json({ message: 'Fehler beim Speichern der Adresse' });
+                      }
+
+                      // Session mit den neuen Benutzerdaten aktualisieren
+                      req.session.benutzer.vorname = vorname;
+                      req.session.benutzer.nachname = nachname;
+                      req.session.benutzer.email = emailBereinigt;
+
+                      req.session.save((saveError) => {
+                        if (saveError) {
+                          console.error(saveError);
+                          return res.status(500).json({ message: 'Session konnte nicht aktualisiert werden' });
+                        }
+
+                        return res.status(200).json({ message: 'Kontodaten erfolgreich aktualisiert' });
+                      });
+                    }
+                  );
+                }
+              }
+            );
+          }
+        );
+      } catch (hashError) {
+        console.error(hashError);
+        return res.status(500).json({ message: 'Fehler beim Verarbeiten des Passworts' });
+      }
+    }
+  );
+});
+
+/*
+  GET /benutzer/meine-bestellungen
+  Lädt alle Bestellungen des eingeloggten Benutzers.
+*/
+router.get('/meine-bestellungen', (req, res) => {
+  // Session prüfen – nur eingeloggte Benutzer dürfen ihre Bestellungen abrufen
+  if (!req.session.benutzer) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
+  }
+
+  // Benutzer-ID aus der Session lesen
+  const benutzerId = req.session.benutzer.id;
+
+  // Alle Bestellungen des Benutzers inkl. Lieferadresse laden, neueste zuerst
+  connection.query(
+    `SELECT
+      b.id,
+      b.bestellstatus,
+      b.erstellungszeitpunkt,
+      b.gesamtpreis,
+      b.zahlungsmethode,
+      b.zahlungsstatus,
+      a.strasse,
+      a.hausnummer,
+      a.adresszusatz,
+      a.postleitzahl,
+      a.ort,
+      a.land
+     FROM bestellung b
+     JOIN adresse a ON b.lieferadresse_id = a.id
+     WHERE b.benutzer_id = ?
+     ORDER BY b.erstellungszeitpunkt DESC`,
+    [benutzerId],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Fehler beim Laden der Bestellungen' });
+      }
+
+      return res.status(200).json(results);
+    }
+  );
 });
 
 module.exports = router;

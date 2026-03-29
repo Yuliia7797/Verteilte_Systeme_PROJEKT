@@ -84,7 +84,7 @@ router.get('/:id', (req, res) => {
       */
       connection.query(
         `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis,
-                ar.bezeichnung AS artikel
+                ar.id AS artikel_id, ar.bezeichnung AS artikel, ar.bild_url
          FROM bestellposition bp
          JOIN artikel ar ON bp.artikel_id = ar.id
          WHERE bp.bestellung_id = ?`,
