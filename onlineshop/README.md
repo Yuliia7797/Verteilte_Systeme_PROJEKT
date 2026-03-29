@@ -1,202 +1,191 @@
-# Client - (Web-)Server Extended mit einer Datenbank in Node.js
+# MyShop – Verteiltes Online-Bestellsystem mit Node.js, MariaDB und Docker
 
 ## Allgemein
 
-In diesem Beispiel werden ein Node.js Webserver (mittels Express) gestartet und Zugriffspunkte (Pfade) definiert. Darüber hinaus wird ein 'MariaDB'-Datenbankcontainer angelegt, welcher vom Webserver verwendet wird.
+In diesem Projekt wird ein verteiltes Online-Bestellsystem umgesetzt. Die Anwendung basiert auf einem Node.js-Server mit Express, einer MariaDB-Datenbank, einem Nginx-Load-Balancer sowie zusätzlichen Worker- und Controller-Komponenten.
 
-Bitte schaue zuerst das Beispiel `node-client-server-extended` an: [- node-client-server-extended Beispiel ->](../node-client-server-extended/README.md)
+Der Webserver stellt die Benutzeroberfläche und die API-Endpunkte bereit. Die Datenbank speichert Benutzer, Artikel, Kategorien, Bestellungen, Warenkörbe und Lagerbestände. Über den Nginx-Container werden die eingehenden Anfragen an die Serverinstanzen weitergeleitet.
 
-In dieser Anleitung wird nur auf alle Erweiterungen des Extended-Beispiels der Datenbank eingegangen.
+Die Anwendung wurde so aufgebaut, dass typische Funktionen eines kleinen Online-Shops umgesetzt werden können. Dazu gehören unter anderem Registrierung und Login, Artikelanzeige, Kategorien, Warenkorb, Bestellungen sowie ein Admin-Bereich zur Verwaltung.
 
-![Screenshot](screenshot.png)
+## Projektaufbau
 
-### Datenbank
+Die wichtigsten Ordner und Dateien im Projekt sind:
 
-Die Datenbank ist eine `MariaDB`-Datenbank, welche eine OpenSource Weiterentwicklung der `MySQL`-Datenbank ist.
+- `server`  
+  Enthält den Node.js-Webserver, die Routen, Modelle und die statischen Dateien der Benutzeroberfläche.
 
-Alles zur Datenbank findet man im Ordner `db`. Dieser wird benötigt, da beim Start der Datenbank das `database.sql` Backup geladen und in die Datenbank automatisch eingespielt wird.
+- `worker`  
+  Enthält die Worker-Logik. Diese Komponente ist für Hintergrundverarbeitung vorgesehen.
 
-Genau genommen nehmen wir das vorhandene offizielle `MariaDB` Container-Image und laden nur unser SQL-Backup rein. Das `database.sql` kann man über PhpMyAdmin exportieren und einfach überschreiben.
+- `controller`  
+  Enthält zusätzliche Steuerungslogik für die verteilte Architektur.
 
-Die Datenbankinitialisierung findet **nur** statt, wenn der Container das erste Mal gestartet wird, sprich, wenn man das erste Mal `docker-compose up --build` ausführt. Bei jedem weiteren Start mittels `docker-compose up --build` werden die vorhandenen Daten genommen und es wird das Backup `database.sql` **nicht** eingespielt.
+- `db`  
+  Enthält die Docker-Konfiguration der Datenbank sowie das SQL-Dump `onlinebestellsystem.sql`.
 
-Konkret bedeutet das, dass beim ersten Start der Datenbank dies etwas länger dauert, bei jedem weiteren Start geht es deutlich schneller. Wenn man möchte, dass die Datenbank komplett gelöscht wird, dann muss man die Container alle löschen mittels `docker-compose down`. Beim nächsten Start mit `docker-compose up --build` wird dann die Datenbank neu erstellt.
+- `docker-compose.yaml`  
+  Definiert alle Container und deren Zusammenspiel.
 
-### Server
+- `nginx.conf`  
+  Konfiguration des Nginx-Load-Balancers.
 
-Der Server benötigt die Datenbank und daher darf der Server erst starten, wenn die Datenbank bereit ist. Der einfachste Workaround hierbei ist ein `sleep`, bevor der Server gestartet wird.
+## Datenbank
 
-Dies wird in der Dockerfile des Servers bei CMD gemacht. In der Praxis würde man z.B. alle X Sekunden prüfen, ob die Datenbank nun verfügbar ist und dann die Verbindung aufbauen.
+Die Datenbank ist eine `MariaDB`-Datenbank.  
+Alle Datenbankskripte befinden sich im Ordner `db`.
 
-Bitte öffne nach dem Start folgende URL: `http://localhost:8080/`
+Die Datei `onlinebestellsystem.sql` enthält das aktuelle Datenbankschema sowie Beispieldaten. Dieses SQL-Dump wird beim ersten Erstellen des Datenbank-Containers automatisch importiert.
 
-Danach wird man automatisch auf die `index.html` geleitet, die im `static` liegt (Ordner: `public` in `server`).
-Mit einem Klick auf den `database.html` Link kommt man auf folgende Seite: `http://localhost:8080/static/database.html`.
-Dort befindet sich alles über den Datenbankzugriff, was im Folgenden erklärt wird.
+Wichtig ist dabei:
 
-Die `database.html` befindet sich in `./server/public/database.html` und beinhaltet den Client (Webbrowser) Code, der im Browser ausgeführt wird.
-Dabei werden folgende Zugriffspunkte vom `server.js` verwendet:
+- Beim **ersten** Start wird die Datenbank mit den Inhalten aus `onlinebestellsystem.sql` aufgebaut.
+- Bei späteren Starts bleiben die bereits vorhandenen Daten erhalten.
+- Wenn die Datenbank komplett neu erstellt werden soll, müssen die Container und Volumes entfernt werden.
 
-Zugriffspunkte:
- * GET http://localhost:8080/database
-   * Gibt die komplette `table1` als JSON-Antwort zum Client.
- * DELETE http://localhost:8080/database/`id`
-   * Löscht die Reihe aus der `table1` mit der angegebenen `id`.
- * POST http://localhost:8080/database
-   * Das übergebene JSON-Objekt an diese URL, welches folgende Struktur haben muss:
-   * `{ title: "", description: ""}`
-   * wird zur `table1` hinzugefügt. Dabei werden die `task_id` sowie die `created_at` automatisch von der Datenbank ausgefüllt (siehe query im Sourcecode).
+## Server
 
-Zugriffspunkte vom `node-client-server-extended` sind enthalten, aber in dieser Readme beschrieben: [- node-client-server-extended Beispiel ->](../node-client-server-extended/README.md)
+Der Server wurde mit `Express` umgesetzt und stellt sowohl die statischen Seiten als auch die API-Routen bereit.
 
-Die `database.html` spielt dabei eine wichtige Rolle. In dieser Datei befindet sich `javascript` Code, welcher diese Anfragen stellt und auch in die HTML-Seite integriert (daher bitte die `database.html` anschauen).
-Dabei gibt es auch ein Error-Handling, welches über den `alert` angezeigt wird. Jegliche Funktion wie löschen oder hinzufügen führt anschließend wieder das Laden der Datenbank aus, damit der neue Zustand gezeigt wird.
+Im Ordner `server` befinden sich unter anderem:
 
-#### Rate Limiting (für Studierende / Tests)
+- `server.js`  
+  Startpunkt des Webservers
 
-Der Server nutzt `express-rate-limit`, um Denial-of-Service-Angriffe zu erschweren.
-Damit Studierende bei Tests nicht blockiert werden, sind die Standardwerte absichtlich sehr hoch gesetzt:
+- `routes/`  
+  Enthält die API-Routen, zum Beispiel für:
+  - Artikel
+  - Kategorien
+  - Benutzer
+  - Warenkorb
+  - Bestellungen
+  - Lagerbestand
 
-* `RATE_LIMIT_WINDOW_MS=60000` (60 Sekunden)
-* `RATE_LIMIT_MAX=10000` (10.000 Requests pro 60 Sekunden und IP)
+- `models/`  
+  Enthält die Datenmodelle
 
-Diese Werte sind in der `docker-compose.yaml` beim `server` hinterlegt und können bei Bedarf angepasst werden.
+- `public/`  
+  Enthält die HTML-, CSS- und JavaScript-Dateien der Oberfläche
 
-#### Datenbankverbindung
+## Benutzeroberfläche
 
-In dem Sourcecode wird die Datenbank automatisch vom `db`-Container beim Start initialisiert. Alternativ kann aber auch wie im `server.js` die Datenbank im Sourcecode angelegt werden (siehe auskommentierter Code am Anfang der Datei).
+Die statischen Seiten liegen im Ordner `server/public`.
 
-Bei dem Start von `server.js` wird die Verbindung zur Datenbank erstellt und auch getestet, damit diese später ohne Probleme vom Server verwendet werden kann.
+Wichtige Seiten sind zum Beispiel:
 
-**Hinweis:** Natürlich kann ein ConnectionPool verwendet werden. Dies kann man in der Dokumentation des `mysql`-clients in Node.js nachlesen.
+- `index.html` – Startseite
+- `artikel.html` – Artikeldetails
+- `kategorie.html` – Anzeige nach Kategorien
+- `suche.html` – Suchseite
+- `warenkorb.html` – Warenkorb
+- `login.html` – Login
+- `registrieren.html` – Registrierung
+- `mein-konto.html` – Benutzerkonto
 
-**Hinweis:** In der Praxis muss man jegliche SQL-Query vor dem bekannten Angriff der `SQL-Injection` schützen. Dies sollte in der Vorlesung `IT-Sicherheit` erklärt werden.
+Zusätzlich gibt es Admin-Seiten:
 
-### PhpMyAdmin
+- `admin.html` – Überblick über den Admin-Bereich
+- `adminartikel.html` – Artikelverwaltung
+- `adminkategorien.html` – Kategorienverwaltung
+- `adminlager.html` – Lagerverwaltung
 
-Im `docker-compose.yaml` wird auch ein `phpMyAdmin`-Container gestartet, der als Hilfestellung zum Erstellen, Testen sowie Debuggen der Datenbank dient. Dieser kann über:
+## Admin-Bereich
+
+Der Admin-Bereich enthält zusätzliche Verwaltungsfunktionen, die nur für Benutzer mit der Rolle `admin` vorgesehen sind.
+
+Aktuell können dort unter anderem folgende Bereiche genutzt werden:
+
+- Artikel ansehen, erstellen, bearbeiten und löschen
+- Kategorien ansehen, erstellen und löschen
+- Lagerbestand ansehen und ändern
+- Bestellungen ansehen und verwalten
+
+## Testzugang
+
+Zum Testen des Admin-Bereichs kann folgender Benutzer verwendet werden:
+
+- E-Mail: `admin@de`
+- Passwort: `admin123`
+
+Nach dem Login sind die Admin-Funktionen verfügbar.
+
+## Rate Limiting
+
+Der Server verwendet `express-rate-limit`, um zu viele Anfragen in kurzer Zeit zu begrenzen.
+
+Für Tests wurden die Werte bewusst großzügig gesetzt:
+
+- `RATE_LIMIT_WINDOW_MS=60000`
+- `RATE_LIMIT_MAX=10000`
+
+Diese Werte können bei Bedarf in der `docker-compose.yaml` angepasst werden.
+
+## PhpMyAdmin
+
+Zusätzlich wird ein `phpMyAdmin`-Container gestartet.  
+Dieser erleichtert die Ansicht und Kontrolle der Datenbank während der Entwicklung.
+
+PhpMyAdmin ist nach dem Start erreichbar unter:
 
 `http://localhost:8085/`
 
-erreicht werden. Hierbei muss man wie im `docker-compose.yaml` den Benutzernamen `MYSQL_USER` sowie das Passwort `MYSQL_PASSWORD` angeben. 
-
-Dies kann auch für den Export verwendet werden mittels `Exportieren` -> `Schnell` -> `SQL`. Die daraus resultierende Datei kann dann in dem Ordner `db` als `database.sql` hinterlegt werden. Bei dem nächsten Neuerstellen des Datenbank-Containers wird diese dann automatisch geladen.
-
-### Static Files
-
-Alle statischen Dateien liegen wie bereits beschrieben in dem Ordner `public`, welcher über `/static/` per Webserver erreichbar ist. Am besten verwendet man relative Pfade zu den Dateien, so wie in der Datei `static.html`. Diese Datei befindet sich in `./server/public/static.html`.
-
-In diesem Beispiel ist beschrieben, wie man Bilder und eigene CSS-Dateien referenzieren kann. Darüber hinaus können auch Javascript-Dateien so richtig ausgegliedert werden. Idealerweise überlegt man sich eine sinnvolle Ordnerstruktur, um dies auch gut warten zu können.
-
-### Client
-
-Der Client ist im Webbrowser, jedoch kann wie im `node-client-server-extended`-Beispiel [- node-client-server-extended Beispiel ->](../node-client-server-extended/README.md) ein eigener Client-Container angelegt werden, welcher die REST-Calls testet.
-
-## Installation und lokale Ausführung
-
-**Hinweis:** Beachte, dass die `docker-compose.yml` im Hauptverzeichnis des Projektes liegt. Die Ordnerstruktur enthält einen Ordner `client` und einen Ordner `server`, welche jeweils die benötigten Dateien sowie eine eigene `Dockerfile` haben, welche die Container beschreiben. Die Container sind unabhängig und unterscheiden sich. Innerhalb der `docker-compose.yml` wird unter `build` der Ordner angegeben, welcher die `Dockerfile` beinhaltet.
-
-Im Verzeichnis `server` können mit:
-```sh
-npm install
-```
-alle definierten Bibliotheken in der `package.json` heruntergeladen werden.
-
-
-Mit folgenden Befehlen können der Server und Client lokal ausgeführt werden:
-
-```sh
-# start des servers -> im "server"-Ordner
-node server.js
-```
-
-**Wichtig:** Die lokale Ausführung funktioniert nur, wenn alle notwendigen `Environmentvariablen` sowie die Datenbank erreichbar sind! Daher wird die Ausführung mittels `docker-compose` bei diesem Beispiel empfohlen!
-
 ## Ausführung mit Docker und docker-compose
 
-In diesem Ordner können mit dem Terminal und folgendem Befehl:
+Das Projekt wird über Docker gestartet.  
+Die zentrale Datei dafür ist `docker-compose.yaml`.
+
+Mit folgendem Befehl kann das Projekt gebaut und gestartet werden:
 
 ```sh
-# start mit
 docker-compose up --build
-```
 
-automatisch der "Server"-Container, der Datenbank-Container und phpMyAdmin gestartet werden.
-Darüber hinaus werden die Container mittels des `--build`-Flags auch neu gebaut, damit aktuelle Änderungen enthalten sind.
+Dabei werden folgende Container gestartet:
 
-Der Output sieht wie folgt aus:
-```sh
-Successfully built f34216b40a71
-Successfully tagged node-client-server-extended-with-database_server:latest
-Creating node-client-server-extended-with-database_meinecooledb_1 ... done
-Creating node-client-server-extended-with-database_phpmyadmin_1   ... done
-Creating node-client-server-extended-with-database_server_1       ... done
-Attaching to node-client-server-extended-with-database_phpmyadmin_1, node-client-server-extended-with-database_meinecooledb_1, node-client-server-extended-with-database_server_1
-meinecooledb_1  | 2020-04-10 13:38:44+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 1:10.4.12+maria~bionic started.
-phpmyadmin_1    | phpMyAdmin not found in /var/www/html - copying now...
-meinecooledb_1  | 2020-04-10 13:38:44+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
-meinecooledb_1  | 2020-04-10 13:38:44+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 1:10.4.12+maria~bionic started.
-phpmyadmin_1    | Complete! phpMyAdmin has been successfully copied to /var/www/html
-phpmyadmin_1    | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 192.168.64.3. Set the 'ServerName' directive globally to suppress this message
-phpmyadmin_1    | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 192.168.64.3. Set the 'ServerName' directive globally to suppress this message
-phpmyadmin_1    | [Fri Apr 10 13:38:44.905627 2020] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.38 (Debian) PHP/7.4.4 configured -- resuming normal operations
-phpmyadmin_1    | [Fri Apr 10 13:38:44.905683 2020] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
-meinecooledb_1  | 2020-04-10 13:38:45+00:00 [Note] [Entrypoint]: Initializing database files
-{...}
-meinecooledb_1  | 2020-04-10 13:38:47+00:00 [Note] [Entrypoint]: Waiting for server startup
-{...}
-meinecooledb_1  | 2020-04-10 13:38:59+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/database.sql
-{...}
-meinecooledb_1  | 2020-04-10 13:39:02 0 [Note] mysqld: ready for connections.
-meinecooledb_1  | Version: '10.4.12-MariaDB-1:10.4.12+maria~bionic'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  mariadb.org binary distribution
-server_1        | Conecting to database...
-server_1        | Running on http://0.0.0.0:8080
-server_1        | Database connected and works
-```
+nginx
+server
+worker
+controller
+onlinebestellsystem
+phpmyadmin
 
-Dabei wird auch im Log ausgegeben, wenn die `database.sql` geladen wird: `meinecooledb_1  | 2020-04-10 13:38:59+00:00 [Note] [Entrypoint]: /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/database.sql`.
+Die Anwendung ist danach erreichbar unter:
 
-Um alle Container zu stoppen, können diese mittels [Strg] + [c] beendet werden.
+http://localhost/
 
-**Hinweis:** Sollte der Container nicht herunterfahren, dann kann [Strg] + [c] nochmals gedrückt werden, um dies zu beschleunigen.
+Da Nginx auf Port 80 läuft, muss hier normalerweise kein zusätzlicher Port angegeben werden.
 
-Der Output sieht wie folgt aus:
-```sh
-Gracefully stopping... (press Ctrl+C again to force)
-Stopping node-client-server-extended-with-database_server_1       ...
-Stopping node-client-server-extended-with-database_phpmyadmin_1   ...
-Stopping node-client-server-extended-with-database_meinecooledb_1 ...
-# wenn nochmal [Strg] + [c] gedrückt wird:
-Stopping node-client-server-extended-with-database_server_1       ... done
-Stopping node-client-server-extended-with-database_phpmyadmin_1   ... done
-Stopping node-client-server-extended-with-database_meinecooledb_1 ... done
-```
+Wichtiger Hinweis zur Datenbank
 
-**Wichtig:** Der Parameter `--build` sorgt dafür, dass bei jedem Aufruf von `docker-compose up` alle Container neu gebaut werden, damit alle Änderungen im `server.js` sowie im Datenbankschema `database.sql` in den jeweiligen Container integriert werden.
+Wenn Änderungen an der Datei onlinebestellsystem.sql vorgenommen wurden und diese neu eingespielt werden sollen, reicht ein normales docker-compose up --build nicht immer aus.
 
+In diesem Fall müssen die Container und Datenbankdaten zuerst entfernt werden, damit die Initialisierung erneut ausgeführt wird.
 
-## Informationen
+Lokale Entwicklung
 
- * Express
-   * NPM: https://www.npmjs.com/package/express
-   * Dokumentation: https://expressjs.com/en/4x/api.html
-   * Routing: https://expressjs.com/en/guide/routing.html
-   * Getting Started: https://expressjs.com/en/starter/installing.html
- * MariaDB
-   * Dockerhub: https://hub.docker.com/_/mariadb/
-   * Homepage: https://mariadb.org/
-   * Dokumentation: https://mariadb.org/documentation/
- * MySQL-Client
-   * NPM: https://www.npmjs.com/package/mysql
-   * Repository: https://github.com/mysqljs/mysql
- * Bootstrap (CSS für Table, usw.)
-   * Homepage: https://getbootstrap.com/
-   * Alerts: https://getbootstrap.com/docs/4.3/components/alerts/
-   * Tabelle: https://getbootstrap.com/docs/4.0/content/tables/
-   * Buttons: https://getbootstrap.com/docs/4.3/components/buttons/
- * W3Schools:
-   * Button onclick Event: https://www.w3schools.com/jsref/event_onclick.asp
-   * JSON HTML Table: https://www.w3schools.com/js/js_json_html.asp
-   * AJAX: https://www.w3schools.com/xml/ajax_intro.asp
-   * Node.js mysql: https://www.w3schools.com/nodejs/nodejs_mysql_where.asp
-   * JSON: https://www.w3schools.com/js/js_json.asp
+Eine direkte lokale Ausführung ohne Docker ist grundsätzlich möglich, wird in diesem Projekt aber nicht empfohlen, da mehrere Container miteinander zusammenarbeiten.
+
+Insbesondere werden benötigt:
+
+eine erreichbare MariaDB-Datenbank
+die korrekten Environment-Variablen
+die passende Container-Struktur
+
+Deshalb sollte das Projekt bevorzugt mit Docker gestartet werden.
+
+Ziel des Projekts
+
+Das Ziel des Projekts ist die Umsetzung eines Online-Shops mit grundlegenden Shop-Funktionen und einer verteilten Architektur. Gleichzeitig soll gezeigt werden, wie mehrere Komponenten wie Webserver, Datenbank, Worker, Controller und Load-Balancer zusammenarbeiten können.
+
+Technologien
+
+In diesem Projekt werden unter anderem folgende Technologien verwendet:
+
+Node.js
+Express
+MariaDB
+MySQL-Client für Node.js
+Docker
+Docker Compose
+Nginx
+phpMyAdmin
+Bootstrap

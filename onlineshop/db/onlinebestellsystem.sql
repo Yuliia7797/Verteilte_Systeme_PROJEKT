@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 28. Mrz 2026 um 20:03
+-- Erstellungszeit: 29. Mrz 2026 um 13:08
 -- Server-Version: 12.0.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
@@ -127,7 +127,8 @@ CREATE TABLE `benutzer` (
 INSERT INTO `benutzer` (`id`, `vorname`, `nachname`, `email`, `passwort_hash`, `rolle`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
 (1, 'Ana', 'Mav', 'nastu@f', '$2b$10$o4/Gzq.JSpRdDzqamUtl9Og0GUODVvUcc.fbB1vYsmaK4b3KzCvoi', 'kunde', '2026-03-26 13:26:55', '2026-03-26 13:26:55'),
 (2, 'Yuliia', 'Shostak', 'iushostak7@gmail.com', '$2b$10$c8Q8iRCPTchJBkLuRNMh8.WMf6kibvnu6YSlnOg/VnBtLYo0/VJ9i', 'admin', '2026-03-27 09:50:56', '2026-03-27 09:50:56'),
-(3, 'TestKunde', 'Smidt', 'smidt@de', '$2b$10$f9edP3XCT55KE48KoRZ9FeCZAB54hsScuy0q1g5r/EGY4pp6A6Cc.', 'kunde', '2026-03-28 15:07:41', '2026-03-28 15:07:41');
+(3, 'TestKunde', 'Smidt', 'smidt@de', '$2b$10$f9edP3XCT55KE48KoRZ9FeCZAB54hsScuy0q1g5r/EGY4pp6A6Cc.', 'kunde', '2026-03-28 15:07:41', '2026-03-28 15:07:41'),
+(4, 'Admin', 'Demo', 'admin@de', '$2b$12$W2IKRxkWZLYzdxp9dn2QzurFzxB1RgzxALQobSD1I9gUWDHHZ2ucG', 'admin', '2026-03-29 12:40:25', '2026-03-29 12:51:57');
 
 -- --------------------------------------------------------
 
@@ -237,7 +238,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
-('aeF5TdmCk0CI_UA-IVSBbc4T0UQnbH8M', 1774731818, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-03-28T20:59:15.838Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":2,\"vorname\":\"Yuliia\",\"nachname\":\"Shostak\",\"email\":\"iushostak7@gmail.com\",\"rolle\":\"admin\"}}');
+('gjtaNYn44y8_Y7Vh5UooUmDj3GG3Pw06', 1774792332, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-03-29T13:52:06.510Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":4,\"vorname\":\"Admin\",\"nachname\":\"Demo\",\"email\":\"admin@de\",\"rolle\":\"admin\"}}');
 
 -- --------------------------------------------------------
 
@@ -288,9 +289,9 @@ CREATE TABLE `worker` (
 --
 
 INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(34, 'allgemein', 'aktiv', '2026-03-28 20:03:56', '2026-03-28 19:58:56'),
-(35, 'allgemein', 'aktiv', '2026-03-28 20:03:56', '2026-03-28 19:58:56'),
-(36, 'allgemein', 'aktiv', '2026-03-28 20:03:26', '2026-03-28 19:58:57');
+(37, 'allgemein', 'aktiv', '2026-03-29 13:07:41', '2026-03-29 12:35:11'),
+(38, 'allgemein', 'aktiv', '2026-03-29 13:07:41', '2026-03-29 12:35:11'),
+(39, 'allgemein', 'aktiv', '2026-03-29 13:07:41', '2026-03-29 12:35:11');
 
 --
 -- Indizes der exportierten Tabellen
@@ -407,7 +408,7 @@ ALTER TABLE `aufgabe`
 -- AUTO_INCREMENT für Tabelle `benutzer`
 --
 ALTER TABLE `benutzer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellposition`
@@ -449,7 +450,7 @@ ALTER TABLE `warenkorb_position`
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- Constraints der exportierten Tabellen
