@@ -5,12 +5,12 @@
 
 <nav class="navbar navbar-expand-lg">
   <div class="container">
-    <!-- Logo-Bereich links -->
+    <!-- Logo links, führt zurück zur Startseite -->
     <a class="navbar-brand" href="index.html">
       <img src="images/myshop-logo.png" alt="MyShop Logo" class="logo-img">
     </a>
 
-    <!-- Burger-Menü für mobile Geräte -->
+    <!-- Burger-Menü für kleine Bildschirme -->
     <button
       class="navbar-toggler"
       type="button"
@@ -23,17 +23,18 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <!-- Navigationsinhalt -->
+    <!-- Gesamter Inhalt der Navigation -->
     <div class="collapse navbar-collapse" id="navbarNav">
-      <!-- Linke Hauptnavigation -->
+      <!-- Linke Navigation mit Startseite, Kategorien, Konto und Admin -->
       <ul class="navbar-nav me-auto ms-lg-4">
+        <!-- Link zur Startseite -->
         <li class="nav-item">
           <a class="nav-link active" href="index.html">Startseite</a>
         </li>
 
         <!--
-          Eigener Dropdown-Bereich für Kategorien.
-          Die Kategorien werden später per JavaScript in die Liste eingefügt.
+          Dropdown für Kategorien.
+          Die Kategorien werden später mit JavaScript aus der Datenbank geladen.
         -->
         <li class="nav-item kategorien-dropdown-wrapper">
           <button
@@ -44,23 +45,22 @@
             Kategorien
           </button>
 
-          <!--
-            Diese Liste bleibt am Anfang leer.
-            Die Kategorien aus der Datenbank werden später
-            per JavaScript hier eingefügt.
-          -->
+          <!-- Hier werden die Kategorien später eingefügt -->
           <ul class="kategorien-dropdown-menu" id="kategorien-dropdown-list"></ul>
         </li>
 
+        <!-- Link zum Benutzerkonto, nur für eingeloggte Benutzer sichtbar -->
         <li class="nav-item" id="nav-konto-item" style="display: none;">
           <a class="nav-link" href="mein-konto.html">Mein Konto</a>
         </li>
+
+        <!-- Link zum Admin-Bereich, nur für Benutzer mit Rolle "admin" sichtbar -->
+        <li class="nav-item" id="nav-admin-item" style="display: none;">
+          <a class="nav-link" href="admin.html">Admin</a>
+        </li>
       </ul>
 
-      <!--
-        Suchformular für die Artikelsuche.
-        Dieses Formular wird später per JavaScript verarbeitet.
-      -->
+      <!-- Suchformular für die Artikelsuche -->
       <form class="d-flex me-3" role="search" id="search-form">
         <input
           class="form-control me-2 search-input"
@@ -72,14 +72,22 @@
         <button class="btn search-btn" type="submit">Suchen</button>
       </form>
 
-      <!-- Rechte Aktionsbuttons -->
+      <!--
+        Bereich für Login, Registrieren und Logout.
+        Die Sichtbarkeit wird später mit JavaScript gesteuert.
+      -->
       <div id="auth-buttons-wrapper" style="display: none;">
+        <!-- Login-Link für nicht eingeloggte Benutzer -->
         <a href="login.html" class="btn btn-light-custom me-2" id="nav-login-item">Login</a>
+
+        <!-- Registrieren-Link für neue Benutzer -->
         <a href="/static/registrieren.html" class="btn btn-main me-2" id="nav-registrieren-item">Registrieren</a>
+
+        <!-- Logout-Link für eingeloggte Benutzer -->
         <a href="#" class="btn btn-light-custom me-2" id="nav-logout-item" style="display: none;">Logout</a>
       </div>
 
-      <!-- Warenkorb-Link mit Warenkorb-Symbol -->
+      <!-- Link zum Warenkorb -->
       <a href="warenkorb.html" class="cart-link ms-2">
         <i class="bi bi-cart3"></i>
         <span>Warenkorb</span>
