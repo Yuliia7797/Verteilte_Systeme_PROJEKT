@@ -188,8 +188,7 @@ async function resetHaengengebliebeneAufgaben() {
 // Bestellung in der Datenbank auf 'bezahlt'.
 async function zahlungPruefen(bestellungId) {
     console.log("  -> Zahlung prüfen für Bestellung:", bestellungId);
-    await query("UPDATE bestellung SET zahlungsstatus = 'bezahlt' WHERE id = ?", [bestellungId]);
-    console.log("  ✓ Zahlung bestätigt für Bestellung:", bestellungId);
+    console.log("  ✓ Keine automatische Zahlungsbestätigung für Bestellung:", bestellungId);
 }
 
 // ─── Lagerbestand für eine Bestellung aktualisieren ────────────────────────

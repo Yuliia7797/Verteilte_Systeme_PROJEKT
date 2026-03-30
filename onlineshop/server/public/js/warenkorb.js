@@ -51,7 +51,7 @@ async function initialisiereWarenkorb() {
   if (zurKasseButton) {
     leerenButton?.addEventListener;
     zurKasseButton.addEventListener('click', () => {
-      window.location.href = '/static/bestellung.html';
+      window.location.href = '/static/kasse.html';
     });
   }
 

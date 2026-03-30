@@ -3,8 +3,8 @@
  * Sie stellt folgende Endpunkte bereit:
  * - GET   /bestellung              – alle Bestellungen mit Benutzerdaten laden
  * - GET   /bestellung/:id          – einzelne Bestellung mit Lieferadresse und Positionen laden
- * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen
- *                                    und automatisch Worker-Aufgaben anlegen
+ * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen,
+ *                                    automatisch Worker-Aufgaben anlegen und Warenkorb leeren
  * - PATCH /bestellung/:id/status   – Bestellstatus aktualisieren
  */
 
@@ -15,14 +15,21 @@ const router = express.Router();
 const connection = require('../db');
 
 /*
+  Prüft, ob ein Benutzer eingeloggt ist.
+*/
+function requireLogin(req, res, next) {
+  if (!req.session || !req.session.benutzer || !req.session.benutzer.id) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
+  }
+
+  next();
+}
+
+/*
   GET /bestellung
   Lädt alle Bestellungen mit Benutzerdaten.
 */
 router.get('/', (req, res) => {
-  /*
-    Alle Bestellungen laden und zusätzlich
-    Vorname, Nachname und E-Mail des Benutzers abrufen.
-  */
   connection.query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.zahlungsstatus,
             b.bestellstatus, b.erstellungszeitpunkt,
@@ -47,18 +54,12 @@ router.get('/', (req, res) => {
   Lieferadresse und Bestellpositionen.
 */
 router.get('/:id', (req, res) => {
-  // Bestell-ID aus der URL lesen
   const id = Number.parseInt(req.params.id, 10);
 
-  // Prüfen, ob die ID gültig ist
   if (!Number.isInteger(id)) {
     return res.status(400).json({ message: 'Ungültige ID' });
   }
 
-  /*
-    Zuerst die eigentliche Bestellung laden,
-    zusammen mit Benutzer und Lieferadresse.
-  */
   connection.query(
     `SELECT b.*, bn.vorname, bn.nachname, bn.email,
             a.strasse, a.hausnummer, a.postleitzahl, a.ort, a.land
@@ -73,15 +74,10 @@ router.get('/:id', (req, res) => {
         return res.status(500).json({ message: 'Datenbankfehler' });
       }
 
-      // Prüfen, ob die Bestellung existiert
       if (bestellungResult.length === 0) {
         return res.status(404).json({ message: 'Bestellung nicht gefunden' });
       }
 
-      /*
-        Danach alle Positionen dieser Bestellung laden,
-        inklusive Artikelbezeichnung.
-      */
       connection.query(
         `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis,
                 ar.id AS artikel_id, ar.bezeichnung AS artikel, ar.bild_url
@@ -107,27 +103,21 @@ router.get('/:id', (req, res) => {
 
 /*
   POST /bestellung
-  Erstellt eine neue Bestellung mit allen Positionen
-  und legt danach automatisch Aufgaben an.
+  Erstellt eine neue Bestellung mit allen Positionen,
+  legt danach automatisch Aufgaben an und leert den Warenkorb.
 */
-router.post('/', (req, res) => {
-  // Daten aus dem Request-Body lesen
-  const { benutzer_id, lieferadresse_id, zahlungsmethode, positionen } = req.body;
+router.post('/', requireLogin, (req, res) => {
+  const benutzerId = req.session.benutzer.id;
+  const { lieferadresse_id, zahlungsmethode, positionen } = req.body;
 
-  // Prüfen, ob alle Pflichtfelder vorhanden sind
-  if (!benutzer_id || !lieferadresse_id || !zahlungsmethode || !positionen || positionen.length === 0) {
+  if (!lieferadresse_id || !zahlungsmethode || !positionen || positionen.length === 0) {
     return res.status(400).json({
-      message: 'benutzer_id, lieferadresse_id, zahlungsmethode und positionen sind Pflichtfelder'
+      message: 'lieferadresse_id, zahlungsmethode und positionen sind Pflichtfelder'
     });
   }
 
-  // Alle Artikel-IDs aus den Bestellpositionen sammeln
   const artikelIds = positionen.map((p) => p.artikel_id);
 
-  /*
-    Preise der Artikel laden, damit der Gesamtpreis
-    korrekt berechnet werden kann.
-  */
   connection.query(
     'SELECT id, preis FROM artikel WHERE id IN (?)',
     [artikelIds],
@@ -137,13 +127,11 @@ router.post('/', (req, res) => {
         return res.status(500).json({ message: 'Fehler beim Laden der Artikelpreise' });
       }
 
-      // Preis-Mapping aufbauen: artikel_id -> preis
       const preisMap = {};
       artikelResult.forEach((a) => {
         preisMap[a.id] = parseFloat(a.preis);
       });
 
-      // Gesamtpreis berechnen
       let gesamtpreis = 0;
 
       for (const pos of positionen) {
@@ -154,17 +142,13 @@ router.post('/', (req, res) => {
         gesamtpreis += preisMap[pos.artikel_id] * pos.anzahl;
       }
 
-      // Gesamtpreis auf zwei Nachkommastellen runden
       gesamtpreis = Math.round(gesamtpreis * 100) / 100;
 
-      /*
-        Neue Bestellung in der Tabelle "bestellung" speichern.
-      */
       connection.query(
         `INSERT INTO bestellung
-        (benutzer_id, lieferadresse_id, gesamtpreis, zahlungsmethode, zahlungsstatus, bestellstatus)
-        VALUES (?, ?, ?, ?, 'ausstehend', 'neu')`,
-        [benutzer_id, lieferadresse_id, gesamtpreis, zahlungsmethode],
+         (benutzer_id, lieferadresse_id, gesamtpreis, zahlungsmethode, zahlungsstatus, bestellstatus)
+         VALUES (?, ?, ?, ?, 'ausstehend', 'neu')`,
+        [benutzerId, lieferadresse_id, gesamtpreis, zahlungsmethode],
         (error, bestellungResult) => {
           if (error) {
             console.error(error);
@@ -173,10 +157,6 @@ router.post('/', (req, res) => {
 
           const bestellung_id = bestellungResult.insertId;
 
-          /*
-            Danach alle Bestellpositionen vorbereiten
-            und gesammelt speichern.
-          */
           const positionenWerte = positionen.map((pos) => [
             bestellung_id,
             pos.artikel_id,
@@ -187,8 +167,8 @@ router.post('/', (req, res) => {
 
           connection.query(
             `INSERT INTO bestellposition
-            (bestellung_id, artikel_id, anzahl, einzelpreis, gesamtpreis)
-            VALUES ?`,
+             (bestellung_id, artikel_id, anzahl, einzelpreis, gesamtpreis)
+             VALUES ?`,
             [positionenWerte],
             (error) => {
               if (error) {
@@ -196,10 +176,6 @@ router.post('/', (req, res) => {
                 return res.status(500).json({ message: 'Fehler beim Speichern der Positionen' });
               }
 
-              /*
-                Nach dem Speichern der Bestellung
-                automatische Aufgaben für Worker anlegen.
-              */
               const aufgaben = [
                 [bestellung_id, null, 'zahlung_pruefen', 'wartend'],
                 [bestellung_id, null, 'lager_aktualisieren', 'wartend'],
@@ -209,20 +185,71 @@ router.post('/', (req, res) => {
               connection.query(
                 'INSERT INTO aufgabe (bestellung_id, worker_id, typ, status) VALUES ?',
                 [aufgaben],
-                (error) => {
-                  if (error) {
-                    console.error(error);
-                    return res.status(201).json({
-                      message: 'Bestellung erstellt, Aufgaben konnten nicht angelegt werden',
-                      bestellung_id
-                    });
+                (aufgabenError) => {
+                  if (aufgabenError) {
+                    console.error(aufgabenError);
                   }
 
-                  res.status(201).json({
-                    message: 'Bestellung erfolgreich erstellt',
-                    bestellung_id,
-                    gesamtpreis
-                  });
+                  connection.query(
+                    'SELECT id FROM warenkorb WHERE benutzer_id = ? LIMIT 1',
+                    [benutzerId],
+                    (warenkorbError, warenkorbResult) => {
+                      if (warenkorbError) {
+                        console.error(warenkorbError);
+                        return res.status(201).json({
+                          message: 'Bestellung erfolgreich erstellt, Warenkorb konnte nicht geleert werden',
+                          bestellung_id,
+                          gesamtpreis
+                        });
+                      }
+
+                      if (warenkorbResult.length === 0) {
+                        return res.status(201).json({
+                          message: 'Bestellung erfolgreich erstellt',
+                          bestellung_id,
+                          gesamtpreis
+                        });
+                      }
+
+                      const warenkorbId = warenkorbResult[0].id;
+
+                      connection.query(
+                        'DELETE FROM warenkorb_position WHERE warenkorb_id = ?',
+                        [warenkorbId],
+                        (deleteError) => {
+                          if (deleteError) {
+                            console.error(deleteError);
+                            return res.status(201).json({
+                              message: 'Bestellung erfolgreich erstellt, Warenkorb konnte nicht geleert werden',
+                              bestellung_id,
+                              gesamtpreis
+                            });
+                          }
+
+                          connection.query(
+                            'UPDATE warenkorb SET gesamtpreis = 0.00, aenderungszeitpunkt = NOW() WHERE id = ?',
+                            [warenkorbId],
+                            (updateWarenkorbError) => {
+                              if (updateWarenkorbError) {
+                                console.error(updateWarenkorbError);
+                                return res.status(201).json({
+                                  message: 'Bestellung erfolgreich erstellt, Warenkorb konnte nicht vollständig aktualisiert werden',
+                                  bestellung_id,
+                                  gesamtpreis
+                                });
+                              }
+
+                              res.status(201).json({
+                                message: 'Bestellung erfolgreich erstellt',
+                                bestellung_id,
+                                gesamtpreis
+                              });
+                            }
+                          );
+                        }
+                      );
+                    }
+                  );
                 }
               );
             }
@@ -238,16 +265,13 @@ router.post('/', (req, res) => {
   Aktualisiert den Status einer Bestellung.
 */
 router.patch('/:id/status', (req, res) => {
-  // Bestell-ID aus der URL lesen
   const id = Number.parseInt(req.params.id, 10);
   const { bestellstatus } = req.body;
 
-  // Prüfen, ob ID und neuer Status vorhanden sind
   if (!Number.isInteger(id) || !bestellstatus) {
     return res.status(400).json({ message: 'Ungültige ID oder fehlender bestellstatus' });
   }
 
-  // Bestellstatus in der Datenbank aktualisieren
   connection.query(
     'UPDATE bestellung SET bestellstatus = ? WHERE id = ?',
     [bestellstatus, id],
