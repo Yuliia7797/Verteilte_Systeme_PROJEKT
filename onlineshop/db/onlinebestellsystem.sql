@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 29. Mrz 2026 um 13:08
--- Server-Version: 12.0.2-MariaDB-ubu2404
+-- Erstellungszeit: 30. Mrz 2026 um 17:10
+-- Server-Version: 12.2.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -45,9 +45,7 @@ CREATE TABLE `adresse` (
 --
 
 INSERT INTO `adresse` (`id`, `benutzer_id`, `strasse`, `hausnummer`, `adresszusatz`, `postleitzahl`, `ort`, `land`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 1, 'Katharinenstraße', '1', NULL, '111111', 'Stuttgart', 'Deutschland', '2026-03-26 13:26:55', '2026-03-26 13:26:55'),
-(2, 2, 'Hegensberger Straße', '34', NULL, '73730', 'Esslingen am Neckar', 'DE', '2026-03-27 09:50:56', '2026-03-27 09:56:19'),
-(3, 3, 'Strasse', '1', NULL, '73728', 'Esslingen am Neckar', 'DE', '2026-03-28 15:07:41', '2026-03-28 15:07:41');
+(1, 1, 'Straße', '1', NULL, '1234567', 'Stuttgart', 'Deutschland', '2026-03-29 14:49:19', '2026-03-29 14:49:19');
 
 -- --------------------------------------------------------
 
@@ -75,14 +73,13 @@ INSERT INTO `artikel` (`id`, `kategorie_id`, `bezeichnung`, `beschreibung`, `pre
 (1, 1, 'Harry Potter und der Stein der Weisen', 'Fantasy-Roman von J.K. Rowling.', 14.99, 'images/produkte/harry-potter-und-der-stein-der-weisen.jpeg', '2026-03-17 19:39:02', '2026-03-18 18:26:11', 'Detailreiche und prachtvoll veredelte Neugestaltung aller sieben Bände. Bis zu seinem elften Geburtstag glaubt Harry, er sei ein ganz normaler Junge. Doch dann erfährt er, dass er sich an der Schule für Hexerei und Zauberei einfinden soll - denn er ist ein Zauberer! In Hogwarts stürzt Harry von einem Abenteuer ins nächste und muss gegen Bestien, Mitschüler*innen und Fabelwesen kämpfen. Da ist es gut, dass er schon Freund*innen gefunden hat, die ihm im Kampf gegen die dunklen Mächte zur Seite stehen. Ein generationenübergreifender Fantasy-Klassiker. Millionen von Leser*innen in mehreren Generationen sind mit den Geschichten von Harry Potter aufgewachsen. J.K. Rowling hat mit Hogwarts ein Universum geschaffen, das einzigartig ist und eine große kulturelle Bedeutung erlangt hat. Neben der magischen Welt und spannenden Abenteuern spielen auch moralische Werte wie Freundschaft, Toleranz, Loyalität und der Einsatz für das Gute in ihren Büchern eine wichtige Rolle. Diese vom griechischen Illustrator George Caltsoudas neu gestaltete Ausgabe des ersten Bandes der Harry-Potter-Serie wird Leser*innen jeden Alters verzaubern.'),
 (2, 1, 'The Hobbit & The Lord of the Rings Boxed Set', 'Boxed Set mit Tolkiens Klassikern in einer illustrierten Geschenkausgabe. Sprache - Englisch', 99.99, 'images/produkte/the-hobbit-the-lord-of-the-rings-boxed-set.jpeg', '2026-03-17 19:39:02', '2026-03-18 19:21:21', 'Boxed gift set von Tolkiens klassischen Meisterwerken, vollständig mit Aquarellillustrationen des gefeierten und preisgekrönten Künstlers Alan Lee ausgestattet. Alan Lee war zudem Conceptual Designer für Peter Jacksons THE HOBBIT-Filme. Diese edle Ausgabe enthält The Hobbit sowie The Lord of the Rings und ist ein besonderes Sammlerstück für alle Fantasy- und Tolkien-Fans.'),
 (3, 6, 'Erwachsenenpuzzle 3000 Teile - Bibliothek des Drachens', 'Magisches Ravensburger Erwachsenenpuzzle mit 3000 Teilen und fantasievollem Motiv.', 34.99, 'images/produkte/bibliothek-des-drachens.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', '3000 bunte Puzzleteile von Ravensburger sind genau das Richtige für jeden Puzzlefan, der faszinierende Landschaftsmotive, magische Fantasiewelten oder bunte Collagen liebt. Ravensburger Puzzle sind das beste Geschenk zu jedem Anlass: Geburtstag, Weihnachten, Ostern oder einfach als tolle Freizeitbeschäftigung. Entdecke die Ravensburger Qualitätsmerkmale auf einen Blick: Formenvielfalt durch handgefertigte Stanzmesser, passgenaue Puzzleteile, reflexfreies Puzzlebild durch Naturleinenprägung, knickstabile Puzzleteile, hergestellt aus recycelter Pappe. Inhalt: 3000 Teile Ravensburger Puzzle, im Format 121,00 cm x 80,00 cm, ab 14 Jahren geeignet. Gepuzzelt und geklebt macht sich ein Ravensburger Puzzle auch hervorragend als Wanddekoration.'),
-(4, 2, 'KIKO Milano Lip Volume Transparent', 'Perfektionierende Lippencreme mit Volumeneffekt für gepflegte und voller wirkende Lippen.', 8888.99, 'images/produkte/kiko-milano-lip-volume-transparent.jpg', '2026-03-17 19:39:02', '2026-03-28 19:39:02', 'Perfektionierende Lippencreme mit voluminisierender Wirkung: nährt und spendet Feuchtigkeit und belebt die natürliche Farbe der Lippen. Die spezielle Formel, angereichert mit Sesamsamenextrakt und Hyaluronsäurekugeln, verleiht einen glänzenden Volumeneffekt, spendet Feuchtigkeit und definiert die Lippen neu. Dank des Applikators mit beflockter Spitze lässt sich die weiche und umhüllende Textur sehr leicht auf den Lippen verteilen und optimiert deren Beschaffenheit. Dermatologisch getestet.'),
+(4, 2, 'KIKO Milano Lip Volume Transparent', 'Perfektionierende Lippencreme mit Volumeneffekt für gepflegte und voller wirkende Lippen.', 8.99, 'images/produkte/kiko-milano-lip-volume-transparent.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Perfektionierende Lippencreme mit voluminisierender Wirkung: nährt und spendet Feuchtigkeit und belebt die natürliche Farbe der Lippen. Die spezielle Formel, angereichert mit Sesamsamenextrakt und Hyaluronsäurekugeln, verleiht einen glänzenden Volumeneffekt, spendet Feuchtigkeit und definiert die Lippen neu. Dank des Applikators mit beflockter Spitze lässt sich die weiche und umhüllende Textur sehr leicht auf den Lippen verteilen und optimiert deren Beschaffenheit. Dermatologisch getestet.'),
 (5, 5, 'SONGMICS Hantel-Set, 3 Paar, 1 kg-3 kg', 'Hantel-Set mit 6 Kurzhanteln und Ständer für Krafttraining zu Hause oder im Fitnessstudio.', 49.99, 'images/produkte/songmics-hantel-set.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Ein Set mit 6 Kurzhanteln: 2 x 1 kg, 2 x 2 kg und 2 x 3 kg, erfüllt Ihre unterschiedlichen Trainingsbedürfnisse. Ob Fitness-Enthusiast oder Anfänger, Sie können im Büro oder im Fitnessstudio mit dem Training beginnen – jederzeit und überall. Der zuverlässige Kunststoff-Ständer ermöglicht einen einfachen Zugriff auf Ihre Hanteln und kann mit der kompakten Form in jeder Ecke Ihres Zuhauses platziert werden. Die aus Gusseisen gefertigten Hanteln sind robust und langlebig; dank der sechseckigen Form sind die Hanteln rollsicher, was für ein sicheres und stabiles Training sorgt. Der ergonomisch geformte Griff erhöht die Griffigkeit der Hanteln; die matte Oberfläche ist hautfreundlich und verhindert effektiv ein Abrutschen, sodass auch schwitzige Hände beim Hanteltraining kein Problem sind. Jede Hantel ist deutlich mit ihrem Gewicht markiert und mit leuchtenden Farben für eine schnelle Unterscheidung verschiedener Gewichte versehen. Dies wirkt sich positiv auf Ihre Stimmung aus und ermöglicht ein effizientes Training.'),
 (6, 3, 'TECKNET Bluetooth Maus, kabellos, 4800 DPI', 'Ergonomische kabellose Maus mit Bluetooth, 2,4G und leisen Klicks für Büro und Alltag.', 19.99, 'images/produkte/tecknet-bluetooth-maus.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die kabellose Bluetooth-Maus von TECKNET unterstützt Bluetooth 5.0 oder 3.0 sowie 2,4-GHz-Konnektivität, sodass Sie flexibel zwischen den drei Modi wechseln können. Der Bluetooth-Modus spart USB-Anschlüsse, während die 2,4-GHz-USB-Empfängertechnologie Plug-and-Play ermöglicht. Beide Verbindungsarten können gleichzeitig verwendet werden, sodass bis zu 2 Geräte parallel verbunden werden können. Mit 6 einstellbaren DPI-Stufen (4800/3200/2400/1600/1200/800) bietet die Maus eine präzise und flüssige Steuerung auf verschiedenen Oberflächen. Das geräuschlose Design reduziert Klickgeräusche deutlich und eignet sich ideal für Bibliotheken, Büros, Heimbüros oder Cafés. Die ergonomische Form und die gummierten Griffe sorgen für hohen Komfort auch bei längerer Nutzung. Die Maus ist kompatibel mit Windows, Mac OS, Linux, Android und iOS und eignet sich perfekt für Zuhause, Büro oder unterwegs.'),
 (7, 3, 'One Fire Tischlampe Kabellos LED Tischlampe Akku', 'Faltbare und tragbare LED-Tischlampe mit Akku, Dimmfunktion und augenschonendem Licht.', 24.99, 'images/produkte/one-fire-tischlampe-kabellos.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die One Fire LED Tischlampe kabellos ist eine faltbare und tragbare Akku-Lampe mit augenschonendem, flimmerfreiem und blendfreiem Licht. Dank der Dimmfunktion können durch langes Berühren des Ein-/Aus-Schalters mehr als 9 Helligkeitsstufen ausgewählt werden. Die Lampe eignet sich ideal für Zuhause, Büro oder Wohnheim und ist besonders praktisch für Studenten und Berufstätige. Die integrierte 3600-mAh-Batterie ermöglicht nach dem Aufladen eine lange Nutzungsdauer, sodass die Lampe flexibel auch ohne Kabel verwendet werden kann. Durch das faltbare Design lässt sich die Tischlampe zu einem runden, kompakten Format zusammenklappen und einfach in einer Tasche oder Schublade verstauen. Zusätzlich verfügt sie über eine Memory-Funktion, die den zuletzt verwendeten Beleuchtungsmodus speichert. Damit ist sie eine vielseitige, platzsparende und benutzerfreundliche Leselampe und Schreibtischlampe für den Alltag.'),
 (8, 4, 'Vileda Mikrofaser Allzwecktücher Colors, 14er-Pack', 'Mikrofasertücher im Maxi-Pack für die trockene und feuchte Reinigung vieler Oberflächen im Haushalt.', 12.99, 'images/produkte/vileda-mikrofaser-allzwecktuecher-colors.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Mit den Vileda Mikrofaser Allzwecktüchern Colors im 14er-Megapack haben Sie immer ein passendes Tuch zur Hand, um Schmutz und Fett von verschiedensten Oberflächen im Haushalt zu entfernen. Die Tücher bestehen aus 100 % Mikrofaser und sind besonders reinigungsstark sowie saugfähig. Sie reinigen Oberflächen aus Kunststoff, Holz, Edelstahl, Keramik und Glas streifen- und fusselfrei. Die Mikrofasertücher können je nach Bedarf sowohl trocken als auch nass verwendet werden und eignen sich beispielsweise zum Staubwischen oder Fensterputzen. Das Megapack enthält 14 bunte Tücher im Format 30 x 30 cm, sodass für verschiedene Einsatzbereiche leicht unterschiedliche Farben genutzt werden können. Die langlebigen Tücher sind bei bis zu 60 °C in der Waschmaschine waschbar und dadurch immer wiederverwendbar.'),
 (9, 7, 'Tangle Teezer Ultimate Detangler Haarbürste', 'Entwirrungsbürste für nasses und trockenes Haar mit zweistufigen Borsten für alle Haartypen.', 16.99, 'images/produkte/tangle-teezer-ultimate-detangler.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Der Tangle Teezer Ultimate Detangler eignet sich für glattes, welliges und lockiges Haar und unterstützt eine gesunde Haarpflege. Die Bürste kann auf nassem Haar, trockenen Locken sowie bei Haarverlängerungen und Perücken verwendet werden. Mit 325 zweistufigen, flexiblen Borsten gleitet sie mühelos durch das Haar, reduziert Haarbruch und hilft dabei, Knoten sanft zu entwirren. Gleichzeitig ist sie schonend zur Kopfhaut, kann die Durchblutung anregen und Irritationen minimieren. Dadurch eignet sie sich auch gut für empfindliche Kopfhaut. Die Bürste ist ein praktischer Bestandteil der täglichen Haarpflege-Routine und sorgt für glatteres und glänzenderes Haar.'),
-(10, 8, 'HMIYA Weite Hosen Damen', 'Leichte Damen-Stoffhose mit hoher Taille, weitem Bein und Taschen für Alltag und Freizeit.', 29.99, 'images/produkte/hmiya-weite-hosen-damen.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die HMIYA weite Damenhose ist eine lässige und leichte Stoffhose mit hoher Taille und praktischen Taschen. Sie eignet sich ideal für Freizeit, Alltag sowie für die Übergangszeiten im Frühling und Herbst. Das Material aus Polyester ist pflegeleicht, knitterarm und angenehm zu tragen. Die Hose ist sauber verarbeitet, bleibt auch nach mehreren Wäschen gut in Form und überzeugt durch Strapazierfähigkeit sowie Atmungsaktivität. Durch den lockeren Schnitt und den schönen Fall bietet sie ein modisches und zugleich komfortables Tragegefühl.'),
-(12, 1, 'The Holy Bible - King James Version (KJV)', 'An Award or Presentation Bible in the King James Version: ideal as a gift or to keep\r\n\r\nThe full text of the Popular size King James or Authorized Version Bible, in a straightforward black imitation leather hardback binding.', 100.00, 'images/produkte/1774728056848-the-holy-bible-king-james-version-kjv-taschenbuch-collins-uk-englisch.jpeg', '2026-03-28 20:00:56', '2026-03-28 20:00:56', 'An Award or Presentation Bible in the King James Version: ideal as a gift or to keep\r\n\r\nThe full text of the Popular size King James or Authorized Version Bible, in a straightforward black imitation leather hardback binding.\r\n\r\nVerkaufsrang 8060\r\nEinband Taschenbuch\r\nErscheinungsdatum 02.07.2001\r\nVerlag HarperCollins\r\nSeitenzahl 1146\r\nMaße (L/B/H) 19,1/12,5/4,5 cm\r\nGewicht 750 g\r\nSprache Englisch\r\nISBN 978-0-00-710307-2\r\nHerstelleradresse\r\nLibri GmbH\r\nEuropaallee 1\r\n36244 Bad Hersfeld\r\nDE');
+(10, 8, 'HMIYA Weite Hosen Damen', 'Leichte Damen-Stoffhose mit hoher Taille, weitem Bein und Taschen für Alltag und Freizeit.', 29.99, 'images/produkte/hmiya-weite-hosen-damen.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die HMIYA weite Damenhose ist eine lässige und leichte Stoffhose mit hoher Taille und praktischen Taschen. Sie eignet sich ideal für Freizeit, Alltag sowie für die Übergangszeiten im Frühling und Herbst. Das Material aus Polyester ist pflegeleicht, knitterarm und angenehm zu tragen. Die Hose ist sauber verarbeitet, bleibt auch nach mehreren Wäschen gut in Form und überzeugt durch Strapazierfähigkeit sowie Atmungsaktivität. Durch den lockeren Schnitt und den schönen Fall bietet sie ein modisches und zugleich komfortables Tragegefühl.');
 
 -- --------------------------------------------------------
 
@@ -125,10 +122,7 @@ CREATE TABLE `benutzer` (
 --
 
 INSERT INTO `benutzer` (`id`, `vorname`, `nachname`, `email`, `passwort_hash`, `rolle`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 'Ana', 'Mav', 'nastu@f', '$2b$10$o4/Gzq.JSpRdDzqamUtl9Og0GUODVvUcc.fbB1vYsmaK4b3KzCvoi', 'kunde', '2026-03-26 13:26:55', '2026-03-26 13:26:55'),
-(2, 'Yuliia', 'Shostak', 'iushostak7@gmail.com', '$2b$10$c8Q8iRCPTchJBkLuRNMh8.WMf6kibvnu6YSlnOg/VnBtLYo0/VJ9i', 'admin', '2026-03-27 09:50:56', '2026-03-27 09:50:56'),
-(3, 'TestKunde', 'Smidt', 'smidt@de', '$2b$10$f9edP3XCT55KE48KoRZ9FeCZAB54hsScuy0q1g5r/EGY4pp6A6Cc.', 'kunde', '2026-03-28 15:07:41', '2026-03-28 15:07:41'),
-(4, 'Admin', 'Demo', 'admin@de', '$2b$12$W2IKRxkWZLYzdxp9dn2QzurFzxB1RgzxALQobSD1I9gUWDHHZ2ucG', 'admin', '2026-03-29 12:40:25', '2026-03-29 12:51:57');
+(1, 'Lea', 'Seiler', 'lea@1', '$2b$10$LzOZ5jVZ/if3dTa9YT0Fk.SE5hURCuZWR1NJl6U8VH/Jj0oSNOSG2', 'kunde', '2026-03-29 14:49:19', '2026-03-29 14:49:19');
 
 -- --------------------------------------------------------
 
@@ -210,16 +204,15 @@ CREATE TABLE `lagerbestand` (
 
 INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`) VALUES
 (1, 1, 10, '2026-03-17 19:39:02'),
-(2, 2, 100, '2026-03-28 15:05:35'),
+(2, 2, 8, '2026-03-17 19:39:02'),
 (3, 3, 25, '2026-03-17 19:39:02'),
 (4, 4, 15, '2026-03-17 19:39:02'),
 (5, 5, 12, '2026-03-17 19:39:02'),
 (6, 6, 9, '2026-03-17 19:39:02'),
-(7, 7, 302, '2026-03-28 15:06:02'),
+(7, 7, 30, '2026-03-17 19:39:02'),
 (8, 8, 7, '2026-03-17 19:39:02'),
 (9, 9, 20, '2026-03-17 19:39:02'),
-(10, 10, 18, '2026-03-17 19:39:02'),
-(13, 12, 1000, '2026-03-28 20:01:17');
+(10, 10, 18, '2026-03-17 19:39:02');
 
 -- --------------------------------------------------------
 
@@ -238,7 +231,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
-('gjtaNYn44y8_Y7Vh5UooUmDj3GG3Pw06', 1774792332, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-03-29T13:52:06.510Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":4,\"vorname\":\"Admin\",\"nachname\":\"Demo\",\"email\":\"admin@de\",\"rolle\":\"admin\"}}');
+('ymwDIOArqkKAGb7HsPPC43YG_p__9TTE', 1774893744, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-03-30T18:02:09.830Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":1,\"vorname\":\"Lea\",\"nachname\":\"Seiler\",\"email\":\"lea@1\",\"rolle\":\"kunde\"}}');
 
 -- --------------------------------------------------------
 
@@ -249,9 +242,17 @@ INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
 CREATE TABLE `warenkorb` (
   `id` int(11) NOT NULL,
   `benutzer_id` int(11) NOT NULL,
+  `gesamtpreis` decimal(10,2) NOT NULL DEFAULT 0.00,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `warenkorb`
+--
+
+INSERT INTO `warenkorb` (`id`, `benutzer_id`, `gesamtpreis`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
+(1, 1, 0.00, '2026-03-30 16:47:38', '2026-03-30 17:02:22');
 
 -- --------------------------------------------------------
 
@@ -289,9 +290,9 @@ CREATE TABLE `worker` (
 --
 
 INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(37, 'allgemein', 'aktiv', '2026-03-29 13:07:41', '2026-03-29 12:35:11'),
-(38, 'allgemein', 'aktiv', '2026-03-29 13:07:41', '2026-03-29 12:35:11'),
-(39, 'allgemein', 'aktiv', '2026-03-29 13:07:41', '2026-03-29 12:35:11');
+(22, 'allgemein', 'aktiv', '2026-03-30 17:09:58', '2026-03-30 16:59:28'),
+(23, 'allgemein', 'aktiv', '2026-03-30 17:09:58', '2026-03-30 16:59:28'),
+(24, 'allgemein', 'aktiv', '2026-03-30 17:09:58', '2026-03-30 16:59:28');
 
 --
 -- Indizes der exportierten Tabellen
@@ -390,13 +391,13 @@ ALTER TABLE `worker`
 -- AUTO_INCREMENT für Tabelle `adresse`
 --
 ALTER TABLE `adresse`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `artikel`
 --
 ALTER TABLE `artikel`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT für Tabelle `aufgabe`
@@ -408,7 +409,7 @@ ALTER TABLE `aufgabe`
 -- AUTO_INCREMENT für Tabelle `benutzer`
 --
 ALTER TABLE `benutzer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellposition`
@@ -432,13 +433,13 @@ ALTER TABLE `kategorie`
 -- AUTO_INCREMENT für Tabelle `lagerbestand`
 --
 ALTER TABLE `lagerbestand`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT für Tabelle `warenkorb`
 --
 ALTER TABLE `warenkorb`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `warenkorb_position`
@@ -450,7 +451,7 @@ ALTER TABLE `warenkorb_position`
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Constraints der exportierten Tabellen

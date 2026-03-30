@@ -2,18 +2,11 @@
 
 const { query } = require("./db");
 
-//___________KUNDENKONTO FUNKTIONEN_______________
-
-
-//___________PRODUKTKATALOG FUNKTIONEN____________
-
-//___________PRODUKTKATALOG FUNKTIONEN____________
-
 
 
 //___________WARENKORB FUNKTIONEN_________________
 
-// ─── Neuen Warenkorb erstellen ─────────────────────────────────────────────
+// ─── Neuen Warenkorb erstellen ─────────────────
 // Erstellt einen neuen Warenkorb für einen Benutzer und speichert den
 // aktuellen Zeitpunkt. Gibt die automatisch generierte Warenkorb-ID zurück.
 async function newBasket(benutzer_id) {
@@ -26,7 +19,7 @@ async function newBasket(benutzer_id) {
     return result.insertId;
 }
 
-// ─── Produkt zum Warenkorb hinzufügen ──────────────────────────────────────
+// ─── Produkt zum Warenkorb hinzufügen ───────────
 // Holt den Preis des Artikels aus der Datenbank, berechnet den Gesamtpreis
 // anhand der Anzahl und fügt den Artikel in den Warenkorb ein.
 async function addProductToBasket(warenkorb_id, artikel_id, anzahl) {
@@ -55,7 +48,7 @@ async function addProductToBasket(warenkorb_id, artikel_id, anzahl) {
     );
 }
 
-// ─── Produktanzahl im Warenkorb ändern ─────────────────────────────────────
+// ─── Produktanzahl im Warenkorb ändern ────────────
 // Aktualisiert die Menge eines bestimmten Artikels innerhalb eines
 // bestimmten Warenkorbs und berechnet den Gesamtpreis neu.
 async function changeProductAmount(warenkorb_id, artikel_id, anzahl) {
@@ -83,7 +76,7 @@ async function changeProductAmount(warenkorb_id, artikel_id, anzahl) {
     );
 }
 
-// ─── Produkt aus dem Warenkorb entfernen ───────────────────────────────────
+// ─── Produkt aus dem Warenkorb entfernen ───────────────
 // Löscht einen bestimmten Artikel aus einem bestimmten Warenkorb.
 async function deleteProduct(warenkorb_id, artikel_id) {
     await query(
@@ -94,7 +87,7 @@ async function deleteProduct(warenkorb_id, artikel_id) {
     );  
 }
 
-// ─── Alle Produkte eines Warenkorbs anzeigen ───────────────────────────────
+// ─── Alle Produkte eines Warenkorbs anzeigen ──────────
 // Holt alle Einträge eines Warenkorbs aus der Datenbank und gibt sie zurück.
 async function showProducts(warenkorb_id) {
     const result = await query(
@@ -107,7 +100,7 @@ async function showProducts(warenkorb_id) {
     return result; 
 }
 
-// ─── Gesamtpreis des Warenkorbs berechnen und speichern ────────────────────
+// ─── Gesamtpreis des Warenkorbs berechnen und speichern ─────
 // Berechnet den Gesamtpreis aller Positionen im Warenkorb und speichert
 // das Ergebnis im Warenkorb selbst.
 async function calculateTotal(warenkorb_id) {
@@ -169,33 +162,3 @@ async function setPaymentStatus(bestellung_id, zahlungsstatus) {
 }*/
 
 //___________BESTELLUNG FUNKTIONEN________________
-
-
-//___________ZAHLUNG FUNKTIONEN___________________
-
-//___________ZAHLUNG FUNKTIONEN___________________
-
-
-//___________LAGER FUNKTIONEN_____________________
-
-//___________LAGER FUNKTIONEN_____________________
-
-
-//___________VERSAND FUNKTIONEN___________________
-
-//___________VERSAND FUNKTIONEN___________________
-
-
-//___________KOMMUNIKATION FUNKTIONEN_____________
-
-//___________KOMMUNIKATION FUNKTIONEN_____________
-
-
-//___________RECHNUNGEN FUNKTIONEN________________
-
-//___________RECHNUNGEN FUNKTIONEN________________
-
-
-//___________ADMINISTRATION FUNKTIONEN____________
-
-//___________ADMINISTRATION FUNKTIONEN____________

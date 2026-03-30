@@ -40,7 +40,13 @@ function createArtikelCard(artikelItem) {
           <p class="fw-bold">${Number(artikelItem.preis).toFixed(2)} €</p>
 
           <!-- Später kann hier die Warenkorb-Funktion ergänzt werden -->
-          <a href="#" class="btn btn-main">In den Warenkorb</a>
+          <button
+            type="button"
+            class="btn btn-main js-in-warenkorb"
+            data-artikel-id="${artikelItem.id}"
+          >
+            In den Warenkorb
+          </button>
         </div>
       </div>
     </div>
@@ -121,3 +127,49 @@ async function loadArtikel() {
   Erst danach sollen die Artikel eingefügt werden.
 */
 document.addEventListener('DOMContentLoaded', loadArtikel);
+
+document.addEventListener('click', async (event) => {
+  const button = event.target.closest('.js-in-warenkorb');
+
+  if (!button) {
+    return;
+  }
+
+  console.log('Button geklickt');
+
+  const artikelId = Number.parseInt(button.dataset.artikelId, 10);
+  console.log('Artikel-ID:', artikelId);
+
+  try {
+    const response = await fetch('/warenkorb/positionen', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        artikel_id: artikelId,
+        anzahl: 1
+      })
+    });
+
+    console.log('HTTP-Status:', response.status);
+
+    const data = await response.json();
+    console.log('Antwort:', data);
+
+    if (response.status === 401) {
+      alert('Nicht eingeloggt');
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Fehler');
+    }
+
+    alert('Artikel wurde hinzugefügt');
+  } catch (error) {
+    console.error('Fehler beim Hinzufügen:', error);
+    alert(error.message || 'Fehler beim Hinzufügen');
+  }
+});
