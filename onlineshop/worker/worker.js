@@ -187,8 +187,8 @@ async function resetHaengengebliebeneAufgaben() {
 // Simuliert die Prüfung der Zahlung und setzt den Zahlungsstatus der
 // Bestellung in der Datenbank auf 'bezahlt'.
 async function zahlungPruefen(bestellungId) {
-    console.log("  -> Zahlung prüfen für Bestellung:", bestellungId);
-    console.log("  ✓ Keine automatische Zahlungsbestätigung für Bestellung:", bestellungId);
+    console.log("  -> Zahlung bereits beim Bestellabschluss verarbeitet für Bestellung:", bestellungId);
+    console.log("  ✓ Kein weiteres Update des Zahlungsstatus notwendig für Bestellung:", bestellungId);
 }
 
 // ─── Lagerbestand für eine Bestellung aktualisieren ────────────────────────

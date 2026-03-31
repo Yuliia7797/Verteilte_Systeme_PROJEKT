@@ -116,6 +116,14 @@ router.post('/', requireLogin, (req, res) => {
     });
   }
 
+  const erlaubteZahlungsmethoden = ['bankkonto', 'paypal'];
+
+  if (!erlaubteZahlungsmethoden.includes(zahlungsmethode)) {
+    return res.status(400).json({
+      message: 'Ungültige Zahlungsmethode'
+    });
+  }
+
   const artikelIds = positionen.map((p) => p.artikel_id);
 
   connection.query(
@@ -147,7 +155,7 @@ router.post('/', requireLogin, (req, res) => {
       connection.query(
         `INSERT INTO bestellung
          (benutzer_id, lieferadresse_id, gesamtpreis, zahlungsmethode, zahlungsstatus, bestellstatus)
-         VALUES (?, ?, ?, ?, 'ausstehend', 'neu')`,
+         VALUES (?, ?, ?, ?, 'bezahlt', 'neu')`,
         [benutzerId, lieferadresse_id, gesamtpreis, zahlungsmethode],
         (error, bestellungResult) => {
           if (error) {
