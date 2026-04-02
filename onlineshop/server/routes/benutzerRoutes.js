@@ -1,7 +1,7 @@
 /**
  * Diese Datei definiert die API-Routen für die Benutzerverwaltung und Authentifizierung.
  * Sie stellt folgende Endpunkte bereit:
- * - GET  /benutzer                    – alle Benutzer laden 
+ * - GET  /benutzer                    – alle Benutzer laden
  * - POST /benutzer                    – neuen Benutzer anlegen (Admin)
  * - POST /benutzer/registrieren       – Registrierung mit Passwort-Hashing und Adresse
  * - POST /benutzer/login              – Login mit Session-Erstellung
@@ -18,13 +18,33 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../db');
 const bcrypt = require('bcrypt'); // Für sicheres Passwort-Hashing und -Vergleich
+const { body, validationResult } = require('express-validator');
+
+// Gibt bei Validierungsfehlern eine 400-Antwort zurück
+function pruefeFehler(req, res) {
+  const fehler = validationResult(req);
+  if (!fehler.isEmpty()) {
+    return res.status(400).json({ message: 'Ungültige Eingaben.' });
+  }
+  return null;
+}
+
+// Wiederverwendbare Validierungsregeln für Adressfelder
+const adresseValidierung = [
+  body('strasse').trim().notEmpty().isLength({ max: 100 }),
+  body('hausnummer').trim().notEmpty().isLength({ max: 10 }),
+  body('adresszusatz').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
+  body('postleitzahl').trim().notEmpty().isLength({ max: 10 }),
+  body('ort').trim().notEmpty().isLength({ max: 100 }),
+  body('land').trim().notEmpty().isLength({ max: 100 })
+];
 
 /*
   GET /benutzer
   Lädt alle Benutzer aus der Datenbank.
   Der Passwort-Hash wird bewusst nicht zurückgegeben.
 */
-router.get('/', (req, res) => {
+router.get('/', (_req, res) => {
   connection.query(
     'SELECT id, vorname, nachname, email, rolle, erstellungszeitpunkt FROM benutzer',
     (error, results) => {
@@ -78,214 +98,203 @@ router.post('/', (req, res) => {
 /*
   POST /benutzer/registrieren
   Registriert einen neuen Benutzer inklusive Adresse.
-  Ablauf: Pflichtfelder prüfen → Passwort validieren → E-Mail prüfen
-          → Passwort hashen → Benutzer speichern → Adresse speichern
+  Ablauf: Eingaben validieren → E-Mail prüfen → Passwort hashen → Benutzer speichern → Adresse speichern
 */
-router.post('/registrieren', async (req, res) => {
-  // Alle Felder aus dem Request-Body auslesen
-  const {
-    vorname,
-    nachname,
-    email,
-    passwort,
-    strasse,
-    hausnummer,
-    adresszusatz,
-    postleitzahl,
-    ort,
-    land
-  } = req.body;
+router.post('/registrieren',
+  [
+    body('vorname').trim().notEmpty().isLength({ max: 50 }),
+    body('nachname').trim().notEmpty().isLength({ max: 50 }),
+    body('email').trim().isEmail().normalizeEmail(),
+    body('passwort').matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/),
+    ...adresseValidierung
+  ],
+  async (req, res) => {
+    // Eingaben gegen die Validierungsregeln prüfen
+    const validierungsFehler = pruefeFehler(req, res);
+    if (validierungsFehler) return;
 
-  // Prüfen ob alle Pflichtfelder vorhanden sind (adresszusatz ist optional)
-  if (
-    !vorname ||
-    !nachname ||
-    !email ||
-    !passwort ||
-    !strasse ||
-    !hausnummer ||
-    !postleitzahl ||
-    !ort ||
-    !land
-  ) {
-    return res.status(400).json({
-      message: 'Bitte alle Pflichtfelder ausfüllen.'
-    });
-  }
+    // Alle Felder aus dem Request-Body auslesen
+    const {
+      vorname,
+      nachname,
+      email,
+      passwort,
+      strasse,
+      hausnummer,
+      adresszusatz,
+      postleitzahl,
+      ort,
+      land
+    } = req.body;
 
-  // Passwort-Regel: mind. 8 Zeichen, ein Großbuchstabe, eine Zahl, ein Sonderzeichen
-  const passwortRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+    // E-Mail normalisieren: Leerzeichen entfernen und Kleinschreibung erzwingen
+    const emailBereinigt = email.trim().toLowerCase();
 
-  if (!passwortRegex.test(passwort)) {
-    return res.status(400).json({
-      message: 'Das Passwort muss mindestens 8 Zeichen lang sein und mindestens einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten.'
-    });
-  }
+    try {
+      // Prüfen ob die E-Mail-Adresse bereits in der Datenbank existiert
+      connection.query(
+        'SELECT id FROM benutzer WHERE email = ?',
+        [emailBereinigt],
+        async (selectError, selectResults) => {
+          if (selectError) {
+            console.error(selectError);
+            return res.status(500).json({ message: 'Datenbankfehler' });
+          }
 
-  // E-Mail normalisieren: Leerzeichen entfernen und Kleinschreibung erzwingen
-  const emailBereinigt = email.trim().toLowerCase();
+          if (selectResults.length > 0) {
+            return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
+          }
 
-  try {
-    // Prüfen ob die E-Mail-Adresse bereits in der Datenbank existiert
-    connection.query(
-      'SELECT id FROM benutzer WHERE email = ?',
-      [emailBereinigt],
-      async (selectError, selectResults) => {
-        if (selectError) {
-          console.error(selectError);
-          return res.status(500).json({ message: 'Datenbankfehler' });
-        }
+          try {
+            // Passwort mit bcrypt hashen (Kostenfaktor 10 = sicherer Standard)
+            const passwortHash = await bcrypt.hash(passwort, 10);
 
-        if (selectResults.length > 0) {
-          return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
-        }
-
-        try {
-          // Passwort mit bcrypt hashen (Kostenfaktor 10 = sicherer Standard)
-          const passwortHash = await bcrypt.hash(passwort, 10);
-
-          // Benutzer in der Datenbank speichern, Rolle wird immer als 'kunde' gesetzt
-          connection.query(
-            'INSERT INTO benutzer (vorname, nachname, email, passwort_hash, rolle) VALUES (?, ?, ?, ?, ?)',
-            [vorname, nachname, emailBereinigt, passwortHash, 'kunde'],
-            (insertUserError, insertUserResults) => {
-              if (insertUserError) {
-                console.error(insertUserError);
-                return res.status(500).json({ message: 'Fehler beim Speichern des Benutzers' });
-              }
-
-              // Die neu generierte Benutzer-ID für die Adresse verwenden
-              const benutzerId = insertUserResults.insertId;
-
-              // Adresse des Benutzers speichern
-              connection.query(
-                `INSERT INTO adresse
-                (benutzer_id, strasse, hausnummer, adresszusatz, postleitzahl, ort, land)
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  benutzerId,
-                  strasse,
-                  hausnummer,
-                  adresszusatz || null, // adresszusatz ist optional
-                  postleitzahl,
-                  ort,
-                  land
-                ],
-                (insertAdresseError, insertAdresseResults) => {
-                  if (insertAdresseError) {
-                    console.error(insertAdresseError);
-
-                    // Rollback: Benutzer wieder löschen, da die Adresse nicht gespeichert werden konnte
-                    connection.query(
-                      'DELETE FROM benutzer WHERE id = ?',
-                      [benutzerId],
-                      (deleteError) => {
-                        if (deleteError) {
-                          console.error('Rollback fehlgeschlagen:', deleteError);
-                        }
-
-                        return res.status(500).json({
-                          message: 'Fehler beim Speichern der Adresse'
-                        });
-                      }
-                    );
-                    return;
-                  }
-
-                  // Registrierung vollständig erfolgreich
-                  res.status(201).json({
-                    message: 'Registrierung erfolgreich',
-                    benutzerId: benutzerId,
-                    adresseId: insertAdresseResults.insertId
-                  });
+            // Benutzer in der Datenbank speichern, Rolle wird immer als 'kunde' gesetzt
+            connection.query(
+              'INSERT INTO benutzer (vorname, nachname, email, passwort_hash, rolle) VALUES (?, ?, ?, ?, ?)',
+              [vorname, nachname, emailBereinigt, passwortHash, 'kunde'],
+              (insertUserError, insertUserResults) => {
+                if (insertUserError) {
+                  console.error(insertUserError);
+                  return res.status(500).json({ message: 'Fehler beim Speichern des Benutzers' });
                 }
-              );
-            }
-          );
-        } catch (hashError) {
-          console.error(hashError);
-          return res.status(500).json({ message: 'Fehler beim Hashen des Passworts' });
+
+                // Die neu generierte Benutzer-ID für die Adresse verwenden
+                const benutzerId = insertUserResults.insertId;
+
+                // Adresse des Benutzers speichern
+                connection.query(
+                  `INSERT INTO adresse
+                  (benutzer_id, strasse, hausnummer, adresszusatz, postleitzahl, ort, land)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    benutzerId,
+                    strasse,
+                    hausnummer,
+                    adresszusatz || null, // adresszusatz ist optional
+                    postleitzahl,
+                    ort,
+                    land
+                  ],
+                  (insertAdresseError, insertAdresseResults) => {
+                    if (insertAdresseError) {
+                      console.error(insertAdresseError);
+
+                      // Rollback: Benutzer wieder löschen, da die Adresse nicht gespeichert werden konnte
+                      connection.query(
+                        'DELETE FROM benutzer WHERE id = ?',
+                        [benutzerId],
+                        (deleteError) => {
+                          if (deleteError) {
+                            console.error('Rollback fehlgeschlagen:', deleteError);
+                          }
+
+                          return res.status(500).json({
+                            message: 'Fehler beim Speichern der Adresse'
+                          });
+                        }
+                      );
+                      return;
+                    }
+
+                    // Registrierung vollständig erfolgreich
+                    res.status(201).json({
+                      message: 'Registrierung erfolgreich',
+                      benutzerId: benutzerId,
+                      adresseId: insertAdresseResults.insertId
+                    });
+                  }
+                );
+              }
+            );
+          } catch (hashError) {
+            console.error(hashError);
+            return res.status(500).json({ message: 'Fehler beim Hashen des Passworts' });
+          }
         }
-      }
-    );
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Unbekannter Serverfehler' });
+      );
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Unbekannter Serverfehler' });
+    }
   }
-});
+);
 
 /*
   POST /benutzer/login
   Prüft E-Mail und Passwort und legt bei Erfolg eine Session an.
 */
-router.post('/login', (req, res) => {
-  const { email, passwort } = req.body;
+router.post('/login',
+  [
+    body('email').trim().isEmail().normalizeEmail(),
+    body('passwort').notEmpty().isLength({ max: 200 })
+  ],
+  (req, res) => {
+    // Eingaben gegen die Validierungsregeln prüfen
+    const validierungsFehler = pruefeFehler(req, res);
+    if (validierungsFehler) return;
 
-  // Beide Felder sind Pflicht
-  if (!email || !passwort) {
-    return res.status(400).json({
-      message: 'Bitte E-Mail und Passwort eingeben.'
-    });
-  }
+    const { email, passwort } = req.body;
 
-  // E-Mail normalisieren für konsistenten Datenbankvergleich
-  const emailBereinigt = email.trim().toLowerCase();
+    // E-Mail normalisieren für konsistenten Datenbankvergleich
+    const emailBereinigt = email.trim().toLowerCase();
 
-  // Benutzer anhand der E-Mail in der Datenbank suchen
-  connection.query(
-    'SELECT id, vorname, nachname, email, passwort_hash, rolle FROM benutzer WHERE email = ?',
-    [emailBereinigt],
-    async (error, results) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Datenbankfehler' });
-      }
+    // Benutzer anhand der E-Mail in der Datenbank suchen
+    connection.query(
+      'SELECT id, vorname, nachname, email, passwort_hash, rolle FROM benutzer WHERE email = ?',
+      [emailBereinigt],
+      async (error, results) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({ message: 'Datenbankfehler' });
+        }
 
-      // Kein Benutzer mit dieser E-Mail gefunden
-      // Bewusst generische Meldung, um keine Hinweise auf vorhandene Konten zu geben
-      if (results.length === 0) {
-        return res.status(401).json({ message: 'E-Mail oder Passwort ist falsch.' });
-      }
-
-      const benutzer = results[0];
-
-      try {
-        // Eingegebenes Passwort mit dem gespeicherten Hash vergleichen
-        const passwortKorrekt = await bcrypt.compare(passwort, benutzer.passwort_hash);
-
-        if (!passwortKorrekt) {
+        // Kein Benutzer mit dieser E-Mail gefunden
+        // Bewusst generische Meldung, um keine Hinweise auf vorhandene Konten zu geben
+        if (results.length === 0) {
           return res.status(401).json({ message: 'E-Mail oder Passwort ist falsch.' });
         }
 
-        // Login erfolgreich: Benutzerdaten in der Session speichern (ohne Passwort-Hash)
-        req.session.benutzer = {
-          id: benutzer.id,
-          vorname: benutzer.vorname,
-          nachname: benutzer.nachname,
-          email: benutzer.email,
-          rolle: benutzer.rolle
-        };
+        const benutzer = results[0];
 
-        // Session explizit speichern, bevor die Antwort gesendet wird
-        req.session.save((saveError) => {
-          if (saveError) {
-            console.error(saveError);
-            return res.status(500).json({ message: 'Session konnte nicht gespeichert werden' });
+        try {
+          // Eingegebenes Passwort mit dem gespeicherten Hash vergleichen
+          const passwortKorrekt = await bcrypt.compare(passwort, benutzer.passwort_hash);
+
+          if (!passwortKorrekt) {
+            return res.status(401).json({ message: 'E-Mail oder Passwort ist falsch.' });
           }
 
-          return res.status(200).json({
-            message: 'Login erfolgreich',
-            benutzer: req.session.benutzer
-          });
-        });
+          // Login erfolgreich: Benutzerdaten in der Session speichern (ohne Passwort-Hash)
+          req.session.benutzer = {
+            id: benutzer.id,
+            vorname: benutzer.vorname,
+            nachname: benutzer.nachname,
+            email: benutzer.email,
+            rolle: benutzer.rolle
+          };
 
-      } catch (compareError) {
-        console.error(compareError);
-        return res.status(500).json({ message: 'Fehler bei der Passwortprüfung' });
+          // Session explizit speichern, bevor die Antwort gesendet wird
+          req.session.save((saveError) => {
+            if (saveError) {
+              console.error(saveError);
+              return res.status(500).json({ message: 'Session konnte nicht gespeichert werden' });
+            }
+
+            return res.status(200).json({
+              message: 'Login erfolgreich',
+              benutzer: req.session.benutzer
+            });
+          });
+
+        } catch (compareError) {
+          console.error(compareError);
+          return res.status(500).json({ message: 'Fehler bei der Passwortprüfung' });
+        }
       }
-    }
-  );
-});
+    );
+  }
+);
 
 /*
   GET /benutzer/session
@@ -369,193 +378,182 @@ router.get('/mein-konto', (req, res) => {
   Aktualisiert die Daten des eingeloggten Benutzers inklusive Adresse
   und optional das Passwort.
 */
-router.put('/mein-konto', async (req, res) => {
-  // Session prüfen – nur eingeloggte Benutzer dürfen ihre Daten ändern
-  if (!req.session.benutzer) {
-    return res.status(401).json({ message: 'Nicht eingeloggt' });
-  }
+router.put('/mein-konto',
+  [
+    body('vorname').trim().notEmpty().isLength({ max: 50 }),
+    body('nachname').trim().notEmpty().isLength({ max: 50 }),
+    body('email').trim().isEmail().normalizeEmail(),
+    body('neuesPasswort').optional({ checkFalsy: true }).matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/),
+    ...adresseValidierung
+  ],
+  async (req, res) => {
+    // Session prüfen – nur eingeloggte Benutzer dürfen ihre Daten ändern
+    if (!req.session.benutzer) {
+      return res.status(401).json({ message: 'Nicht eingeloggt' });
+    }
 
-  // Benutzer-ID aus der Session lesen
-  const benutzerId = req.session.benutzer.id;
+    // Eingaben gegen die Validierungsregeln prüfen
+    const validierungsFehler = pruefeFehler(req, res);
+    if (validierungsFehler) return;
 
-  // Alle Felder aus dem Request-Body auslesen (adresszusatz und neuesPasswort sind optional)
-  const {
-    vorname,
-    nachname,
-    email,
-    strasse,
-    hausnummer,
-    adresszusatz,
-    postleitzahl,
-    ort,
-    land,
-    neuesPasswort
-  } = req.body;
+    // Benutzer-ID aus der Session lesen
+    const benutzerId = req.session.benutzer.id;
 
-  // Pflichtfelder prüfen
-  if (
-    !vorname ||
-    !nachname ||
-    !email ||
-    !strasse ||
-    !hausnummer ||
-    !postleitzahl ||
-    !ort ||
-    !land
-  ) {
-    return res.status(400).json({
-      message: 'Bitte alle Pflichtfelder ausfüllen.'
-    });
-  }
+    // Alle Felder aus dem Request-Body auslesen (adresszusatz und neuesPasswort sind optional)
+    const {
+      vorname,
+      nachname,
+      email,
+      strasse,
+      hausnummer,
+      adresszusatz,
+      postleitzahl,
+      ort,
+      land,
+      neuesPasswort
+    } = req.body;
 
-  // E-Mail normalisieren für konsistenten Datenbankvergleich
-  const emailBereinigt = email.trim().toLowerCase();
-  const passwortRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+    // E-Mail normalisieren für konsistenten Datenbankvergleich
+    const emailBereinigt = email.trim().toLowerCase();
 
-  // Neues Passwort nur validieren, wenn es angegeben wurde
-  if (neuesPasswort && !passwortRegex.test(neuesPasswort)) {
-    return res.status(400).json({
-      message: 'Das neue Passwort muss mindestens 8 Zeichen lang sein und mindestens einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten.'
-    });
-  }
-
-  // Prüfen ob die neue E-Mail bereits von einem anderen Benutzer verwendet wird
-  connection.query(
-    'SELECT id FROM benutzer WHERE email = ? AND id <> ?',
-    [emailBereinigt, benutzerId],
-    async (selectError, selectResults) => {
-      if (selectError) {
-        console.error(selectError);
-        return res.status(500).json({ message: 'Datenbankfehler' });
-      }
-
-      if (selectResults.length > 0) {
-        return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
-      }
-
-      try {
-        let passwortHash = null;
-
-        // Neues Passwort hashen, falls angegeben
-        if (neuesPasswort) {
-          passwortHash = await bcrypt.hash(neuesPasswort, 10);
+    // Prüfen ob die neue E-Mail bereits von einem anderen Benutzer verwendet wird
+    connection.query(
+      'SELECT id FROM benutzer WHERE email = ? AND id <> ?',
+      [emailBereinigt, benutzerId],
+      async (selectError, selectResults) => {
+        if (selectError) {
+          console.error(selectError);
+          return res.status(500).json({ message: 'Datenbankfehler' });
         }
 
-        // Query dynamisch zusammensetzen – mit oder ohne Passwort-Update
-        const benutzerQuery = passwortHash
-          ? 'UPDATE benutzer SET vorname = ?, nachname = ?, email = ?, passwort_hash = ? WHERE id = ?'
-          : 'UPDATE benutzer SET vorname = ?, nachname = ?, email = ? WHERE id = ?';
+        if (selectResults.length > 0) {
+          return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
+        }
 
-        const benutzerParams = passwortHash
-          ? [vorname, nachname, emailBereinigt, passwortHash, benutzerId]
-          : [vorname, nachname, emailBereinigt, benutzerId];
+        try {
+          let passwortHash = null;
 
-        // Benutzerdaten in der Tabelle aktualisieren
-        connection.query(
-          benutzerQuery,
-          benutzerParams,
-          (updateBenutzerError) => {
-            if (updateBenutzerError) {
-              console.error(updateBenutzerError);
-              return res.status(500).json({ message: 'Fehler beim Aktualisieren der Benutzerdaten' });
-            }
-
-            // Prüfen ob bereits eine Adresse für diesen Benutzer existiert
-            connection.query(
-              'SELECT id FROM adresse WHERE benutzer_id = ? LIMIT 1',
-              [benutzerId],
-              (selectAdresseError, selectAdresseResults) => {
-                if (selectAdresseError) {
-                  console.error(selectAdresseError);
-                  return res.status(500).json({ message: 'Fehler beim Prüfen der Adresse' });
-                }
-
-                if (selectAdresseResults.length > 0) {
-                  // Adresse existiert bereits → aktualisieren
-                  const adresseId = selectAdresseResults[0].id;
-
-                  connection.query(
-                    `UPDATE adresse
-                     SET strasse = ?, hausnummer = ?, adresszusatz = ?, postleitzahl = ?, ort = ?, land = ?
-                     WHERE id = ?`,
-                    [
-                      strasse,
-                      hausnummer,
-                      adresszusatz || null,
-                      postleitzahl,
-                      ort,
-                      land,
-                      adresseId
-                    ],
-                    (updateAdresseError) => {
-                      if (updateAdresseError) {
-                        console.error(updateAdresseError);
-                        return res.status(500).json({ message: 'Fehler beim Aktualisieren der Adresse' });
-                      }
-
-                      // Session mit den neuen Benutzerdaten aktualisieren
-                      req.session.benutzer.vorname = vorname;
-                      req.session.benutzer.nachname = nachname;
-                      req.session.benutzer.email = emailBereinigt;
-
-                      req.session.save((saveError) => {
-                        if (saveError) {
-                          console.error(saveError);
-                          return res.status(500).json({ message: 'Session konnte nicht aktualisiert werden' });
-                        }
-
-                        return res.status(200).json({ message: 'Kontodaten erfolgreich aktualisiert' });
-                      });
-                    }
-                  );
-                } else {
-                  // Noch keine Adresse vorhanden → neu anlegen
-                  connection.query(
-                    `INSERT INTO adresse
-                    (benutzer_id, strasse, hausnummer, adresszusatz, postleitzahl, ort, land)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                      benutzerId,
-                      strasse,
-                      hausnummer,
-                      adresszusatz || null,
-                      postleitzahl,
-                      ort,
-                      land
-                    ],
-                    (insertAdresseError) => {
-                      if (insertAdresseError) {
-                        console.error(insertAdresseError);
-                        return res.status(500).json({ message: 'Fehler beim Speichern der Adresse' });
-                      }
-
-                      // Session mit den neuen Benutzerdaten aktualisieren
-                      req.session.benutzer.vorname = vorname;
-                      req.session.benutzer.nachname = nachname;
-                      req.session.benutzer.email = emailBereinigt;
-
-                      req.session.save((saveError) => {
-                        if (saveError) {
-                          console.error(saveError);
-                          return res.status(500).json({ message: 'Session konnte nicht aktualisiert werden' });
-                        }
-
-                        return res.status(200).json({ message: 'Kontodaten erfolgreich aktualisiert' });
-                      });
-                    }
-                  );
-                }
-              }
-            );
+          // Neues Passwort hashen, falls angegeben
+          if (neuesPasswort) {
+            passwortHash = await bcrypt.hash(neuesPasswort, 10);
           }
-        );
-      } catch (hashError) {
-        console.error(hashError);
-        return res.status(500).json({ message: 'Fehler beim Verarbeiten des Passworts' });
+
+          // Query dynamisch zusammensetzen – mit oder ohne Passwort-Update
+          const benutzerQuery = passwortHash
+            ? 'UPDATE benutzer SET vorname = ?, nachname = ?, email = ?, passwort_hash = ? WHERE id = ?'
+            : 'UPDATE benutzer SET vorname = ?, nachname = ?, email = ? WHERE id = ?';
+
+          const benutzerParams = passwortHash
+            ? [vorname, nachname, emailBereinigt, passwortHash, benutzerId]
+            : [vorname, nachname, emailBereinigt, benutzerId];
+
+          // Benutzerdaten in der Tabelle aktualisieren
+          connection.query(
+            benutzerQuery,
+            benutzerParams,
+            (updateBenutzerError) => {
+              if (updateBenutzerError) {
+                console.error(updateBenutzerError);
+                return res.status(500).json({ message: 'Fehler beim Aktualisieren der Benutzerdaten' });
+              }
+
+              // Prüfen ob bereits eine Adresse für diesen Benutzer existiert
+              connection.query(
+                'SELECT id FROM adresse WHERE benutzer_id = ? LIMIT 1',
+                [benutzerId],
+                (selectAdresseError, selectAdresseResults) => {
+                  if (selectAdresseError) {
+                    console.error(selectAdresseError);
+                    return res.status(500).json({ message: 'Fehler beim Prüfen der Adresse' });
+                  }
+
+                  if (selectAdresseResults.length > 0) {
+                    // Adresse existiert bereits → aktualisieren
+                    const adresseId = selectAdresseResults[0].id;
+
+                    connection.query(
+                      `UPDATE adresse
+                       SET strasse = ?, hausnummer = ?, adresszusatz = ?, postleitzahl = ?, ort = ?, land = ?
+                       WHERE id = ?`,
+                      [
+                        strasse,
+                        hausnummer,
+                        adresszusatz || null,
+                        postleitzahl,
+                        ort,
+                        land,
+                        adresseId
+                      ],
+                      (updateAdresseError) => {
+                        if (updateAdresseError) {
+                          console.error(updateAdresseError);
+                          return res.status(500).json({ message: 'Fehler beim Aktualisieren der Adresse' });
+                        }
+
+                        // Session mit den neuen Benutzerdaten aktualisieren
+                        req.session.benutzer.vorname = vorname;
+                        req.session.benutzer.nachname = nachname;
+                        req.session.benutzer.email = emailBereinigt;
+
+                        req.session.save((saveError) => {
+                          if (saveError) {
+                            console.error(saveError);
+                            return res.status(500).json({ message: 'Session konnte nicht aktualisiert werden' });
+                          }
+
+                          return res.status(200).json({ message: 'Kontodaten erfolgreich aktualisiert' });
+                        });
+                      }
+                    );
+                  } else {
+                    // Noch keine Adresse vorhanden → neu anlegen
+                    connection.query(
+                      `INSERT INTO adresse
+                      (benutzer_id, strasse, hausnummer, adresszusatz, postleitzahl, ort, land)
+                      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                      [
+                        benutzerId,
+                        strasse,
+                        hausnummer,
+                        adresszusatz || null,
+                        postleitzahl,
+                        ort,
+                        land
+                      ],
+                      (insertAdresseError) => {
+                        if (insertAdresseError) {
+                          console.error(insertAdresseError);
+                          return res.status(500).json({ message: 'Fehler beim Speichern der Adresse' });
+                        }
+
+                        // Session mit den neuen Benutzerdaten aktualisieren
+                        req.session.benutzer.vorname = vorname;
+                        req.session.benutzer.nachname = nachname;
+                        req.session.benutzer.email = emailBereinigt;
+
+                        req.session.save((saveError) => {
+                          if (saveError) {
+                            console.error(saveError);
+                            return res.status(500).json({ message: 'Session konnte nicht aktualisiert werden' });
+                          }
+
+                          return res.status(200).json({ message: 'Kontodaten erfolgreich aktualisiert' });
+                        });
+                      }
+                    );
+                  }
+                }
+              );
+            }
+          );
+        } catch (hashError) {
+          console.error(hashError);
+          return res.status(500).json({ message: 'Fehler beim Verarbeiten des Passworts' });
+        }
       }
-    }
-  );
-});
+    );
+  }
+);
 
 /*
   GET /benutzer/meine-bestellungen

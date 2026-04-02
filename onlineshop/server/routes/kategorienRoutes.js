@@ -83,7 +83,11 @@ router.post('/', (req, res) => {
   Löscht eine Kategorie.
 */
 router.delete('/:id', (req, res) => {
-  const kategorieId = req.params.id;
+  const kategorieId = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(kategorieId)) {
+    return res.status(400).json({ message: 'Ungültige Kategorie-ID' });
+  }
 
   // Prüfen, ob noch Artikel mit dieser Kategorie verknüpft sind
   connection.query(

@@ -336,9 +336,13 @@ async function start() {
             await registerWorker();
 
             setInterval(async () => {
-                await sendHeartbeat();
-                await markInaktiveWorker();
-            }, 30000);
+                try {
+                    await sendHeartbeat();
+                    await markInaktiveWorker();
+                } catch (error) {
+                    console.error('Heartbeat-Fehler:', error.message);
+                }
+            }, 15000);
 
             await workerLoop();
         } catch (error) {
