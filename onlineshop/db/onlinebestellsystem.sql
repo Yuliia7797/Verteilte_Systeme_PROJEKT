@@ -117,13 +117,6 @@ CREATE TABLE `benutzer` (
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Daten für Tabelle `benutzer`
---
-
-INSERT INTO `benutzer` (`id`, `vorname`, `nachname`, `email`, `passwort_hash`, `rolle`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 'Lea', 'Seiler', 'lea@1', '$2b$10$LzOZ5jVZ/if3dTa9YT0Fk.SE5hURCuZWR1NJl6U8VH/Jj0oSNOSG2', 'kunde', '2026-03-29 14:49:19', '2026-03-29 14:49:19');
-
 -- --------------------------------------------------------
 
 --
