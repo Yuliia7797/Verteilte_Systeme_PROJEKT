@@ -226,12 +226,6 @@ CREATE TABLE `sessions` (
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Daten für Tabelle `sessions`
---
-
-INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
-('ymwDIOArqkKAGb7HsPPC43YG_p__9TTE', 1774893744, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-03-30T18:02:09.830Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":1,\"vorname\":\"Lea\",\"nachname\":\"Seiler\",\"email\":\"lea@1\",\"rolle\":\"kunde\"}}');
 
 -- --------------------------------------------------------
 
@@ -284,15 +278,6 @@ CREATE TABLE `worker` (
   `letzter_heartbeat` timestamp NULL DEFAULT NULL,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Daten für Tabelle `worker`
---
-
-INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(22, 'allgemein', 'aktiv', '2026-03-30 17:09:58', '2026-03-30 16:59:28'),
-(23, 'allgemein', 'aktiv', '2026-03-30 17:09:58', '2026-03-30 16:59:28'),
-(24, 'allgemein', 'aktiv', '2026-03-30 17:09:58', '2026-03-30 16:59:28');
 
 --
 -- Indizes der exportierten Tabellen

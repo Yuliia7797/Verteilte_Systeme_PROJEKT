@@ -67,7 +67,7 @@ async function ladeSession() {
   });
 
   if (response.status === 401 || !response.ok) {
-    window.location.href = '/static/login.html';
+    weiterleiten('/static/login.html');
     throw new Error('Nicht eingeloggt');
   }
 
@@ -181,7 +181,7 @@ async function ladeWarenkorb() {
   });
 
   if (response.status === 401) {
-    window.location.href = '/static/login.html';
+    weiterleiten('/static/login.html');
     throw new Error('Nicht eingeloggt');
   }
 
@@ -302,7 +302,7 @@ async function bestellungAbsenden() {
     }
 
     if (response.status === 401) {
-      window.location.href = '/static/login.html';
+      weiterleiten('/static/login.html');
       return;
     }
 
@@ -313,7 +313,7 @@ async function bestellungAbsenden() {
     zeigeMeldung(data.message || 'Deine Bestellung wurde erfolgreich aufgegeben.', 'success');
 
     window.setTimeout(() => {
-     window.location.href = `/static/bestellungAbgeschlossen.html?bestellung=${data.bestellung_id}`;
+     weiterleiten(`/static/bestellungAbgeschlossen.html?bestellung=${data.bestellung_id}`);
     }, 1500);
 
   } catch (error) {

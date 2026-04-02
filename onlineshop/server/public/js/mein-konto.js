@@ -142,7 +142,7 @@ async function ladeKontodaten() {
     if (!response.ok) {
       // Nicht eingeloggt: zur Login-Seite weiterleiten
       if (response.status === 401) {
-        window.location.href = '/static/login.html';
+        weiterleiten('/static/login.html');
         return;
       }
 
@@ -230,7 +230,7 @@ async function ladeBestellungen() {
     if (!response.ok) {
       // Nicht eingeloggt: zur Login-Seite weiterleiten
       if (response.status === 401) {
-        window.location.href = '/static/login.html';
+        weiterleiten('/static/login.html');
         return;
       }
 

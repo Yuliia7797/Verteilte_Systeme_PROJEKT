@@ -58,7 +58,7 @@ function initSucheFormular() {
       Zur Suchergebnisseite weiterleiten.
       Der Suchbegriff wird in der URL übergeben.
     */
-    window.location.href = `/static/suche.html?q=${encodeURIComponent(suchbegriff)}`;
+    weiterleiten(`/static/suche.html?q=${encodeURIComponent(suchbegriff)}`);
   });
 
   /*

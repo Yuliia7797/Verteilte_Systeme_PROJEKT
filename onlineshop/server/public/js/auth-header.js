@@ -9,6 +9,56 @@
 
 'use strict';
 
+// Hilfsfunktion: Navigation markieren, damit beforeunload keinen Logout auslöst.
+// Muss vor jedem window.location.href-Aufruf und Link-Klick gesetzt werden.
+function setzeNavigationsflag() {
+  sessionStorage.setItem('navigiert', '1');
+}
+
+// Erkennt ob der Tab wirklich geschlossen/versteckt wird.
+// visibilitychange(hidden) feuert beim Tab-Schließen.
+// Beim F5-Reload bleibt der Tab sichtbar → visibilitychange feuert NICHT.
+let tabWirdGeschlossen = false;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    tabWirdGeschlossen = true;
+  } else {
+    tabWirdGeschlossen = false;
+  }
+});
+
+// pagehide feuert nach visibilitychange, daher ist tabWirdGeschlossen korrekt gesetzt.
+// - Tab schließen:  visibilitychange(hidden) → pagehide → tabWirdGeschlossen=true  → Logout
+// - F5:             kein visibilitychange    → pagehide → tabWirdGeschlossen=false → kein Logout
+// - Link-Klick:     navigiert-Flag gesetzt   → pagehide → kein Logout
+window.addEventListener('pagehide', () => {
+  if (tabWirdGeschlossen && !sessionStorage.getItem('navigiert')) {
+    navigator.sendBeacon('/benutzer/logout');
+  }
+  sessionStorage.removeItem('navigiert');
+  tabWirdGeschlossen = false;
+});
+
+// Alle Link-Klicks als Navigation markieren
+document.addEventListener('click', (event) => {
+  if (event.target.closest('a[href]')) {
+    setzeNavigationsflag();
+  }
+});
+
+// Browser Zurück/Vor-Button als Navigation markieren
+window.addEventListener('popstate', () => {
+  setzeNavigationsflag();
+});
+
+// Alle programmatischen Weiterleitungen über diese Funktion abwickeln,
+// damit das Navigations-Flag immer gesetzt wird
+function weiterleiten(url) {
+  setzeNavigationsflag();
+  window.location.href = url;
+}
+
 // Auf das Custom-Event 'includesLoaded' warten, das ausgelöst wird sobald
 // der Header-HTML-Include vollständig ins DOM eingefügt wurde
 document.addEventListener('includesLoaded', () => {
@@ -89,6 +139,9 @@ async function aktualisiereHeader() {
     // Standard-Linkverhalten verhindern
     event.preventDefault();
 
+    // Navigation-Flag setzen, damit der beforeunload-Beacon nicht zusätzlich feuert
+    setzeNavigationsflag();
+
     try {
       // Logout-Anfrage an den Server senden – Session wird serverseitig beendet
       const response = await fetch('/benutzer/logout', {
@@ -98,7 +151,7 @@ async function aktualisiereHeader() {
 
       if (response.ok) {
         // Logout erfolgreich: zur Login-Seite weiterleiten
-        window.location.href = '/static/login.html';
+        weiterleiten('/static/login.html');
       } else {
         alert('Logout fehlgeschlagen.');
       }

@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         meldung.classList.add('text-success');
 
         setTimeout(() => {
-          window.location.href = '/static'; // Weiterleitung zur Startseite
+          weiterleiten('/static'); // Weiterleitung zur Startseite
         }, 1000);
       } else {
         // Login fehlgeschlagen: Fehlermeldung vom Server anzeigen

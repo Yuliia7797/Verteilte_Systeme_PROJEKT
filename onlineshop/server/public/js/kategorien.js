@@ -188,8 +188,13 @@ function initKategorienDropdown() {
   /*
     Klick innerhalb des Dropdown-Menüs soll das Menü
     nicht sofort wieder schließen.
+    Falls auf einen Link geklickt wird, Navigation-Flag setzen,
+    da stopPropagation das Bubbling zum document-Listener verhindert.
   */
   dropdownMenu.addEventListener('click', (event) => {
+    if (event.target.closest('a[href]')) {
+      setzeNavigationsflag();
+    }
     event.stopPropagation();
   });
 

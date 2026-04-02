@@ -211,7 +211,7 @@ document.addEventListener('click', async (event) => {
 
     if (response.status === 401) {
       alert('Bitte melde dich an, um Artikel in den Warenkorb zu legen.');
-      window.location.href = '/static/login.html';
+      weiterleiten('/static/login.html');
       return;
     }
 

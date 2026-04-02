@@ -13,7 +13,7 @@ async function pruefeAdminZugriff() {
 
     // Wenn keine aktive Session vorhanden ist, zur Login-Seite weiterleiten
     if (!response.ok) {
-      window.location.href = 'login.html';
+      weiterleiten('login.html');
       return;
     }
 
@@ -21,7 +21,7 @@ async function pruefeAdminZugriff() {
 
     // Wenn der Benutzer kein Admin ist, zurück zur Startseite weiterleiten
     if (benutzer.rolle !== 'admin') {
-      window.location.href = 'index.html';
+      weiterleiten('index.html');
       return;
     }
 
@@ -29,7 +29,7 @@ async function pruefeAdminZugriff() {
     ladeLagerbestand();
   } catch (fehler) {
     console.error('Fehler bei der Prüfung des Admin-Zugriffs:', fehler);
-    window.location.href = 'login.html';
+    weiterleiten('login.html');
   }
 }
 

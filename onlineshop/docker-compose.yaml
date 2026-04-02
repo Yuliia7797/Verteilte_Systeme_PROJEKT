@@ -79,8 +79,6 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_ROOT_PASSWORD: rootpw
-    volumes:
-      - db_data:/var/lib/mysql
 
   # ── phpMyAdmin ─────────────────────────────────────────────────────────────
   phpmyadmin:
@@ -94,5 +92,3 @@ services:
     depends_on:
       - onlinebestellsystem
 
-volumes:
-  db_data:
