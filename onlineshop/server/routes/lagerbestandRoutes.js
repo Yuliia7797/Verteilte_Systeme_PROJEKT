@@ -1,9 +1,9 @@
 /**
  * Diese Datei definiert die API-Routen für die Lagerverwaltung.
  * Sie stellt folgende Endpunkte bereit:
- * - GET   /lagerbestand/:artikel_id  – alle Lagerbestände mit Artikeldaten laden
- * - PATCH /lagerbestand/:artikel_id  – Lagerbestand eines Artikels aktualisieren
- *                                      (legt einen neuen Datensatz an, falls noch keiner existiert)
+ * - GET   /lagerbestand           – alle Lagerbestände mit Artikeldaten laden
+ * - PATCH /lagerbestand/:artikel_id – Lagerbestand eines Artikels aktualisieren
+ *                                     (legt einen neuen Datensatz an, falls noch keiner existiert)
  */
 
 'use strict';
@@ -11,12 +11,14 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../db');
+const istAdmin = require('../istAdmin');
 
 /*
   GET /lagerbestand
   Lädt alle Lagerbestände zusammen mit den Artikeldaten.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.get('/', (req, res) => {
+router.get('/', istAdmin, (req, res) => {
   /*
     Alle Lagerbestände laden und zusätzlich
     die Artikelbezeichnung sowie die Artikel-ID anzeigen.
@@ -40,8 +42,9 @@ router.get('/', (req, res) => {
 /*
   PATCH /lagerbestand/:artikel_id
   Aktualisiert den Lagerbestand eines Artikels.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.patch('/:artikel_id', (req, res) => {
+router.patch('/:artikel_id', istAdmin, (req, res) => {
   // Artikel-ID aus der URL lesen
   const artikel_id = Number.parseInt(req.params.artikel_id, 10);
   const { anzahl } = req.body;

@@ -15,6 +15,7 @@ const router = express.Router();
 const connection = require('../db');
 const multer = require('multer');
 const path = require('path');
+const istAdmin = require('../istAdmin');
 
 /*
   Speicherort und Dateiname für hochgeladene Bilder festlegen.
@@ -189,8 +190,9 @@ router.get('/:id', (req, res) => {
 /*
   POST /artikel
   Legt einen neuen Artikel an.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.post('/', upload.single('bild'), (req, res) => {
+router.post('/', istAdmin, upload.single('bild'), (req, res) => {
   /*
     Werte aus dem Request-Body auslesen.
   */
@@ -273,8 +275,9 @@ router.post('/', upload.single('bild'), (req, res) => {
 /*
   PUT /artikel/:id
   Aktualisiert einen vorhandenen Artikel anhand seiner ID.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.put('/:id', upload.single('bild'), (req, res) => {
+router.put('/:id', istAdmin, upload.single('bild'), (req, res) => {
   /*
     Artikel-ID aus der URL lesen und in eine Zahl umwandeln.
   */
@@ -374,8 +377,9 @@ router.put('/:id', upload.single('bild'), (req, res) => {
 /*
   DELETE /artikel/:id
   Löscht einen Artikel anhand seiner ID.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', istAdmin, (req, res) => {
   /*
     Artikel-ID aus der URL lesen und prüfen.
   */

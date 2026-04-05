@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 30. Mrz 2026 um 17:10
--- Server-Version: 12.2.2-MariaDB-ubu2404
+-- Erstellungszeit: 05. Apr 2026 um 12:01
+-- Server-Version: 12.0.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -117,6 +117,15 @@ CREATE TABLE `benutzer` (
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Daten für Tabelle `benutzer`
+--
+
+INSERT INTO `benutzer` (`id`, `vorname`, `nachname`, `email`, `passwort_hash`, `rolle`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
+(1, 'Lea', 'Seiler', 'lea@1', '$2b$10$LzOZ5jVZ/if3dTa9YT0Fk.SE5hURCuZWR1NJl6U8VH/Jj0oSNOSG2', 'kunde', '2026-03-29 14:49:19', '2026-03-29 14:49:19'),
+(4, 'Admin', 'Demo', 'admin@test.de', '$2b$12$W2IKRxkWZLYzdxp9dn2QzurFzxB1RgzxALQobSD1I9gUWDHHZ2ucG', 'admin', '2026-03-29 12:40:25', '2026-04-05 11:57:33'),
+(5, 'Yuliia', 'Shostak', 'iushostak7@gmail.com', '$2b$10$FP8bO.n95bFYCnt8XG3SBurGggr5gvCR0ROes/5mBHqj0hiK7XTem', 'kunde', '2026-03-30 18:12:04', '2026-03-30 18:12:04');
+
 -- --------------------------------------------------------
 
 --
@@ -219,6 +228,12 @@ CREATE TABLE `sessions` (
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Daten für Tabelle `sessions`
+--
+
+INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
+('TvoHY2HU6bmcLup5cuRbw9K2N2gcj5xT', 1775393870, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-04-05T12:57:41.392Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":4,\"vorname\":\"Admin\",\"nachname\":\"Demo\",\"email\":\"admin@test.de\",\"rolle\":\"admin\"}}');
 
 -- --------------------------------------------------------
 
@@ -271,6 +286,15 @@ CREATE TABLE `worker` (
   `letzter_heartbeat` timestamp NULL DEFAULT NULL,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `worker`
+--
+
+INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
+(25, 'allgemein', 'aktiv', '2026-04-05 12:01:42', '2026-04-05 11:44:42'),
+(26, 'allgemein', 'aktiv', '2026-04-05 12:01:42', '2026-04-05 11:44:42'),
+(27, 'allgemein', 'aktiv', '2026-04-05 12:01:42', '2026-04-05 11:44:42');
 
 --
 -- Indizes der exportierten Tabellen
@@ -387,7 +411,7 @@ ALTER TABLE `aufgabe`
 -- AUTO_INCREMENT für Tabelle `benutzer`
 --
 ALTER TABLE `benutzer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellposition`
@@ -429,7 +453,7 @@ ALTER TABLE `warenkorb_position`
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- Constraints der exportierten Tabellen
@@ -487,7 +511,3 @@ ALTER TABLE `warenkorb_position`
   ADD CONSTRAINT `warenkorb_position_ibfk_1` FOREIGN KEY (`warenkorb_id`) REFERENCES `warenkorb` (`id`),
   ADD CONSTRAINT `warenkorb_position_ibfk_2` FOREIGN KEY (`artikel_id`) REFERENCES `artikel` (`id`);
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

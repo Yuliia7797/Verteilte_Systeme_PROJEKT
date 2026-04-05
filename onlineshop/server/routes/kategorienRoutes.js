@@ -11,6 +11,7 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../db');
+const istAdmin = require('../istAdmin');
 
 /*
   GET /kategorien
@@ -33,8 +34,9 @@ router.get('/', (req, res) => {
 /*
   POST /kategorien
   Legt eine neue Kategorie an.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.post('/', (req, res) => {
+router.post('/', istAdmin, (req, res) => {
   const { bezeichnung } = req.body;
 
   // Prüfen, ob eine Bezeichnung vorhanden ist
@@ -81,8 +83,9 @@ router.post('/', (req, res) => {
 /*
   DELETE /kategorien/:id
   Löscht eine Kategorie.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', istAdmin, (req, res) => {
   const kategorieId = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(kategorieId)) {

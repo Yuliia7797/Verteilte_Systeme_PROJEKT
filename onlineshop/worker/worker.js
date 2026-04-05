@@ -92,10 +92,38 @@ async function markInaktiveWorker() {
     );
 }
 
+/*
+  Prüft, ob dieser Worker aktuell den Status "aktiv" hat.
+  Nur aktive Worker dürfen neue Aufgaben aus der Datenbank übernehmen.
+*/
+async function istWorkerAktiv() {
+    const results = await query(
+        "SELECT status FROM worker WHERE id = ? LIMIT 1",
+        [workerId]
+    );
+
+    if (!results.length) {
+        return false;
+    }
+
+    return results[0].status === 'aktiv';
+}
+
 // ─── Nächste wartende Aufgabe holen und für diesen Worker sperren ──────────
 // Die Aufgabe wird in einer Transaktion gelesen und direkt auf
 // 'in_bearbeitung' gesetzt, damit kein anderer Worker dieselbe Aufgabe greift.
 async function getNextTask() {
+    /*
+      Vor dem Holen einer neuen Aufgabe prüfen,
+      ob dieser Worker noch aktiv ist.
+      Wenn der Status "inaktiv" ist, darf keine neue Aufgabe übernommen werden.
+    */
+    const workerAktiv = await istWorkerAktiv();
+
+    if (!workerAktiv) {
+        return null;
+    }
+
     const conn = await getConnection();
 
     return new Promise((resolve, reject) => {

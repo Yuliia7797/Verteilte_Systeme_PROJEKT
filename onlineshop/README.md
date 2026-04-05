@@ -100,11 +100,13 @@ Aktuell können dort unter anderem folgende Bereiche genutzt werden:
 - Lagerbestand ansehen und ändern
 - Bestellungen ansehen und verwalten
 
+Der Admin-Bereich ist nicht nur im Frontend geschützt, sondern zusätzlich auch im Backend abgesichert. Das bedeutet, dass normale Benutzer keine Admin-Funktionen ausführen können, selbst wenn sie versuchen, eine Admin-Seite oder eine geschützte Route direkt über einen Link aufzurufen.
+
 ## Testzugang
 
 Zum Testen des Admin-Bereichs kann folgender Benutzer verwendet werden:
 
-- E-Mail: `admin@de`
+- E-Mail: `admin@test.de`
 - Passwort: `admin123`
 
 Nach dem Login sind die Admin-Funktionen verfügbar.
@@ -136,7 +138,6 @@ Die zentrale Datei dafür ist `docker-compose.yaml`.
 
 Mit folgendem Befehl kann das Projekt gebaut und gestartet werden:
 
-```sh
 docker-compose up --build
 
 Dabei werden folgende Container gestartet:

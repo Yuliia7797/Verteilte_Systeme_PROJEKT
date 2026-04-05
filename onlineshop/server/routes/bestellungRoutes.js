@@ -13,6 +13,7 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../db');
+const istAdmin = require('../istAdmin');
 
 /*
   Prüft, ob ein Benutzer eingeloggt ist.
@@ -28,8 +29,9 @@ function requireLogin(req, res, next) {
 /*
   GET /bestellung
   Lädt alle Bestellungen mit Benutzerdaten.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.get('/', (req, res) => {
+router.get('/', istAdmin, (req, res) => {
   connection.query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.zahlungsstatus,
             b.bestellstatus, b.erstellungszeitpunkt,
@@ -52,8 +54,9 @@ router.get('/', (req, res) => {
   GET /bestellung/:id
   Lädt eine einzelne Bestellung mit Benutzerdaten,
   Lieferadresse und Bestellpositionen.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.get('/:id', (req, res) => {
+router.get('/:id', istAdmin, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(id)) {
@@ -127,7 +130,10 @@ router.post('/', requireLogin, (req, res) => {
   const artikelIds = positionen.map((p) => p.artikel_id);
 
   connection.query(
-    'SELECT id, preis FROM artikel WHERE id IN (?)',
+    `SELECT a.id, a.preis, l.anzahl AS lagerbestand
+     FROM artikel a
+     LEFT JOIN lagerbestand l ON a.id = l.artikel_id
+     WHERE a.id IN (?)`,
     [artikelIds],
     (error, artikelResult) => {
       if (error) {
@@ -135,19 +141,30 @@ router.post('/', requireLogin, (req, res) => {
         return res.status(500).json({ message: 'Fehler beim Laden der Artikelpreise' });
       }
 
-      const preisMap = {};
+      const artikelMap = {};
       artikelResult.forEach((a) => {
-        preisMap[a.id] = parseFloat(a.preis);
+        artikelMap[a.id] = {
+          preis: parseFloat(a.preis),
+          lagerbestand: a.lagerbestand !== null ? Number.parseInt(a.lagerbestand, 10) : 0
+        };
       });
 
       let gesamtpreis = 0;
 
       for (const pos of positionen) {
-        if (!preisMap[pos.artikel_id]) {
+        // Prüfen, ob der Artikel existiert
+        if (!artikelMap[pos.artikel_id]) {
           return res.status(400).json({ message: 'Artikel ' + pos.artikel_id + ' nicht gefunden' });
         }
 
-        gesamtpreis += preisMap[pos.artikel_id] * pos.anzahl;
+        // Prüfen, ob genügend Lagerbestand vorhanden ist
+        if (artikelMap[pos.artikel_id].lagerbestand < pos.anzahl) {
+          return res.status(400).json({
+            message: 'Für Artikel ' + pos.artikel_id + ' ist nicht genügend Lagerbestand vorhanden'
+          });
+        }
+
+        gesamtpreis += artikelMap[pos.artikel_id].preis * pos.anzahl;
       }
 
       gesamtpreis = Math.round(gesamtpreis * 100) / 100;
@@ -169,8 +186,8 @@ router.post('/', requireLogin, (req, res) => {
             bestellung_id,
             pos.artikel_id,
             pos.anzahl,
-            preisMap[pos.artikel_id],
-            preisMap[pos.artikel_id] * pos.anzahl
+            artikelMap[pos.artikel_id].preis,
+            artikelMap[pos.artikel_id].preis * pos.anzahl
           ]);
 
           connection.query(
@@ -271,8 +288,9 @@ router.post('/', requireLogin, (req, res) => {
 /*
   PATCH /bestellung/:id/status
   Aktualisiert den Status einer Bestellung.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.patch('/:id/status', (req, res) => {
+router.patch('/:id/status', istAdmin, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const { bestellstatus } = req.body;
 

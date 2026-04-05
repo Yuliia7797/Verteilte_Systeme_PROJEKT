@@ -19,6 +19,7 @@ const router = express.Router();
 const connection = require('../db');
 const bcrypt = require('bcrypt'); // Für sicheres Passwort-Hashing und -Vergleich
 const { body, validationResult } = require('express-validator');
+const istAdmin = require('../istAdmin');
 
 // Gibt bei Validierungsfehlern eine 400-Antwort zurück
 function pruefeFehler(req, res) {
@@ -43,8 +44,9 @@ const adresseValidierung = [
   GET /benutzer
   Lädt alle Benutzer aus der Datenbank.
   Der Passwort-Hash wird bewusst nicht zurückgegeben.
+  Dieser Endpunkt darf nur von Admins genutzt werden.
 */
-router.get('/', (_req, res) => {
+router.get('/', istAdmin, (_req, res) => {
   connection.query(
     'SELECT id, vorname, nachname, email, rolle, erstellungszeitpunkt FROM benutzer',
     (error, results) => {
@@ -61,9 +63,9 @@ router.get('/', (_req, res) => {
 /*
   POST /benutzer
   Legt einen neuen Benutzer an.
-  Diese Route kann z. B. für Admin-Zwecke bleiben.
+  Dieser Endpunkt ist nur für Admin-Zwecke gedacht.
 */
-router.post('/', (req, res) => {
+router.post('/', istAdmin, (req, res) => {
   const { vorname, nachname, email, passwort_hash, rolle } = req.body;
 
   // Alle Felder sind Pflicht
@@ -171,7 +173,7 @@ router.post('/registrieren',
                     benutzerId,
                     strasse,
                     hausnummer,
-                    adresszusatz || null, // adresszusatz ist optional
+                    adresszusatz || null,
                     postleitzahl,
                     ort,
                     land
@@ -399,7 +401,7 @@ router.put('/mein-konto',
     // Benutzer-ID aus der Session lesen
     const benutzerId = req.session.benutzer.id;
 
-    // Alle Felder aus dem Request-Body auslesen (adresszusatz und neuesPasswort sind optional)
+    // Alle Felder aus dem Request-Body auslesen
     const {
       vorname,
       nachname,
