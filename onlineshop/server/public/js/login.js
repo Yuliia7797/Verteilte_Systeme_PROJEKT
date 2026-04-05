@@ -13,29 +13,27 @@
 
 'use strict';
 
-// Warten bis das HTML vollständig geladen ist, bevor auf DOM-Elemente zugegriffen wird
+/**
+ * Initialisiert das Login-Formular nach dem Laden des DOM.
+ * Registriert den Submit-Handler und verarbeitet Login-Anfragen.
+ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Referenzen auf das Formular und das Meldungs-Element holen
   const formular = document.getElementById('login-form');
   const meldung = document.getElementById('meldung');
 
-  // Event-Listener für das Absenden des Login-Formulars registrieren
   formular.addEventListener('submit', async (event) => {
-    // Standard-Formularverhalten (Seitenneuladen) verhindern
     event.preventDefault();
 
-    // Meldungsfeld zurücksetzen, bevor ein neuer Login-Versuch gestartet wird
+    // Meldungsbereich zurücksetzen
     meldung.textContent = '';
     meldung.className = 'mt-3 text-center';
 
-    // Eingabewerte aus dem Formular auslesen
     const daten = {
-      email: document.getElementById('email').value.trim(), // Leerzeichen am Rand entfernen
+      email: document.getElementById('email').value.trim(),
       passwort: document.getElementById('passwort').value
     };
 
     try {
-      // Login-Anfrage als JSON an den Server senden
       const response = await fetch('/benutzer/login', {
         method: 'POST',
         headers: {
@@ -44,24 +42,20 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(daten)
       });
 
-      // Antwort des Servers als JSON parsen
       const ergebnis = await response.json();
 
       if (response.ok) {
-        // Login erfolgreich: Erfolgsmeldung anzeigen und nach 1 Sekunde weiterleiten
         meldung.textContent = 'Login erfolgreich.';
         meldung.classList.add('text-success');
 
         setTimeout(() => {
-          weiterleiten('/static'); // Weiterleitung zur Startseite
+          weiterleiten('/static');
         }, 1000);
       } else {
-        // Login fehlgeschlagen: Fehlermeldung vom Server anzeigen
         meldung.textContent = ergebnis.message || 'Login fehlgeschlagen.';
         meldung.classList.add('text-danger');
       }
     } catch (error) {
-      // Netzwerk- oder Serverfehler abfangen und allgemeine Meldung ausgeben
       console.error('Fehler beim Login:', error);
       meldung.textContent = 'Serverfehler. Bitte später erneut versuchen.';
       meldung.classList.add('text-danger');

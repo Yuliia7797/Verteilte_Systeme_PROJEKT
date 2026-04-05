@@ -8,12 +8,19 @@
   Erstellt: 05.04.2026
 */
 
-// Wenn die Seite geöffnet ist, wird zuerst der Zugriff geprüft
+// Startet die Zugriffsprüfung nach dem Laden des DOM
 document.addEventListener('DOMContentLoaded', () => {
   pruefeAdminZugriff();
 });
 
-// Prüft, ob ein Benutzer eingeloggt ist und die Rolle "admin" hat
+/**
+ * Prüft, ob ein Benutzer eingeloggt ist und Admin-Rechte besitzt.
+ * Lädt bei Erfolg den Lagerbestand, leitet sonst weiter.
+ *
+ * @async
+ * @function pruefeAdminZugriff
+ * @returns {Promise<void>}
+ */
 async function pruefeAdminZugriff() {
   try {
     const response = await fetch('/benutzer/session', {
@@ -21,7 +28,6 @@ async function pruefeAdminZugriff() {
       credentials: 'same-origin'
     });
 
-    // Wenn keine aktive Session vorhanden ist, zur Login-Seite weiterleiten
     if (!response.ok) {
       weiterleiten('login.html');
       return;
@@ -29,13 +35,11 @@ async function pruefeAdminZugriff() {
 
     const benutzer = await response.json();
 
-    // Wenn der Benutzer kein Admin ist, zurück zur Startseite weiterleiten
     if (benutzer.rolle !== 'admin') {
       weiterleiten('index.html');
       return;
     }
 
-    // Nur Admins dürfen den Lagerbestand laden
     ladeLagerbestand();
   } catch (fehler) {
     console.error('Fehler bei der Prüfung des Admin-Zugriffs:', fehler);
@@ -43,7 +47,14 @@ async function pruefeAdminZugriff() {
   }
 }
 
-// Holt die Lagerdaten vom Server
+/**
+ * Lädt den aktuellen Lagerbestand vom Server und zeigt ihn in der Tabelle an.
+ * Ermöglicht das Bearbeiten und Speichern einzelner Bestände.
+ *
+ * @async
+ * @function ladeLagerbestand
+ * @returns {Promise<void>}
+ */
 async function ladeLagerbestand() {
   try {
     const response = await fetch('/lagerbestand');
@@ -52,11 +63,8 @@ async function ladeLagerbestand() {
     console.log('Geladene Lagerdaten:', daten);
 
     const tbody = document.getElementById('lagerbestand-tabelle');
-
-    // Alte Tabelleninhalte löschen
     tbody.innerHTML = '';
 
-    // Für jeden Artikel eine neue Zeile erstellen
     daten.forEach(eintrag => {
       const zeile = document.createElement('tr');
 
@@ -72,18 +80,15 @@ async function ladeLagerbestand() {
         </td>
       `;
 
-      // Zeile in die Tabelle einfügen
       tbody.appendChild(zeile);
 
-      // Eingabefeld und Button aus der aktuellen Zeile holen
       const inputFeld = zeile.querySelector('input');
       const speichernButton = zeile.querySelector('button');
 
-      // Beim Klick wird der neue Lagerbestand gespeichert
+      // Speichert den aktualisierten Lagerbestand eines Artikels
       speichernButton.addEventListener('click', async () => {
         const neuerBestand = parseInt(inputFeld.value, 10);
 
-        // Prüfen, ob die Eingabe gültig ist
         if (isNaN(neuerBestand) || neuerBestand < 0) {
           alert('Bitte eine gültige Anzahl eingeben.');
           return;
@@ -104,9 +109,7 @@ async function ladeLagerbestand() {
             throw new Error('Fehler beim Speichern des Lagerbestands.');
           }
 
-          // Tabelle nach dem Speichern neu laden
           ladeLagerbestand();
-
           alert('Lagerbestand erfolgreich gespeichert.');
         } catch (fehler) {
           console.error('Fehler beim Speichern:', fehler);

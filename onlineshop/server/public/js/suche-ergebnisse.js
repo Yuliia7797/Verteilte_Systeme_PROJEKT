@@ -9,53 +9,50 @@
   Erstellt: 05.04.2026
 */
 
+'use strict';
 
-/*
-  Diese Funktion liest den Suchbegriff aus der URL.
-
-  Beispiel:
-  suche.html?q=Harry
-
-  Dann wird "Harry" ausgelesen.
-*/
+/**
+ * Liest den Suchbegriff aus der URL.
+ *
+ * Beispiel: suche.html?q=Harry → "Harry"
+ *
+ * @function getSuchbegriffFromUrl
+ * @returns {string|null} Suchbegriff oder null
+ */
 function getSuchbegriffFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('q');
 }
 
-/*
-  Diese Funktion zeigt oberhalb der Ergebnisse an,
-  wonach gesucht wurde.
-*/
+/**
+ * Zeigt den aktuellen Suchbegriff oberhalb der Ergebnisse an.
+ * Gibt einen Hinweis aus, wenn kein Suchbegriff vorhanden ist.
+ *
+ * @function renderSuchbegriff
+ * @param {string|null} suchbegriff - Der Suchbegriff aus der URL
+ */
 function renderSuchbegriff(suchbegriff) {
   const suchbegriffAnzeige = document.getElementById('suchbegriff-anzeige');
 
-  /*
-    Falls das Element nicht existiert, Funktion beenden.
-  */
   if (!suchbegriffAnzeige) {
     return;
   }
 
-  /*
-    Falls kein Suchbegriff vorhanden ist,
-    Hinweistext anzeigen.
-  */
   if (!suchbegriff) {
     suchbegriffAnzeige.textContent = 'Bitte gib einen Suchbegriff ein.';
     return;
   }
 
-  /*
-    Den aktuellen Suchbegriff auf der Seite anzeigen.
-  */
   suchbegriffAnzeige.textContent = `Ergebnisse für: "${suchbegriff}"`;
 }
 
-/*
-  Diese Funktion erstellt die HTML-Karte
-  für einen gefundenen Artikel.
-*/
+/**
+ * Erstellt die HTML-Karte für einen gefundenen Artikel.
+ *
+ * @function createSuchArtikelCard
+ * @param {Object} artikelItem - Artikeldaten
+ * @returns {string} HTML-Markup der Karte
+ */
 function createSuchArtikelCard(artikelItem) {
   return `
     <div class="col-md-4">
@@ -82,28 +79,22 @@ function createSuchArtikelCard(artikelItem) {
   `;
 }
 
-/*
-  Diese Funktion zeigt alle gefundenen Artikel an.
-*/
+/**
+ * Rendert alle gefundenen Artikel im Ergebnis-Container.
+ * Zeigt eine Meldung an, wenn keine Treffer vorhanden sind.
+ *
+ * @function renderSuchergebnisse
+ * @param {Array<Object>} artikelListe - Liste der gefundenen Artikel
+ */
 function renderSuchergebnisse(artikelListe) {
   const container = document.getElementById('suche-artikel-container');
 
-  /*
-    Falls der Container nicht existiert, Funktion beenden.
-  */
   if (!container) {
     return;
   }
 
-  /*
-    Alten Inhalt löschen.
-  */
   container.innerHTML = '';
 
-  /*
-    Falls keine Artikel gefunden wurden,
-    entsprechende Meldung anzeigen.
-  */
   if (!artikelListe || artikelListe.length === 0) {
     container.innerHTML = `
       <div class="col-12">
@@ -113,17 +104,17 @@ function renderSuchergebnisse(artikelListe) {
     return;
   }
 
-  /*
-    Für jeden gefundenen Artikel eine Karte erzeugen.
-  */
   artikelListe.forEach((artikelItem) => {
     container.innerHTML += createSuchArtikelCard(artikelItem);
   });
 }
 
-/*
-  Diese Funktion zeigt eine Fehlermeldung auf der Seite an.
-*/
+/**
+ * Zeigt eine Fehlermeldung im Ergebnisbereich an.
+ *
+ * @function renderSucheFehler
+ * @param {string} fehlermeldung - Fehlermeldungstext
+ */
 function renderSucheFehler(fehlermeldung) {
   const container = document.getElementById('suche-artikel-container');
 
@@ -140,51 +131,33 @@ function renderSucheFehler(fehlermeldung) {
   `;
 }
 
-/*
-  Diese Funktion lädt die Suchergebnisse vom Backend.
-*/
+/**
+ * Lädt die Suchergebnisse vom Backend anhand des URL-Suchbegriffs
+ * und zeigt sie auf der Seite an.
+ *
+ * @async
+ * @function loadSuchergebnisse
+ * @returns {Promise<void>}
+ */
 async function loadSuchergebnisse() {
   try {
-    /*
-      Suchbegriff aus der URL lesen.
-    */
     const suchbegriff = getSuchbegriffFromUrl();
 
-    /*
-      Suchbegriff oberhalb der Ergebnisse anzeigen.
-    */
     renderSuchbegriff(suchbegriff);
 
-    /*
-      Falls kein Suchbegriff vorhanden ist,
-      Fehlermeldung anzeigen.
-    */
     if (!suchbegriff) {
       renderSucheFehler('Kein Suchbegriff wurde übergeben.');
       return;
     }
 
-    /*
-      Suchanfrage an das Backend senden.
-      Der Backend-Route /artikel kann bereits mit ?suche=... umgehen.
-    */
     const response = await fetch(`/artikel?suche=${encodeURIComponent(suchbegriff)}`);
 
-    /*
-      Prüfen, ob die Antwort erfolgreich war.
-    */
     if (!response.ok) {
       throw new Error('Suchergebnisse konnten nicht geladen werden');
     }
 
-    /*
-      JSON-Daten in JavaScript-Objekte umwandeln.
-    */
     const artikelListe = await response.json();
 
-    /*
-      Ergebnisse auf der Seite anzeigen.
-    */
     renderSuchergebnisse(artikelListe);
   } catch (error) {
     console.error('Fehler beim Laden der Suchergebnisse:', error);
@@ -192,7 +165,8 @@ async function loadSuchergebnisse() {
   }
 }
 
-/*
-  Nach dem Laden der Seite die Suchergebnisse abrufen.
-*/
+/**
+ * Startet das Laden der Suchergebnisse,
+ * sobald das DOM vollständig geladen ist.
+ */
 document.addEventListener('DOMContentLoaded', loadSuchergebnisse);

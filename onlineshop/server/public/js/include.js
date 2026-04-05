@@ -16,10 +16,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.dispatchEvent(new Event("includesLoaded"));
 });
 
-/*
-  Funktion zum Laden einer externen HTML-Datei
-  und Einfügen in ein bestimmtes Element.
-*/
+/**
+ * Lädt eine externe HTML-Datei und fügt sie in das angegebene Element ein.
+ *
+ * @async
+ * @function loadComponent
+ * @param {string} placeholderId - Die ID des Platzhalter-Elements
+ * @param {string} filePath - Der Pfad zur HTML-Komponente
+ * @returns {Promise<void>}
+ */
 async function loadComponent(placeholderId, filePath) {
   const placeholder = document.getElementById(placeholderId);
 

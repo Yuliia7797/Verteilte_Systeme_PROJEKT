@@ -20,14 +20,17 @@ let eingeloggterBenutzer = null;
 let standardAdresse = null;
 let warenkorbDaten = null;
 
+// Initialisiert die Kassen-Seite nach dem Aufbau des DOM
 document.addEventListener('DOMContentLoaded', async () => {
   registriereEvents();
   await initialisiereKasse();
 });
 
-/*
-  Registriert alle benötigten Event-Handler.
-*/
+/**
+ * Registriert alle benötigten Event-Handler der Kassen-Seite.
+ *
+ * @function registriereEvents
+ */
 function registriereEvents() {
   const checkboxAbweichendeAdresse = document.getElementById('abweichende-lieferadresse-checkbox');
   const bestellungAbsendenButton = document.getElementById('bestellung-absenden-button');
@@ -45,9 +48,13 @@ function registriereEvents() {
   }
 }
 
-/*
-  Lädt alle benötigten Daten für die Kassen-Seite.
-*/
+/**
+ * Lädt alle für die Kassen-Seite benötigten Daten und initialisiert die Ansicht.
+ *
+ * @async
+ * @function initialisiereKasse
+ * @returns {Promise<void>}
+ */
 async function initialisiereKasse() {
   try {
     await ladeSession();
@@ -60,9 +67,14 @@ async function initialisiereKasse() {
   }
 }
 
-/*
-  Lädt die Session des aktuell eingeloggten Benutzers.
-*/
+/**
+ * Lädt die Session des aktuell eingeloggten Benutzers
+ * und füllt die Basisdaten im Formular vor.
+ *
+ * @async
+ * @function ladeSession
+ * @returns {Promise<void>}
+ */
 async function ladeSession() {
   const response = await fetch('/benutzer/session', {
     method: 'GET',
@@ -81,9 +93,14 @@ async function ladeSession() {
   setzeFeldWert('email', eingeloggterBenutzer.email || '');
 }
 
-/*
-  Lädt die hinterlegte Adresse des Benutzers.
-*/
+/**
+ * Lädt die hinterlegte Standardadresse des Benutzers
+ * und trägt sie in das Formular ein.
+ *
+ * @async
+ * @function ladeBenutzerAdresse
+ * @returns {Promise<void>}
+ */
 async function ladeBenutzerAdresse() {
   if (!eingeloggterBenutzer || !eingeloggterBenutzer.id) {
     throw new Error('Benutzerdaten konnten nicht geladen werden.');
@@ -106,9 +123,12 @@ async function ladeBenutzerAdresse() {
   }
 }
 
-/*
-  Füllt die Adressdaten in das Formular ein.
-*/
+/**
+ * Schreibt eine Adresse in die Formularfelder.
+ *
+ * @function fuelleAdresseInsFormular
+ * @param {Object|null} adresse - Adressdaten
+ */
 function fuelleAdresseInsFormular(adresse) {
   if (!adresse) {
     return;
@@ -122,9 +142,11 @@ function fuelleAdresseInsFormular(adresse) {
   setzeFeldWert('land', adresse.land);
 }
 
-/*
-  Leert die Adressfelder im Formular.
-*/
+/**
+ * Leert alle Adressfelder im Formular.
+ *
+ * @function leereAdressFelder
+ */
 function leereAdressFelder() {
   setzeFeldWert('strasse', '');
   setzeFeldWert('hausnummer', '');
@@ -134,9 +156,13 @@ function leereAdressFelder() {
   setzeFeldWert('land', '');
 }
 
-/*
-  Setzt den Wert eines Formularfelds.
-*/
+/**
+ * Setzt den Wert eines Formularfelds, falls das Feld existiert.
+ *
+ * @function setzeFeldWert
+ * @param {string} feldId - ID des Formularfelds
+ * @param {string} wert - Zu setzender Wert
+ */
 function setzeFeldWert(feldId, wert) {
   const feld = document.getElementById(feldId);
 
@@ -145,9 +171,12 @@ function setzeFeldWert(feldId, wert) {
   }
 }
 
-/*
-  Schaltet zwischen Standardadresse und abweichender Lieferadresse um.
-*/
+/**
+ * Schaltet zwischen hinterlegter Standardadresse
+ * und abweichender Lieferadresse um.
+ *
+ * @function aktualisiereAdressModus
+ */
 function aktualisiereAdressModus() {
   const checkbox = document.getElementById('abweichende-lieferadresse-checkbox');
 
@@ -162,9 +191,14 @@ function aktualisiereAdressModus() {
   }
 }
 
-/*
-  Lädt den aktuellen Warenkorb des Benutzers.
-*/
+/**
+ * Lädt den aktuellen Warenkorb des Benutzers
+ * und rendert die Bestellübersicht.
+ *
+ * @async
+ * @function ladeWarenkorb
+ * @returns {Promise<void>}
+ */
 async function ladeWarenkorb() {
   const ladeanzeige = document.getElementById('kasse-ladeanzeige');
   const positionenContainer = document.getElementById('kasse-positionen');
@@ -196,9 +230,12 @@ async function ladeWarenkorb() {
   renderBestelluebersicht(warenkorbDaten);
 }
 
-/*
-  Rendert die Bestellübersicht in der rechten Spalte.
-*/
+/**
+ * Rendert die Bestellübersicht in der rechten Spalte der Kassen-Seite.
+ *
+ * @function renderBestelluebersicht
+ * @param {Object} data - Warenkorb- und Summendaten
+ */
 function renderBestelluebersicht(data) {
   const ladeanzeige = document.getElementById('kasse-ladeanzeige');
   const positionenContainer = document.getElementById('kasse-positionen');
@@ -248,9 +285,14 @@ function renderBestelluebersicht(data) {
   setzeText('kasse-gesamtsumme', formatPreis(zusammenfassung.gesamtsumme ?? 0));
 }
 
-/*
-  Sendet die Bestellung an das Backend.
-*/
+/**
+ * Prüft die Eingaben, erstellt die Bestellung
+ * und sendet sie an das Backend.
+ *
+ * @async
+ * @function bestellungAbsenden
+ * @returns {Promise<void>}
+ */
 async function bestellungAbsenden() {
   const agbCheckbox = document.getElementById('agb-checkbox');
   const bestellungAbsendenButton = document.getElementById('bestellung-absenden-button');
@@ -300,7 +342,7 @@ async function bestellungAbsenden() {
 
     try {
       data = await response.json();
-    } catch (jsonError) {
+    } catch {
       data = {};
     }
 
@@ -316,9 +358,8 @@ async function bestellungAbsenden() {
     zeigeMeldung(data.message || 'Deine Bestellung wurde erfolgreich aufgegeben.', 'success');
 
     window.setTimeout(() => {
-     weiterleiten(`/static/bestellungAbgeschlossen.html?bestellung=${data.bestellung_id}`);
+      weiterleiten(`/static/bestellungAbgeschlossen.html?bestellung=${data.bestellung_id}`);
     }, 1500);
-
   } catch (error) {
     console.error('Fehler beim Absenden der Bestellung:', error);
     zeigeMeldung(error.message || 'Serverfehler beim Absenden der Bestellung.', 'danger');
@@ -329,9 +370,14 @@ async function bestellungAbsenden() {
   }
 }
 
-/*
-  Ermittelt, welche Lieferadresse für die Bestellung verwendet werden soll.
-*/
+/**
+ * Ermittelt die für die Bestellung zu verwendende Lieferadresse.
+ * Nutzt entweder die Standardadresse oder legt eine neue Adresse an.
+ *
+ * @async
+ * @function ermittleLieferadresseId
+ * @returns {Promise<number|string>}
+ */
 async function ermittleLieferadresseId() {
   const checkbox = document.getElementById('abweichende-lieferadresse-checkbox');
 
@@ -374,7 +420,7 @@ async function ermittleLieferadresseId() {
 
   try {
     data = await response.json();
-  } catch (jsonError) {
+  } catch {
     data = {};
   }
 
@@ -385,9 +431,12 @@ async function ermittleLieferadresseId() {
   return data.id;
 }
 
-/*
-  Erstellt die Bestellpositionen aus dem Warenkorb.
-*/
+/**
+ * Erstellt die Bestellpositionen aus den aktuellen Warenkorbdaten.
+ *
+ * @function erstelleBestellpositionen
+ * @returns {Array<Object>} Liste der Bestellpositionen
+ */
 function erstelleBestellpositionen() {
   if (!warenkorbDaten || !Array.isArray(warenkorbDaten.positionen)) {
     return [];
@@ -399,9 +448,12 @@ function erstelleBestellpositionen() {
   }));
 }
 
-/*
-  Liest die Lieferadresse aus dem Formular aus.
-*/
+/**
+ * Liest die Lieferadresse aus dem Formular aus.
+ *
+ * @function leseLieferadresseAusFormular
+ * @returns {Object} Lieferadressdaten aus dem Formular
+ */
 function leseLieferadresseAusFormular() {
   return {
     vorname: leseFeldwert('vorname'),
@@ -417,17 +469,25 @@ function leseLieferadresseAusFormular() {
   };
 }
 
-/*
-  Liest einen Feldwert aus dem Formular.
-*/
+/**
+ * Liest den getrimmten Wert eines Formularfelds aus.
+ *
+ * @function leseFeldwert
+ * @param {string} feldId - ID des Formularfelds
+ * @returns {string} Feldwert oder leerer String
+ */
 function leseFeldwert(feldId) {
   const feld = document.getElementById(feldId);
   return feld ? feld.value.trim() : '';
 }
 
-/*
-  Prüft, ob alle Pflichtfelder der Lieferadresse gefüllt sind.
-*/
+/**
+ * Prüft, ob alle Pflichtfelder der Lieferadresse ausgefüllt sind.
+ *
+ * @function istLieferadresseGueltig
+ * @param {Object} lieferadresse - Zu prüfende Lieferadresse
+ * @returns {boolean} True, wenn alle Pflichtfelder vorhanden sind
+ */
 function istLieferadresseGueltig(lieferadresse) {
   return Boolean(
     lieferadresse.vorname &&
@@ -441,17 +501,24 @@ function istLieferadresseGueltig(lieferadresse) {
   );
 }
 
-/*
-  Liest die ausgewählte Zahlungsmethode.
-*/
+/**
+ * Liest die aktuell ausgewählte Zahlungsmethode aus.
+ *
+ * @function leseZahlungsmethode
+ * @returns {string} Gewählte Zahlungsmethode oder leerer String
+ */
 function leseZahlungsmethode() {
   const ausgewaehlt = document.querySelector('input[name="zahlungsmethode"]:checked');
   return ausgewaehlt ? ausgewaehlt.value : '';
 }
 
-/*
-  Setzt Text in ein HTML-Element.
-*/
+/**
+ * Setzt den Textinhalt eines HTML-Elements, falls es existiert.
+ *
+ * @function setzeText
+ * @param {string} elementId - ID des Zielelements
+ * @param {string|number} text - Anzuzeigender Text
+ */
 function setzeText(elementId, text) {
   const element = document.getElementById(elementId);
 
@@ -460,9 +527,13 @@ function setzeText(elementId, text) {
   }
 }
 
-/*
-  Formatiert einen Preis im deutschen Euro-Format.
-*/
+/**
+ * Formatiert einen Wert als Euro-Betrag im deutschen Format.
+ *
+ * @function formatPreis
+ * @param {number|string} wert - Zu formatierender Preiswert
+ * @returns {string} Formatierter Preis
+ */
 function formatPreis(wert) {
   const nummer = Number(wert) || 0;
 
@@ -472,9 +543,13 @@ function formatPreis(wert) {
   });
 }
 
-/*
-  Zeigt eine Meldung im Kassenbereich an.
-*/
+/**
+ * Zeigt eine Statusmeldung im Kassenbereich an.
+ *
+ * @function zeigeMeldung
+ * @param {string} text - Meldungstext
+ * @param {string} [typ='success'] - Bootstrap-Typ der Meldung
+ */
 function zeigeMeldung(text, typ = 'success') {
   const meldung = document.getElementById('kasse-meldung');
 
@@ -485,9 +560,13 @@ function zeigeMeldung(text, typ = 'success') {
   meldung.innerHTML = `<div class="alert alert-${typ} mb-0">${escapeHtml(text)}</div>`;
 }
 
-/*
-  Escaped HTML-Zeichen für sichere Ausgabe.
-*/
+/**
+ * Escaped HTML-Sonderzeichen für eine sichere Ausgabe im DOM.
+ *
+ * @function escapeHtml
+ * @param {string} text - Zu escapender Text
+ * @returns {string} Sicherer HTML-Text
+ */
 function escapeHtml(text) {
   return String(text ?? '')
     .replaceAll('&', '&amp;')

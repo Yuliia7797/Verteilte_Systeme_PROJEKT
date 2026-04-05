@@ -1,4 +1,3 @@
-
 /*
   Datei: adminbestellungen.js
   Beschreibung: Diese Datei steuert die Admin-Seite für die Bestellverwaltung.
@@ -11,16 +10,18 @@
 
 'use strict';
 
-/**
- * Wartet, bis die Seite geladen ist.
- * Danach werden die Bestellungen vom Backend geladen.
- */
+// Lädt die Bestellungen nach dem Aufbau des DOM
 document.addEventListener('DOMContentLoaded', () => {
   ladeBestellungen();
 });
 
 /**
- * Lädt alle Bestellungen vom Backend und zeigt sie in der Tabelle an.
+ * Lädt alle Bestellungen vom Server und zeigt sie in der Tabelle an.
+ * Erstellt für jede Bestellung eine Tabellenzeile inklusive Link zur Detailseite.
+ *
+ * @async
+ * @function ladeBestellungen
+ * @returns {Promise<void>}
  */
 async function ladeBestellungen() {
   const bestellungenTabelle = document.getElementById('bestellungen-tabelle');
@@ -81,10 +82,12 @@ async function ladeBestellungen() {
 }
 
 /**
- * Formatiert ein Datum für eine besser lesbare Anzeige.
+ * Formatiert ein Datum für die Anzeige im deutschen Format.
+ * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
  *
- * @param {string|null|undefined} wert - Das Datum aus dem Backend.
- * @returns {string} Formatiertes Datum oder "-".
+ * @function formatiereDatum
+ * @param {string|null|undefined} wert - Datum aus dem Backend
+ * @returns {string} Formatiertes Datum oder "-"
  */
 function formatiereDatum(wert) {
   if (!wert) {
@@ -101,10 +104,12 @@ function formatiereDatum(wert) {
 }
 
 /**
- * Formatiert einen Preis mit zwei Nachkommastellen.
+ * Formatiert einen Preis mit zwei Nachkommastellen und Euro-Zeichen.
+ * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
  *
- * @param {number|string|null|undefined} wert - Der Preis aus dem Backend.
- * @returns {string} Formatierter Preis oder "-".
+ * @function formatierePreis
+ * @param {number|string|null|undefined} wert - Preis aus dem Backend
+ * @returns {string} Formatierter Preis oder "-"
  */
 function formatierePreis(wert) {
   if (wert === null || wert === undefined || wert === '') {

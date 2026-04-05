@@ -12,24 +12,28 @@
 
 'use strict';
 
-/*
-  Diese Funktion liest die Artikel-ID aus der URL aus.
-  Beispiel: artikel.html?id=3
-*/
+/**
+ * Liest die Artikel-ID aus der URL (z. B. artikel.html?id=3).
+ *
+ * @function getArtikelIdFromUrl
+ * @returns {string|null} Artikel-ID oder null
+ */
 function getArtikelIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id');
 }
 
-/*
-  Diese Funktion zeigt eine Fehlermeldung
-  direkt im Detail-Container an.
-*/
+/**
+ * Zeigt eine Fehlermeldung im Detail-Container an.
+ *
+ * @function renderArtikelDetailFehler
+ * @param {string} message - Fehlermeldung
+ */
 function renderArtikelDetailFehler(message) {
   const container = document.getElementById('artikel-detail-container');
 
   if (!container) {
-    console.error('Der Container mit der ID "artikel-detail-container" wurde nicht gefunden.');
+    console.error('Container "artikel-detail-container" nicht gefunden.');
     return;
   }
 
@@ -40,26 +44,27 @@ function renderArtikelDetailFehler(message) {
   `;
 }
 
-/*
-  Diese Funktion erstellt die Detailansicht
-  für einen einzelnen Artikel.
-*/
+/**
+ * Rendert die Detailansicht eines Artikels in den Container.
+ *
+ * @function renderArtikelDetail
+ * @param {Object} artikel - Artikeldaten vom Backend
+ */
 function renderArtikelDetail(artikel) {
   const container = document.getElementById('artikel-detail-container');
 
   if (!container) {
-    console.error('Der Container mit der ID "artikel-detail-container" wurde nicht gefunden.');
+    console.error('Container "artikel-detail-container" nicht gefunden.');
     return;
   }
 
   const lagerbestand = artikel.lagerbestand ?? 0;
-  const verfuegbarkeitText = lagerbestand > 0 ? 'Auf Lager' : 'Nicht verfügbar';
   const istVerfuegbar = lagerbestand > 0;
+  const verfuegbarkeitText = istVerfuegbar ? 'Auf Lager' : 'Nicht verfügbar';
 
   container.innerHTML = `
     <div class="row g-5 align-items-start">
       <div class="col-md-6">
-        <!-- Artikelbild -->
         <div class="card p-3 shadow-sm">
           <img
             src="${artikel.bild_url}"
@@ -70,16 +75,14 @@ function renderArtikelDetail(artikel) {
       </div>
 
       <div class="col-md-6">
-        <!-- Artikelname -->
         <h1 class="mb-3">${artikel.bezeichnung}</h1>
 
-        <!-- Kurze Artikelbeschreibung -->
         <p class="lead">${artikel.beschreibung || ''}</p>
 
-        <!-- Artikelpreis -->
-        <p class="fs-2 fw-bold mb-4">${Number(artikel.preis).toFixed(2)} €</p>
+        <p class="fs-2 fw-bold mb-4">
+          ${Number(artikel.preis).toFixed(2)} €
+        </p>
 
-        <!-- Zusätzliche Artikelinformationen -->
         <div class="mb-4">
           <p class="mb-2"><strong>Artikelnummer:</strong> ${artikel.id}</p>
           <p class="mb-2"><strong>Kategorie:</strong> ${artikel.kategorie_name || 'Keine Angabe'}</p>
@@ -87,7 +90,6 @@ function renderArtikelDetail(artikel) {
           <p class="mb-2"><strong>Bestand:</strong> ${lagerbestand} Stück</p>
         </div>
 
-        <!-- Button zum Hinzufügen in den Warenkorb -->
         <button
           type="button"
           class="btn btn-main btn-lg mb-4 js-in-warenkorb"
@@ -100,7 +102,6 @@ function renderArtikelDetail(artikel) {
 
         <hr>
 
-        <!-- Ausführliche Artikelbeschreibung -->
         <h4 class="mb-3">Artikelbeschreibung</h4>
         <p>${artikel.langbeschreibung || 'Keine ausführliche Beschreibung vorhanden.'}</p>
       </div>
@@ -108,10 +109,14 @@ function renderArtikelDetail(artikel) {
   `;
 }
 
-/*
-  Diese Funktion lädt die Daten eines einzelnen Artikels
-  vom Backend und zeigt sie auf der Detailseite an.
-*/
+/**
+ * Lädt die Artikeldaten anhand der ID aus der URL
+ * und rendert die Detailansicht.
+ *
+ * @async
+ * @function loadArtikelDetail
+ * @returns {Promise<void>}
+ */
 async function loadArtikelDetail() {
   try {
     const artikelId = getArtikelIdFromUrl();
@@ -136,16 +141,17 @@ async function loadArtikelDetail() {
   }
 }
 
-/*
-  Diese Funktion behandelt Klicks auf den
-  "In den Warenkorb"-Button der Detailseite.
-*/
+/**
+ * Behandelt Klicks auf den "In den Warenkorb"-Button.
+ * Fügt den Artikel dem Warenkorb hinzu.
+ */
 document.addEventListener('click', async (event) => {
   const button = event.target.closest('.js-in-warenkorb');
 
   if (!button) {
     return;
   }
+
   const lagerbestand = Number(button.dataset.lagerbestand) || 0;
 
   if (lagerbestand <= 0) {
@@ -179,7 +185,7 @@ document.addEventListener('click', async (event) => {
 
     try {
       data = await response.json();
-    } catch (jsonError) {
+    } catch {
       data = {};
     }
 
@@ -202,8 +208,5 @@ document.addEventListener('click', async (event) => {
   }
 });
 
-/*
-  Warten, bis die HTML-Seite vollständig geladen ist.
-  Erst danach sollen die Artikeldetails geladen werden.
-*/
+// Lädt die Artikeldetails nach dem Aufbau des DOM
 document.addEventListener('DOMContentLoaded', loadArtikelDetail);

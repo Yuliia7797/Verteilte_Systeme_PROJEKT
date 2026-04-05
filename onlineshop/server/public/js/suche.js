@@ -9,69 +9,49 @@
   Erstellt: 05.04.2026
 */
 
+'use strict';
+
+/**
+ * Initialisiert das Suchformular im Header.
+ * Registriert den Submit-Handler und leitet zur Suchseite weiter.
+ * Verhindert doppelte Initialisierung bei dynamischem Laden.
+ *
+ * @function initSucheFormular
+ */
 function initSucheFormular() {
-  /*
-    Suchformular und Eingabefeld im Header suchen.
-  */
   const searchForm = document.getElementById('search-form');
   const searchInput = document.getElementById('search-input');
 
-  /*
-    Falls das Formular oder das Eingabefeld nicht existiert,
-    Funktion sofort beenden.
-  */
   if (!searchForm || !searchInput) {
     return;
   }
 
-  /*
-    Verhindern, dass der Event-Listener mehrfach gesetzt wird.
-    Das ist wichtig, weil der Header dynamisch geladen wird.
-  */
   if (searchForm.dataset.initialized === 'true') {
     return;
   }
 
-  /*
-    Reagieren, wenn das Formular abgeschickt wird.
-  */
   searchForm.addEventListener('submit', (event) => {
-    /*
-      Standardverhalten des Formulars verhindern.
-    */
     event.preventDefault();
 
-    /*
-      Eingegebenen Suchbegriff lesen und Leerzeichen entfernen.
-    */
     const suchbegriff = searchInput.value.trim();
 
-    /*
-      Falls nichts eingegeben wurde, nichts tun.
-    */
     if (!suchbegriff) {
       return;
     }
 
-    /*
-      Zur Suchergebnisseite weiterleiten.
-      Der Suchbegriff wird in der URL übergeben.
-    */
     weiterleiten(`/static/suche.html?q=${encodeURIComponent(suchbegriff)}`);
   });
 
-  /*
-    Markieren, dass das Formular bereits initialisiert wurde.
-  */
   searchForm.dataset.initialized = 'true';
 }
 
-/*
-  Initialisierung nach dem normalen Laden der Seite.
-*/
+/**
+ * Initialisiert das Suchformular nach dem Laden des DOM.
+ */
 document.addEventListener('DOMContentLoaded', initSucheFormular);
 
-/*
-  Initialisierung nachdem Header/Footer dynamisch eingefügt wurden.
-*/
+/**
+ * Initialisiert das Suchformular erneut,
+ * nachdem dynamische Inhalte (z. B. Header) geladen wurden.
+ */
 document.addEventListener('includesLoaded', initSucheFormular);

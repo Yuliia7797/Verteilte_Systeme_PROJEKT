@@ -1,4 +1,3 @@
-
 /*
   Datei: adminworker.js
   Beschreibung: Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
@@ -11,17 +10,19 @@
 
 'use strict';
 
-/**
- * Wartet, bis die Seite geladen ist.
- * Danach werden die Worker- und Aufgaben-Daten vom Backend geladen.
- */
+// Lädt nach dem Aufbau des DOM die Worker- und Aufgabenübersicht
 document.addEventListener('DOMContentLoaded', () => {
   ladeWorker();
   ladeAufgaben();
 });
 
 /**
- * Lädt alle Worker vom Backend und zeigt sie in der Worker-Tabelle an.
+ * Lädt alle Worker vom Server und zeigt sie in der Worker-Tabelle an.
+ * Erstellt für jeden Worker eine Schaltfläche zum Aktivieren oder Deaktivieren.
+ *
+ * @async
+ * @function ladeWorker
+ * @returns {Promise<void>}
  */
 async function ladeWorker() {
   const workerTabelle = document.getElementById('worker-tabelle');
@@ -48,7 +49,6 @@ async function ladeWorker() {
     worker.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 
-      // Beschriftung und Zielstatus für die Schaltfläche festlegen
       const istAktiv = eintrag.status === 'aktiv';
       const buttonText = istAktiv ? 'OUT' : 'IN';
       const neuerStatus = istAktiv ? 'inaktiv' : 'aktiv';
@@ -86,7 +86,11 @@ async function ladeWorker() {
 }
 
 /**
- * Lädt alle Aufgaben vom Backend und zeigt sie in der Aufgaben-Tabelle an.
+ * Lädt alle Aufgaben vom Server und zeigt sie in der Aufgaben-Tabelle an.
+ *
+ * @async
+ * @function ladeAufgaben
+ * @returns {Promise<void>}
  */
 async function ladeAufgaben() {
   const aufgabenTabelle = document.getElementById('aufgaben-tabelle');
@@ -139,11 +143,14 @@ async function ladeAufgaben() {
 }
 
 /**
- * Ändert den Status eines Workers über das Backend.
- * Nach erfolgreicher Änderung wird die Worker-Tabelle neu geladen.
+ * Ändert den Status eines Workers über das Backend und lädt danach
+ * die Worker-Tabelle neu.
  *
- * @param {number} workerId - Die ID des Workers.
- * @param {string} neuerStatus - Der neue Status ("aktiv" oder "inaktiv").
+ * @async
+ * @function aendereWorkerStatus
+ * @param {number} workerId - ID des Workers
+ * @param {string} neuerStatus - Neuer Status des Workers
+ * @returns {Promise<void>}
  */
 async function aendereWorkerStatus(workerId, neuerStatus) {
   try {
@@ -163,7 +170,6 @@ async function aendereWorkerStatus(workerId, neuerStatus) {
       throw new Error(daten.message || 'Fehler beim Aktualisieren des Worker-Status.');
     }
 
-    // Nach erfolgreicher Änderung die Worker-Tabelle neu laden
     ladeWorker();
   } catch (fehler) {
     console.error('Fehler beim Ändern des Worker-Status:', fehler);
@@ -172,11 +178,12 @@ async function aendereWorkerStatus(workerId, neuerStatus) {
 }
 
 /**
- * Formatiert ein Datum für eine besser lesbare Anzeige.
- * Falls kein Datum vorhanden ist, wird ein Bindestrich angezeigt.
+ * Formatiert ein Datum für die Anzeige im deutschen Format.
+ * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
  *
- * @param {string|null|undefined} wert - Das Datum aus dem Backend.
- * @returns {string} Formatiertes Datum oder "-".
+ * @function formatiereDatum
+ * @param {string|null|undefined} wert - Datum aus dem Backend
+ * @returns {string} Formatiertes Datum oder "-"
  */
 function formatiereDatum(wert) {
   if (!wert) {

@@ -11,25 +11,23 @@
   Erstellt: 05.04.2026
 */
 
-
 'use strict';
 
-// Speichert die zuletzt geladenen Kontodaten – wird beim Abbrechen zum Zurücksetzen genutzt
 let urspruenglicheDaten = null;
 
-// Warten bis das HTML vollständig geladen ist
+/**
+ * Initialisiert die "Mein Konto"-Seite nach dem Laden des DOM.
+ * Lädt die Kontodaten und registriert alle benötigten Event-Handler.
+ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Referenzen auf alle relevanten DOM-Elemente holen
   const bearbeitenButton = document.getElementById('bearbeiten-button');
   const kontoForm = document.getElementById('konto-form');
   const anzeigeBereich = document.getElementById('anzeige-bereich');
   const abbrechenButton = document.getElementById('abbrechen-button');
   const meldung = document.getElementById('meldung');
 
-  // Kontodaten beim Laden der Seite sofort abrufen
   ladeKontodaten();
 
-  // Bearbeiten-Button: Formular einblenden, Anzeigebereich ausblenden
   bearbeitenButton.addEventListener('click', () => {
     kontoForm.style.display = 'block';
     anzeigeBereich.style.display = 'none';
@@ -37,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     meldung.textContent = '';
   });
 
-  // Abbrechen-Button: Formular mit ursprünglichen Daten befüllen und zurück in den Anzeigemodus
   abbrechenButton.addEventListener('click', () => {
     if (!urspruenglicheDaten) {
       return;
@@ -48,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
     wechsleInAnzeigemodus();
   });
 
-  // Formular absenden: Daten validieren und per PUT an den Server schicken
   kontoForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -58,10 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const neuesPasswort = document.getElementById('neues-passwort').value;
     const passwortBestaetigen = document.getElementById('passwort-bestaetigen').value;
 
-    // Passwort-Regel: mind. 8 Zeichen, ein Großbuchstabe, eine Zahl, ein Sonderzeichen
     const passwortRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
 
-    // Passwortänderung nur prüfen, wenn mindestens ein Passwortfeld ausgefüllt wurde
     if (neuesPasswort || passwortBestaetigen) {
       if (!neuesPasswort || !passwortBestaetigen) {
         meldung.textContent = 'Bitte beide Passwortfelder ausfüllen.';
@@ -69,14 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Prüfen ob beide Passwörter übereinstimmen
       if (neuesPasswort !== passwortBestaetigen) {
         meldung.textContent = 'Die Passwörter stimmen nicht überein.';
         meldung.classList.add('text-danger');
         return;
       }
 
-      // Passwort gegen die Sicherheitsregel prüfen
       if (!passwortRegex.test(neuesPasswort)) {
         meldung.textContent = 'Das neue Passwort muss mindestens 8 Zeichen lang sein und mindestens einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten.';
         meldung.classList.add('text-danger');
@@ -84,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Alle geänderten Felder aus dem Formular auslesen
     const daten = {
       vorname: document.getElementById('vorname').value.trim(),
       nachname: document.getElementById('nachname').value.trim(),
@@ -95,11 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
       postleitzahl: document.getElementById('postleitzahl').value.trim(),
       ort: document.getElementById('ort').value.trim(),
       land: document.getElementById('land').value.trim(),
-      neuesPasswort: neuesPasswort // leer = kein Passwortwechsel
+      neuesPasswort: neuesPasswort
     };
 
     try {
-      // Änderungen per PUT-Request an den Server senden
       const response = await fetch('/benutzer/mein-konto', {
         method: 'PUT',
         headers: {
@@ -120,9 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
       meldung.textContent = 'Änderungen erfolgreich gespeichert.';
       meldung.classList.add('text-success');
 
-      // Kontodaten neu laden, damit Anzeige und urspruenglicheDaten aktuell sind
       await ladeKontodaten();
-
       wechsleInAnzeigemodus();
 
     } catch (error) {
@@ -133,19 +121,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Lädt die Kontodaten des eingeloggten Benutzers vom Server
+/**
+ * Lädt die Kontodaten des eingeloggten Benutzers vom Server
+ * und aktualisiert Anzeige, Formular und Bestellübersicht.
+ *
+ * @async
+ * @function ladeKontodaten
+ * @returns {Promise<void>}
+ */
 async function ladeKontodaten() {
   const meldung = document.getElementById('meldung');
 
   try {
-    // GET-Request an den Server – Session-Cookie wird automatisch mitgeschickt
     const response = await fetch('/benutzer/mein-konto', {
       method: 'GET',
       credentials: 'same-origin'
     });
 
     if (!response.ok) {
-      // Nicht eingeloggt: zur Login-Seite weiterleiten
       if (response.status === 401) {
         weiterleiten('/static/login.html');
         return;
@@ -156,7 +149,6 @@ async function ladeKontodaten() {
 
     const daten = await response.json();
 
-    // Daten zwischenspeichern für späteres Zurücksetzen beim Abbrechen
     urspruenglicheDaten = daten;
 
     setzeBegruessung(daten);
@@ -170,14 +162,25 @@ async function ladeKontodaten() {
   }
 }
 
-// Setzt die Begrüßung oben auf der Seite mit dem Vornamen des Benutzers
+/**
+ * Setzt die Begrüßung auf der Seite
+ * anhand des Vornamens des Benutzers.
+ *
+ * @function setzeBegruessung
+ * @param {Object} daten - Kontodaten des Benutzers
+ */
 function setzeBegruessung(daten) {
   const begruessung = document.getElementById('konto-begruessung');
   begruessung.textContent = `Hallo, ${daten.vorname}`;
 }
 
-// Befüllt den Anzeigebereich mit den aktuellen Kontodaten
-// Fallback auf '-' falls ein Feld leer ist
+/**
+ * Befüllt den Anzeigebereich mit den aktuellen Kontodaten.
+ * Leere Felder werden durch "-" ersetzt.
+ *
+ * @function fuelleAnzeige
+ * @param {Object} daten - Kontodaten des Benutzers
+ */
 function fuelleAnzeige(daten) {
   document.getElementById('anzeige-vorname').textContent = daten.vorname || '-';
   document.getElementById('anzeige-nachname').textContent = daten.nachname || '-';
@@ -190,7 +193,13 @@ function fuelleAnzeige(daten) {
   document.getElementById('anzeige-land').textContent = daten.land || '-';
 }
 
-// Befüllt das Bearbeitungsformular mit den aktuellen Kontodaten
+/**
+ * Befüllt das Bearbeitungsformular
+ * mit den aktuellen Kontodaten.
+ *
+ * @function fuelleFormular
+ * @param {Object} daten - Kontodaten des Benutzers
+ */
 function fuelleFormular(daten) {
   document.getElementById('vorname').value = daten.vorname || '';
   document.getElementById('nachname').value = daten.nachname || '';
@@ -203,7 +212,12 @@ function fuelleFormular(daten) {
   document.getElementById('land').value = daten.land || '';
 }
 
-// Wechselt zurück in den Anzeigemodus und setzt das Formular zurück
+/**
+ * Wechselt zurück in den Anzeigemodus,
+ * blendet das Formular aus und leert die Passwortfelder.
+ *
+ * @function wechsleInAnzeigemodus
+ */
 function wechsleInAnzeigemodus() {
   const bearbeitenButton = document.getElementById('bearbeiten-button');
   const kontoForm = document.getElementById('konto-form');
@@ -214,7 +228,6 @@ function wechsleInAnzeigemodus() {
   anzeigeBereich.style.display = 'block';
   bearbeitenButton.style.display = 'inline-block';
 
-  // Passwortfelder leeren, damit sie beim nächsten Bearbeiten leer sind
   document.getElementById('neues-passwort').value = '';
   document.getElementById('passwort-bestaetigen').value = '';
 
@@ -222,18 +235,24 @@ function wechsleInAnzeigemodus() {
   meldung.className = 'mt-4 text-center';
 }
 
+/**
+ * Lädt die Bestellungen des eingeloggten Benutzers
+ * und zeigt sie im Bestellungsbereich an.
+ *
+ * @async
+ * @function ladeBestellungen
+ * @returns {Promise<void>}
+ */
 async function ladeBestellungen() {
   const container = document.getElementById('bestellungen-container');
 
   try {
-    // Bestellungen des eingeloggten Benutzers vom Server laden
     const response = await fetch('/benutzer/meine-bestellungen', {
       method: 'GET',
       credentials: 'same-origin'
     });
 
     if (!response.ok) {
-      // Nicht eingeloggt: zur Login-Seite weiterleiten
       if (response.status === 401) {
         weiterleiten('/static/login.html');
         return;
@@ -250,26 +269,27 @@ async function ladeBestellungen() {
   }
 }
 
-// Rendert alle Bestellungen als aufklappbare Karten im Container
+/**
+ * Rendert alle Bestellungen als aufklappbare Karten.
+ *
+ * @function zeigeBestellungen
+ * @param {Array<Object>} bestellungen - Liste der Bestellungen
+ */
 function zeigeBestellungen(bestellungen) {
   const container = document.getElementById('bestellungen-container');
 
-  // Keine Bestellungen vorhanden: Hinweistext anzeigen
   if (!bestellungen || bestellungen.length === 0) {
     container.innerHTML = '<p class="text-muted mb-0">Sie haben noch keine Bestellungen.</p>';
     return;
   }
 
   container.innerHTML = bestellungen.map((bestellung) => {
-    // Datum, Preis und Adresse für die Anzeige formatieren
     const datum = formatiereDatum(bestellung.erstellungszeitpunkt);
     const preis = formatierePreis(bestellung.gesamtpreis);
     const adresse = formatiereAdresse(bestellung);
 
     return `
       <div class="card mb-3 border">
-
-        <!-- Klickbarer Kopfbereich – öffnet/schließt die Artikeldetails -->
         <div class="card-body" style="cursor: pointer;" onclick="toggleBestellungDetails(${bestellung.id})">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="h5 mb-0">Bestellung #${bestellung.id}</h3>
@@ -309,19 +329,24 @@ function zeigeBestellungen(bestellungen) {
           </div>
         </div>
 
-        <!-- Aufklappbarer Bereich mit Artikeldetails (standardmäßig versteckt) -->
         <div id="details-${bestellung.id}" style="display: none;">
           <div class="card-body border-top" id="details-inhalt-${bestellung.id}">
             <p class="text-muted mb-0">Wird geladen...</p>
           </div>
         </div>
-
       </div>
     `;
   }).join('');
 }
 
-// Wandelt einen Datums-String in deutsches Format um (z.B. "29.03.2026")
+/**
+ * Formatiert ein Datum für die Anzeige
+ * im deutschen Datumsformat.
+ *
+ * @function formatiereDatum
+ * @param {string} datumString - Datum als String
+ * @returns {string} Formatiertes Datum
+ */
 function formatiereDatum(datumString) {
   const datum = new Date(datumString);
 
@@ -332,7 +357,13 @@ function formatiereDatum(datumString) {
   });
 }
 
-// Formatiert einen Preis als deutschen Währungsbetrag (z.B. "29,98 €")
+/**
+ * Formatiert einen Preis als deutschen Währungsbetrag.
+ *
+ * @function formatierePreis
+ * @param {number|string} preis - Preiswert
+ * @returns {string} Formatierter Preis
+ */
 function formatierePreis(preis) {
   return Number(preis).toLocaleString('de-DE', {
     style: 'currency',
@@ -340,26 +371,33 @@ function formatierePreis(preis) {
   });
 }
 
-// Öffnet oder schließt die Artikeldetails einer Bestellung
-// Beim ersten Öffnen werden die Daten vom Server geladen
+/**
+ * Öffnet oder schließt die Artikeldetails einer Bestellung.
+ * Lädt die Bestellpositionen beim ersten Öffnen vom Server nach.
+ *
+ * @async
+ * @function toggleBestellungDetails
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
 async function toggleBestellungDetails(bestellungId) {
   const detailsDiv = document.getElementById(`details-${bestellungId}`);
   const chevron = document.getElementById(`chevron-${bestellungId}`);
   const inhalt = document.getElementById(`details-inhalt-${bestellungId}`);
 
   if (detailsDiv.style.display === 'none') {
-    // Aufklappen
     detailsDiv.style.display = 'block';
     chevron.classList.replace('bi-chevron-down', 'bi-chevron-up');
 
-    // Artikel nur laden, wenn noch nicht geladen
     if (inhalt.dataset.geladen !== 'true') {
       try {
         const response = await fetch(`/bestellung/${bestellungId}`, {
           credentials: 'same-origin'
         });
 
-        if (!response.ok) throw new Error('Fehler beim Laden');
+        if (!response.ok) {
+          throw new Error('Fehler beim Laden');
+        }
 
         const daten = await response.json();
         zeigeBestellungsPositionen(inhalt, daten.positionen);
@@ -369,13 +407,19 @@ async function toggleBestellungDetails(bestellungId) {
       }
     }
   } else {
-    // Zuklappen
     detailsDiv.style.display = 'none';
     chevron.classList.replace('bi-chevron-up', 'bi-chevron-down');
   }
 }
 
-// Zeigt die bestellten Artikel mit Bild, Name, Anzahl und Preisen an
+/**
+ * Zeigt die Positionen einer Bestellung
+ * mit Bild, Name, Anzahl und Preisen an.
+ *
+ * @function zeigeBestellungsPositionen
+ * @param {HTMLElement} container - Zielcontainer für die Positionen
+ * @param {Array<Object>} positionen - Liste der Bestellpositionen
+ */
 function zeigeBestellungsPositionen(container, positionen) {
   if (!positionen || positionen.length === 0) {
     container.innerHTML = '<p class="text-muted mb-0">Keine Artikel gefunden.</p>';
@@ -400,8 +444,14 @@ function zeigeBestellungsPositionen(container, positionen) {
   `;
 }
 
-// Setzt die Lieferadresse aus den einzelnen Feldern zu einem lesbaren String zusammen
-// Adresszusatz wird nur eingefügt, wenn er vorhanden ist
+/**
+ * Formatiert die Lieferadresse einer Bestellung
+ * als lesbaren zusammenhängenden String.
+ *
+ * @function formatiereAdresse
+ * @param {Object} bestellung - Bestelldaten mit Adressfeldern
+ * @returns {string} Formatierte Adresse
+ */
 function formatiereAdresse(bestellung) {
   let adresse = `${bestellung.strasse} ${bestellung.hausnummer}`;
 

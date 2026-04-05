@@ -8,30 +8,31 @@
   Erstellt: 05.04.2026
 */
 
-
 'use strict';
 
-/**
- * Wartet, bis die Seite geladen ist.
- * Danach wird die Bestell-ID aus der URL gelesen und die Bestellung geladen.
- */
+// Lädt die Bestelldetails nach dem Aufbau des DOM
 document.addEventListener('DOMContentLoaded', () => {
   ladeBestelldetails();
 });
 
 /**
- * Lädt die Details einer Bestellung anhand der ID aus der URL.
+ * Liest die Bestell-ID aus der URL, lädt die zugehörigen Bestelldaten
+ * vom Server und zeigt allgemeine Informationen, Lieferadresse
+ * sowie Bestellpositionen auf der Seite an.
+ *
+ * @async
+ * @function ladeBestelldetails
+ * @returns {Promise<void>}
  */
 async function ladeBestelldetails() {
   const bestellungInfo = document.getElementById('bestellung-info');
   const lieferadresseInfo = document.getElementById('lieferadresse-info');
   const positionenTabelle = document.getElementById('positionen-tabelle');
 
-  // Bestell-ID aus der URL lesen
   const urlParameter = new URLSearchParams(window.location.search);
   const bestellungId = urlParameter.get('id');
 
-  // Prüfen, ob eine ID vorhanden ist
+  // Ohne Bestell-ID können keine Daten geladen werden
   if (!bestellungId) {
     bestellungInfo.innerHTML = '<p class="text-danger mb-0">Keine Bestell-ID angegeben.</p>';
     lieferadresseInfo.innerHTML = '<p class="text-danger mb-0">Keine Lieferadresse verfügbar.</p>';
@@ -54,7 +55,6 @@ async function ladeBestelldetails() {
     const bestellung = daten.bestellung;
     const positionen = daten.positionen;
 
-    // Allgemeine Informationen zur Bestellung anzeigen
     bestellungInfo.innerHTML = `
       <p><strong>Bestell-ID:</strong> ${bestellung.id ?? '-'}</p>
       <p><strong>Kunde:</strong> ${bestellung.vorname ?? '-'} ${bestellung.nachname ?? '-'}</p>
@@ -66,14 +66,12 @@ async function ladeBestelldetails() {
       <p class="mb-0"><strong>Erstellt am:</strong> ${formatiereDatum(bestellung.erstellungszeitpunkt)}</p>
     `;
 
-    // Lieferadresse anzeigen
     lieferadresseInfo.innerHTML = `
       <p><strong>Straße:</strong> ${bestellung.strasse ?? '-'} ${bestellung.hausnummer ?? ''}</p>
       <p><strong>Postleitzahl / Ort:</strong> ${bestellung.postleitzahl ?? '-'} ${bestellung.ort ?? '-'}</p>
       <p class="mb-0"><strong>Land:</strong> ${bestellung.land ?? '-'}</p>
     `;
 
-    // Bestellpositionen anzeigen
     if (!Array.isArray(positionen) || positionen.length === 0) {
       positionenTabelle.innerHTML = `
         <tr>
@@ -114,10 +112,12 @@ async function ladeBestelldetails() {
 }
 
 /**
- * Formatiert ein Datum für eine besser lesbare Anzeige.
+ * Formatiert ein Datum für die Anzeige im deutschen Format.
+ * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
  *
- * @param {string|null|undefined} wert - Das Datum aus dem Backend.
- * @returns {string} Formatiertes Datum oder "-".
+ * @function formatiereDatum
+ * @param {string|null|undefined} wert - Datum aus dem Backend
+ * @returns {string} Formatiertes Datum oder "-"
  */
 function formatiereDatum(wert) {
   if (!wert) {
@@ -134,10 +134,12 @@ function formatiereDatum(wert) {
 }
 
 /**
- * Formatiert einen Preis mit zwei Nachkommastellen.
+ * Formatiert einen Preis mit zwei Nachkommastellen und Euro-Zeichen.
+ * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
  *
- * @param {number|string|null|undefined} wert - Der Preis aus dem Backend.
- * @returns {string} Formatierter Preis oder "-".
+ * @function formatierePreis
+ * @param {number|string|null|undefined} wert - Preis aus dem Backend
+ * @returns {string} Formatierter Preis oder "-"
  */
 function formatierePreis(wert) {
   if (wert === null || wert === undefined || wert === '') {

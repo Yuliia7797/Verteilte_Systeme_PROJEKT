@@ -11,40 +11,36 @@
   Erstellt: 05.04.2026
 */
 
+'use strict';
 
-/*
-  Diese Funktion erstellt die HTML-Karte
-  für einen einzelnen Artikel.
-*/
+/**
+ * Erstellt die HTML-Karte für einen einzelnen Artikel.
+ *
+ * @function createArtikelCard
+ * @param {Object} artikelItem - Artikeldaten aus dem Backend
+ * @returns {string} HTML-Markup für die Artikelkarte
+ */
 function createArtikelCard(artikelItem) {
-  /*
-    Für jeden Artikel wird eine Karte mit Bild,
-    Name, Beschreibung, Preis und Button erstellt.
-  */
   const istVerfuegbar = (artikelItem.lagerbestand ?? 0) > 0;
+
   return `
     <div class="col-md-4">
       <div class="card h-100">
-        <!-- Klick auf das Bild führt zur Artikeldetailseite -->
         <a href="/static/artikel.html?id=${artikelItem.id}">
           <img src="${artikelItem.bild_url}" alt="${artikelItem.bezeichnung}">
         </a>
 
         <div class="card-body">
-          <!-- Klick auf den Artikelnamen führt ebenfalls zur Detailseite -->
           <h5 class="card-title">
             <a href="/static/artikel.html?id=${artikelItem.id}" class="text-decoration-none text-dark">
               ${artikelItem.bezeichnung}
             </a>
           </h5>
 
-          <!-- Kurze Artikelbeschreibung -->
           <p class="card-text">${artikelItem.beschreibung || ''}</p>
 
-          <!-- Preis mit zwei Nachkommastellen -->
           <p class="fw-bold">${Number(artikelItem.preis).toFixed(2)} €</p>
 
-          <!-- Später kann hier die Warenkorb-Funktion ergänzt werden -->
           <button
             type="button"
             class="btn btn-main js-in-warenkorb"
@@ -60,27 +56,23 @@ function createArtikelCard(artikelItem) {
   `;
 }
 
-/*
-  Diese Funktion fügt alle geladenen Artikel
-  in den Container der Startseite ein.
-*/
+/**
+ * Rendert alle geladenen Artikel im Container der Startseite.
+ * Zeigt bei leerer Liste eine entsprechende Meldung an.
+ *
+ * @function renderArtikel
+ * @param {Array<Object>} artikel - Liste der Artikel
+ */
 function renderArtikel(artikel) {
-  /* Den Container aus der HTML-Seite holen */
   const container = document.getElementById('artikel-container');
 
-  /* Prüfen, ob der Container im HTML existiert */
   if (!container) {
-    console.error('Der Container mit der ID "artikel-container" wurde nicht gefunden.');
+    console.error('Container "artikel-container" nicht gefunden.');
     return;
   }
 
-  /*
-    Sicherheitshalber alten Inhalt löschen,
-    damit keine doppelten Karten angezeigt werden.
-  */
   container.innerHTML = '';
 
-  /* Prüfen, ob überhaupt Artikel vorhanden sind */
   if (artikel.length === 0) {
     container.innerHTML = `
       <div class="col-12">
@@ -90,51 +82,38 @@ function renderArtikel(artikel) {
     return;
   }
 
-  /* Über alle Artikel aus der Datenbank laufen */
-  artikel.forEach(artikelItem => {
-    /* Für jeden Artikel eine Karte erzeugen */
+  artikel.forEach((artikelItem) => {
     const card = createArtikelCard(artikelItem);
-
-    /* Die erzeugte Karte in den Container einfügen */
     container.innerHTML += card;
   });
 }
 
-/*
-  Diese Funktion lädt alle Artikel vom Backend
-  und zeigt sie auf der Startseite an.
-*/
+/**
+ * Lädt alle Artikel vom Server und zeigt sie auf der Startseite an.
+ *
+ * @async
+ * @function loadArtikel
+ * @returns {Promise<void>}
+ */
 async function loadArtikel() {
   try {
-    /*
-      Anfrage an das Backend senden.
-      Die Route /artikel liefert alle Artikel als JSON zurück.
-    */
     const response = await fetch('/artikel');
 
-    /* Prüfen, ob die Serverantwort erfolgreich war */
     if (!response.ok) {
       throw new Error('Fehler beim Laden der Artikel vom Server');
     }
 
-    /* Antwort in JSON umwandeln */
     const artikel = await response.json();
-
-    /* Alle geladenen Artikel im Container anzeigen */
     renderArtikel(artikel);
-
   } catch (error) {
-    /* Falls beim Laden etwas schiefgeht, Fehler in der Konsole anzeigen */
     console.error('Fehler beim Laden der Artikel:', error);
   }
 }
 
-/*
-  Warten, bis die komplette HTML-Seite geladen ist.
-  Erst danach sollen die Artikel eingefügt werden.
-*/
-document.addEventListener('DOMContentLoaded', loadArtikel);
-
+/**
+ * Behandelt Klicks auf den "In den Warenkorb"-Button
+ * in der Artikelübersicht und fügt den Artikel dem Warenkorb hinzu.
+ */
 document.addEventListener('click', async (event) => {
   const button = event.target.closest('.js-in-warenkorb');
 
@@ -142,18 +121,23 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
-  console.log('Button geklickt');
-
   const lagerbestand = Number(button.dataset.lagerbestand) || 0;
 
   if (lagerbestand <= 0) {
     alert('Dieser Artikel ist momentan nicht verfügbar.');
     return;
   }
+
   const artikelId = Number.parseInt(button.dataset.artikelId, 10);
-  console.log('Artikel-ID:', artikelId);
+
+  if (!Number.isInteger(artikelId)) {
+    alert('Ungültige Artikel-ID.');
+    return;
+  }
 
   try {
+    button.disabled = true;
+
     const response = await fetch('/warenkorb/positionen', {
       method: 'POST',
       headers: {
@@ -166,23 +150,31 @@ document.addEventListener('click', async (event) => {
       })
     });
 
-    console.log('HTTP-Status:', response.status);
+    let data = {};
 
-    const data = await response.json();
-    console.log('Antwort:', data);
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
 
     if (response.status === 401) {
-      alert('Nicht eingeloggt');
+      alert('Bitte melde dich an, um Artikel in den Warenkorb zu legen.');
       return;
     }
 
     if (!response.ok) {
-      throw new Error(data.message || 'Fehler');
+      throw new Error(data.message || 'Fehler beim Hinzufügen zum Warenkorb');
     }
 
-    alert('Artikel wurde hinzugefügt');
+    alert(data.message || 'Artikel wurde hinzugefügt.');
   } catch (error) {
     console.error('Fehler beim Hinzufügen:', error);
     alert(error.message || 'Fehler beim Hinzufügen');
+  } finally {
+    button.disabled = false;
   }
 });
+
+// Lädt die Artikelübersicht nach dem Aufbau des DOM
+document.addEventListener('DOMContentLoaded', loadArtikel);

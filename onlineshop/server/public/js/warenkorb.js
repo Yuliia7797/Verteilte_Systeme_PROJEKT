@@ -16,10 +16,21 @@
 
 'use strict';
 
+/**
+ * Initialisiert die Warenkorb-Seite nach dem Laden des DOM.
+ */
 document.addEventListener('DOMContentLoaded', () => {
   initialisiereWarenkorb();
 });
 
+/**
+ * Registriert alle Event-Handler der Warenkorb-Seite
+ * und lädt anschließend die aktuellen Warenkorbdaten.
+ *
+ * @async
+ * @function initialisiereWarenkorb
+ * @returns {Promise<void>}
+ */
 async function initialisiereWarenkorb() {
   const leerenButton = document.getElementById('warenkorb-leeren-button');
   const zurKasseButton = document.getElementById('zur-kasse-button');
@@ -125,6 +136,14 @@ async function initialisiereWarenkorb() {
   await ladeWarenkorb();
 }
 
+/**
+ * Lädt den aktuellen Warenkorb des Benutzers vom Server
+ * und rendert die Ansicht abhängig vom Ergebnis.
+ *
+ * @async
+ * @function ladeWarenkorb
+ * @returns {Promise<void>}
+ */
 async function ladeWarenkorb() {
   const ladeanzeige = document.getElementById('warenkorb-ladeanzeige');
   const leerContainer = document.getElementById('warenkorb-leer');
@@ -183,6 +202,12 @@ async function ladeWarenkorb() {
   }
 }
 
+/**
+ * Rendert die Ansicht für nicht eingeloggte Benutzer
+ * und setzt die Zusammenfassung auf 0 zurück.
+ *
+ * @function renderNichtEingeloggt
+ */
 function renderNichtEingeloggt() {
   const ladeanzeige = document.getElementById('warenkorb-ladeanzeige');
   const leerContainer = document.getElementById('warenkorb-leer');
@@ -215,6 +240,13 @@ function renderNichtEingeloggt() {
   });
 }
 
+/**
+ * Rendert den Warenkorb mit allen Positionen
+ * und aktualisiert die Zusammenfassung.
+ *
+ * @function renderWarenkorb
+ * @param {Object} data - Warenkorbdaten vom Backend
+ */
 function renderWarenkorb(data) {
   const ladeanzeige = document.getElementById('warenkorb-ladeanzeige');
   const leerContainer = document.getElementById('warenkorb-leer');
@@ -339,6 +371,16 @@ function renderWarenkorb(data) {
   });
 }
 
+/**
+ * Aktualisiert die Menge eines Artikels im Warenkorb
+ * und lädt den Warenkorb danach neu.
+ *
+ * @async
+ * @function aktualisiereArtikelmenge
+ * @param {number} artikelId - ID des Artikels
+ * @param {number} neueAnzahl - Neue Anzahl im Warenkorb
+ * @returns {Promise<void>}
+ */
 async function aktualisiereArtikelmenge(artikelId, neueAnzahl) {
   try {
     const response = await fetch(`/warenkorb/positionen/${artikelId}`, {
@@ -364,6 +406,15 @@ async function aktualisiereArtikelmenge(artikelId, neueAnzahl) {
   }
 }
 
+/**
+ * Entfernt einen Artikel aus dem Warenkorb
+ * und lädt den Warenkorb danach neu.
+ *
+ * @async
+ * @function entferneArtikel
+ * @param {number} artikelId - ID des zu entfernenden Artikels
+ * @returns {Promise<void>}
+ */
 async function entferneArtikel(artikelId) {
   try {
     const response = await fetch(`/warenkorb/positionen/${artikelId}`, {
@@ -385,6 +436,13 @@ async function entferneArtikel(artikelId) {
   }
 }
 
+/**
+ * Aktualisiert die Preis- und Mengenzusammenfassung
+ * im Warenkorbbereich.
+ *
+ * @function aktualisiereZusammenfassung
+ * @param {Object} zusammenfassung - Zusammenfassungsdaten des Warenkorbs
+ */
 function aktualisiereZusammenfassung(zusammenfassung) {
   const artikelanzahl = document.getElementById('summary-artikelanzahl');
   const zwischensumme = document.getElementById('summary-zwischensumme');
@@ -408,6 +466,14 @@ function aktualisiereZusammenfassung(zusammenfassung) {
   }
 }
 
+/**
+ * Formatiert einen Wert als Euro-Betrag
+ * im deutschen Zahlenformat.
+ *
+ * @function formatPreis
+ * @param {number|string} wert - Zu formatierender Preiswert
+ * @returns {string} Formatierter Preis
+ */
 function formatPreis(wert) {
   const nummer = Number(wert) || 0;
 
@@ -417,6 +483,14 @@ function formatPreis(wert) {
   });
 }
 
+/**
+ * Zeigt eine Statusmeldung im Warenkorbbereich an
+ * und blendet sie nach kurzer Zeit wieder aus.
+ *
+ * @function zeigeMeldung
+ * @param {string} text - Meldungstext
+ * @param {string} [typ='success'] - Bootstrap-Typ der Meldung
+ */
 function zeigeMeldung(text, typ = 'success') {
   const meldung = document.getElementById('warenkorb-meldung');
 
@@ -431,6 +505,13 @@ function zeigeMeldung(text, typ = 'success') {
   }, 3000);
 }
 
+/**
+ * Escaped HTML-Sonderzeichen für eine sichere Ausgabe im DOM.
+ *
+ * @function escapeHtml
+ * @param {string} text - Zu escapender Text
+ * @returns {string} Sicherer HTML-Text
+ */
 function escapeHtml(text) {
   return String(text ?? '')
     .replaceAll('&', '&amp;')

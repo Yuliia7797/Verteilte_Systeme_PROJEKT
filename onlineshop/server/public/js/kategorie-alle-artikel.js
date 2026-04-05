@@ -12,22 +12,27 @@
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
 */
-
 'use strict';
 
-/*
-  Diese Funktion liest die Kategorie-ID aus der URL aus.
-  Beispiel: kategorie.html?id=2
-*/
+/**
+ * Liest die Kategorie-ID aus der URL.
+ *
+ * @function getKategorieIdFromUrl
+ * @returns {string|null} Kategorie-ID oder null
+ */
 function getKategorieIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id');
 }
 
-/*
-  Diese Funktion sucht den Namen der aktuellen Kategorie
-  und setzt damit die Überschrift der Seite sowie den Seitentitel.
-*/
+/**
+ * Setzt den Namen der aktuellen Kategorie als Seitenüberschrift
+ * und aktualisiert zusätzlich den Seitentitel.
+ *
+ * @function setKategorieTitel
+ * @param {Array<Object>} kategorien - Liste aller Kategorien
+ * @param {string} kategorieId - Aktuelle Kategorie-ID aus der URL
+ */
 function setKategorieTitel(kategorien, kategorieId) {
   const titleElement = document.getElementById('kategorie-title');
 
@@ -49,10 +54,13 @@ function setKategorieTitel(kategorien, kategorieId) {
   }
 }
 
-/*
-  Diese Funktion erstellt die HTML-Karten
-  für alle Artikel der ausgewählten Kategorie.
-*/
+/**
+ * Rendert alle Artikel der ausgewählten Kategorie
+ * als Karten im Container.
+ *
+ * @function renderKategorieArtikel
+ * @param {Array<Object>} artikel - Liste der Artikel
+ */
 function renderKategorieArtikel(artikel) {
   const container = document.getElementById('kategorie-artikel-container');
 
@@ -74,29 +82,25 @@ function renderKategorieArtikel(artikel) {
 
   artikel.forEach(artikelItem => {
     const istVerfuegbar = (artikelItem.lagerbestand ?? 0) > 0;
+
     const card = `
       <div class="col-md-4">
         <div class="card h-100">
-          <!-- Klick auf das Bild führt zur Artikeldetailseite -->
           <a href="/static/artikel.html?id=${artikelItem.id}">
             <img src="${artikelItem.bild_url}" alt="${artikelItem.bezeichnung}">
           </a>
 
           <div class="card-body">
-            <!-- Klick auf den Artikelnamen führt ebenfalls zur Detailseite -->
             <h5 class="card-title">
               <a href="/static/artikel.html?id=${artikelItem.id}" class="text-decoration-none text-dark">
                 ${artikelItem.bezeichnung}
               </a>
             </h5>
 
-            <!-- Kurze Artikelbeschreibung -->
             <p class="card-text">${artikelItem.beschreibung || ''}</p>
 
-            <!-- Preis mit zwei Nachkommastellen -->
             <p class="fw-bold">${Number(artikelItem.preis).toFixed(2)} €</p>
 
-            <!-- Button zum Hinzufügen in den Warenkorb -->
             <button
               type="button"
               class="btn btn-main js-in-warenkorb"
@@ -115,10 +119,12 @@ function renderKategorieArtikel(artikel) {
   });
 }
 
-/*
-  Diese Funktion zeigt eine Fehlermeldung
-  direkt im Artikel-Container an.
-*/
+/**
+ * Zeigt eine Fehlermeldung im Artikel-Container an.
+ *
+ * @function renderKategorieArtikelFehler
+ * @param {string} message - Anzuzeigende Fehlermeldung
+ */
 function renderKategorieArtikelFehler(message) {
   const container = document.getElementById('kategorie-artikel-container');
 
@@ -136,11 +142,14 @@ function renderKategorieArtikelFehler(message) {
   `;
 }
 
-/*
-  Diese Funktion lädt:
-  1. die Kategorien, um den Namen der aktuellen Kategorie zu finden
-  2. die Artikel dieser Kategorie, um sie auf der Seite anzuzeigen
-*/
+/**
+ * Lädt die Kategorien und die Artikel der ausgewählten Kategorie
+ * und rendert die Seite entsprechend.
+ *
+ * @async
+ * @function loadKategorieArtikel
+ * @returns {Promise<void>}
+ */
 async function loadKategorieArtikel() {
   try {
     const kategorieId = getKategorieIdFromUrl();
@@ -174,17 +183,21 @@ async function loadKategorieArtikel() {
   }
 }
 
-/*
-  Diese Funktion behandelt Klicks auf die
-  "In den Warenkorb"-Buttons in der Kategorieansicht.
-*/
+/**
+ * Behandelt Klicks auf "In den Warenkorb"-Buttons
+ * und fügt Artikel dem Warenkorb hinzu.
+ *
+ * @async
+ * @param {MouseEvent} event - Klickereignis im Dokument
+ * @returns {Promise<void>}
+ */
 document.addEventListener('click', async (event) => {
   const button = event.target.closest('.js-in-warenkorb');
 
   if (!button) {
     return;
   }
-  
+
   const lagerbestand = Number(button.dataset.lagerbestand) || 0;
 
   if (lagerbestand <= 0) {
@@ -218,7 +231,7 @@ document.addEventListener('click', async (event) => {
 
     try {
       data = await response.json();
-    } catch (jsonError) {
+    } catch {
       data = {};
     }
 
@@ -241,8 +254,8 @@ document.addEventListener('click', async (event) => {
   }
 });
 
-/*
-  Warten, bis die HTML-Seite vollständig geladen ist.
-  Erst danach sollen die Artikel der ausgewählten Kategorie geladen werden.
-*/
+/**
+ * Lädt die Artikel der ausgewählten Kategorie,
+ * nachdem das DOM vollständig aufgebaut ist.
+ */
 document.addEventListener('DOMContentLoaded', loadKategorieArtikel);
