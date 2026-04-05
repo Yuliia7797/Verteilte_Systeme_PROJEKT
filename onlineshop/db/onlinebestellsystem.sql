@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 05. Apr 2026 um 22:20
+-- Erstellungszeit: 05. Apr 2026 um 22:40
 -- Server-Version: 12.2.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
@@ -106,9 +106,9 @@ CREATE TABLE `aufgabe` (
 --
 
 INSERT INTO `aufgabe` (`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`) VALUES
-(1, 1, 30, 'zahlung_pruefen', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:30', '2026-04-05 20:42:30'),
-(2, 1, 28, 'lager_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:34', '2026-04-05 20:42:34'),
-(3, 1, 28, 'bestaetigung_senden', 'zugewiesen', 0, NULL, '2026-04-05 20:42:30', NULL, NULL);
+(1, 1, NULL, 'zahlung_pruefen', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:30', '2026-04-05 20:42:30'),
+(2, 1, NULL, 'lager_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:34', '2026-04-05 20:42:34'),
+(3, 1, 31, 'bestaetigung_senden', 'zugewiesen', 0, NULL, '2026-04-05 20:42:30', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -253,6 +253,13 @@ CREATE TABLE `sessions` (
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Daten für Tabelle `sessions`
+--
+
+INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
+('rqBYsUrgzRt5wnSF31fbqho-2Fkj72-O', 1775431411, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-04-05T23:23:06.612Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":6,\"vorname\":\"Lea\",\"nachname\":\"Seiler\",\"email\":\"leas2000@gmx.de\",\"rolle\":\"kunde\"}}');
+
 -- --------------------------------------------------------
 
 --
@@ -273,7 +280,7 @@ CREATE TABLE `warenkorb` (
 
 INSERT INTO `warenkorb` (`id`, `benutzer_id`, `gesamtpreis`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
 (1, 1, 0.00, '2026-03-30 16:47:38', '2026-03-30 17:02:22'),
-(2, 6, 0.00, '2026-04-05 20:41:51', '2026-04-05 20:42:30');
+(2, 6, 0.00, '2026-04-05 20:41:51', '2026-04-05 22:23:25');
 
 -- --------------------------------------------------------
 
@@ -311,9 +318,9 @@ CREATE TABLE `worker` (
 --
 
 INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(28, 'allgemein', 'aktiv', '2026-04-05 22:20:39', '2026-04-05 20:40:24'),
-(29, 'allgemein', 'aktiv', '2026-04-05 22:20:40', '2026-04-05 20:40:24'),
-(30, 'allgemein', 'aktiv', '2026-04-05 22:20:40', '2026-04-05 20:40:25');
+(31, 'allgemein', 'aktiv', '2026-04-05 22:39:58', '2026-04-05 22:22:28'),
+(32, 'allgemein', 'aktiv', '2026-04-05 22:39:58', '2026-04-05 22:22:28'),
+(33, 'allgemein', 'aktiv', '2026-04-05 22:39:58', '2026-04-05 22:22:28');
 
 --
 -- Indizes der exportierten Tabellen
@@ -472,7 +479,7 @@ ALTER TABLE `warenkorb_position`
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- Constraints der exportierten Tabellen

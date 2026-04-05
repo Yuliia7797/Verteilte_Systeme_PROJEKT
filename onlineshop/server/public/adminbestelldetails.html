@@ -6,125 +6,179 @@
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Datum: 05.04.2026
 -->
+
 <!DOCTYPE html>
+
 <html lang="de">
+
+<!-- =========================
+     HEAD / METADATEN & STYLES
+========================= -->
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bestelldetails - MyShop</title>
 
-  <!-- Bootstrap CSS für Layout und responsive Darstellung -->
+  <!-- Bootstrap CSS (Layout & Responsivität) -->
+
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
 
-  <!-- Bootstrap Icons für Symbole -->
+  <!-- Bootstrap Icons (Symbole) -->
+
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
   >
 
-  <!-- Eigene CSS-Datei -->
+  <!-- Eigenes Stylesheet -->
+
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-  <!-- Platzhalter für den Header -->
+  <!-- =========================
+       HEADER (dynamisch geladen)
+  ========================= -->
+
   <div id="header-placeholder"></div>
+
+  <!-- =========================
+       HAUPTINHALT BESTELLDETAILS
+  ========================= -->
 
   <main class="py-5">
     <div class="container">
-      <!-- Überschrift der Seite -->
-      <h1 class="section-title text-center mb-5">Bestelldetails</h1>
 
-      <!-- Bereich für allgemeine Bestellinformationen -->
-      <section class="mb-5">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h2 class="h4 mb-4">Allgemeine Informationen</h2>
+```
+  <!-- Seitentitel -->
+  <h1 class="section-title text-center mb-5">Bestelldetails</h1>
 
-            <div id="bestellung-info">
-              <p class="text-muted mb-0">Lade Bestelldaten...</p>
-            </div>
-          </div>
+  <!-- =========================
+       ALLGEMEINE INFORMATIONEN
+  ========================= -->
+  <section class="mb-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h4 mb-4">Allgemeine Informationen</h2>
+
+        <div id="bestellung-info">
+          <!-- Wird dynamisch geladen -->
+          <p class="text-muted mb-0">Lade Bestelldaten...</p>
         </div>
-      </section>
-
-      <!-- Bereich für die Lieferadresse -->
-      <section class="mb-5">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h2 class="h4 mb-4">Lieferadresse</h2>
-
-            <div id="lieferadresse-info">
-              <p class="text-muted mb-0">Lade Lieferadresse...</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Bereich für die Bestellpositionen -->
-      <section class="mb-5">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h2 class="h4 mb-4">Bestellpositionen</h2>
-
-            <div class="table-responsive">
-              <table class="table table-bordered table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>Artikel-ID</th>
-                    <th>Artikel</th>
-                    <th>Anzahl</th>
-                    <th>Einzelpreis</th>
-                    <th>Gesamtpreis</th>
-                  </tr>
-                </thead>
-                <tbody id="positionen-tabelle">
-                  <tr>
-                    <td colspan="5" class="text-center">Lade Positionen...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Bereich für Navigation -->
-      <section>
-        <div class="d-flex justify-content-between flex-wrap gap-2">
-          <a href="adminbestellungen.html" class="btn btn-outline-secondary">
-            Zurück zur Bestellverwaltung
-          </a>
-        </div>
-      </section>
+      </div>
     </div>
+  </section>
+
+  <!-- =========================
+       LIEFERADRESSE
+  ========================= -->
+  <section class="mb-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h4 mb-4">Lieferadresse</h2>
+
+        <div id="lieferadresse-info">
+          <!-- Wird dynamisch geladen -->
+          <p class="text-muted mb-0">Lade Lieferadresse...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================
+       BESTELLPOSITIONEN
+  ========================= -->
+  <section class="mb-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h4 mb-4">Bestellpositionen</h2>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Artikel-ID</th>
+                <th>Artikel</th>
+                <th>Anzahl</th>
+                <th>Einzelpreis</th>
+                <th>Gesamtpreis</th>
+              </tr>
+            </thead>
+            <tbody id="positionen-tabelle">
+              <!-- Wird dynamisch mit JavaScript gefüllt -->
+              <tr>
+                <td colspan="5" class="text-center">
+                  Lade Positionen...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================
+       NAVIGATION / ZURÜCK
+  ========================= -->
+  <section>
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <a
+        href="adminbestellungen.html"
+        class="btn btn-outline-secondary"
+      >
+        Zurück zur Bestellverwaltung
+      </a>
+    </div>
+  </section>
+
+</div>
+```
+
   </main>
 
-  <!-- Platzhalter für den Footer -->
+  <!-- =========================
+       FOOTER (dynamisch geladen)
+  ========================= -->
+
   <div id="footer-placeholder"></div>
 
-  <!-- Header und Footer laden -->
+  <!-- =========================
+       SCRIPTS / FUNKTIONALITÄT
+  ========================= -->
+
+  <!-- Lädt Header & Footer -->
+
   <script src="js/include.js"></script>
 
-  <!-- Session prüfen und Header anpassen -->
+  <!-- Session prüfen & Header anpassen -->
+
   <script src="js/auth-header.js"></script>
 
   <!-- Suchfunktion im Header -->
+
   <script src="js/suche.js"></script>
 
-  <!-- Kategorien für das Dropdown-Menü im Header laden -->
+  <!-- Kategorien für Dropdown laden -->
+
   <script src="js/kategorien.js"></script>
 
   <!-- Admin-Zugriff prüfen -->
+
   <script src="js/admin.js"></script>
 
-  <!-- JavaScript für die Bestelldetails -->
+  <!-- Logik für Bestelldetails -->
+
   <script src="js/adminbestelldetails.js"></script>
 
-  <!-- Bootstrap JavaScript -->
+  <!-- Bootstrap JS (Interaktionen) -->
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
