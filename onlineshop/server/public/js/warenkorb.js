@@ -6,6 +6,11 @@
  * - Menge verringern
  * - Artikel entfernen
  * - gesamten Warenkorb leeren
+ *
+ * Zusätzlich wird der Lagerbestand berücksichtigt:
+ * - Wenn die aktuelle Anzahl den Lagerbestand erreicht,
+ *   wird der Plus-Button grau dargestellt.
+ * - Bei weiterem Klick erscheint eine Fehlermeldung.
  */
 
 'use strict';
@@ -49,9 +54,8 @@ async function initialisiereWarenkorb() {
   }
 
   if (zurKasseButton) {
-    leerenButton?.addEventListener;
     zurKasseButton.addEventListener('click', () => {
-      weiterleiten('/static/kasse.html');
+      window.location.href = '/static/kasse.html';
     });
   }
 
@@ -64,11 +68,18 @@ async function initialisiereWarenkorb() {
       if (plusButton) {
         const artikelId = Number.parseInt(plusButton.dataset.artikelId, 10);
         const aktuelleAnzahl = Number.parseInt(plusButton.dataset.anzahl, 10);
+        const lagerbestand = Number.parseInt(plusButton.dataset.lagerbestand, 10);
 
         if (Number.isInteger(artikelId) && Number.isInteger(aktuelleAnzahl)) {
+          if (Number.isInteger(lagerbestand) && aktuelleAnzahl >= lagerbestand) {
+            zeigeMeldung('Die angegebene Menge überschreitet den Lagerbestand.', 'danger');
+            return;
+          }
+
           await aktualisiereArtikelmenge(artikelId, aktuelleAnzahl + 1);
-          return;
         }
+
+        return;
       }
 
       if (minusButton) {
@@ -240,64 +251,74 @@ function renderWarenkorb(data) {
 
     if (positionenContainer) {
       positionenContainer.style.display = '';
-      positionenContainer.innerHTML = positionen.map((position) => `
-        <div class="border rounded p-3 mb-3">
-          <div class="row align-items-center g-3">
-            <div class="col-md-2 col-4">
-              <img
-                src="/static/${position.bild_url}"
-                alt="${escapeHtml(position.bezeichnung)}"
-                class="img-fluid rounded border"
-              >
-            </div>
+      positionenContainer.innerHTML = positionen.map((position) => {
+        const aktuelleAnzahl = Number(position.anzahl) || 0;
+        const lagerbestand = Number(position.lagerbestand) || 0;
+        const maxBestandErreicht = aktuelleAnzahl >= lagerbestand && lagerbestand > 0;
 
-            <div class="col-md-4 col-8">
-              <h3 class="h6 mb-1">${escapeHtml(position.bezeichnung)}</h3>
-              <p class="text-muted mb-1 small">${escapeHtml(position.beschreibung || '')}</p>
-              <p class="mb-0"><strong>Einzelpreis:</strong> ${formatPreis(position.einzelpreis)}</p>
-            </div>
+        return `
+          <div class="border rounded p-3 mb-3">
+            <div class="row align-items-center g-3">
+              <div class="col-md-2 col-4">
+                <img
+                  src="/static/${position.bild_url}"
+                  alt="${escapeHtml(position.bezeichnung)}"
+                  class="img-fluid rounded border"
+                >
+              </div>
 
-            <div class="col-md-3 col-sm-6">
-              <div class="d-flex align-items-center gap-2">
+              <div class="col-md-4 col-8">
+                <h3 class="h6 mb-1">${escapeHtml(position.bezeichnung)}</h3>
+                <p class="text-muted mb-1 small">${escapeHtml(position.beschreibung || '')}</p>
+                <p class="mb-1"><strong>Einzelpreis:</strong> ${formatPreis(position.einzelpreis)}</p>
+                <p class="mb-0 small text-muted">Verfügbar: ${lagerbestand} Stück</p>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm js-menge-verringern"
+                    data-artikel-id="${position.artikel_id}"
+                    data-anzahl="${position.anzahl}"
+                    title="Menge verringern"
+                  >
+                    <i class="bi bi-dash"></i>
+                  </button>
+
+                  <span class="fw-bold">${position.anzahl}</span>
+
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm js-menge-erhoehen ${maxBestandErreicht ? 'opacity-50' : ''}"
+                    data-artikel-id="${position.artikel_id}"
+                    data-anzahl="${position.anzahl}"
+                    data-lagerbestand="${lagerbestand}"
+                    title="${maxBestandErreicht ? 'Maximaler Lagerbestand erreicht' : 'Menge erhöhen'}"
+                  >
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="col-md-2 col-sm-4">
+                <strong>${formatPreis(position.gesamtpreis)}</strong>
+              </div>
+
+              <div class="col-md-1 col-sm-2 text-sm-end">
                 <button
                   type="button"
-                  class="btn btn-outline-secondary btn-sm js-menge-verringern"
+                  class="btn btn-outline-danger btn-sm js-artikel-entfernen"
                   data-artikel-id="${position.artikel_id}"
-                  data-anzahl="${position.anzahl}"
+                  title="Artikel entfernen"
                 >
-                  <i class="bi bi-dash"></i>
-                </button>
-
-                <span class="fw-bold">${position.anzahl}</span>
-
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm js-menge-erhoehen"
-                  data-artikel-id="${position.artikel_id}"
-                  data-anzahl="${position.anzahl}"
-                >
-                  <i class="bi bi-plus"></i>
+                  <i class="bi bi-trash"></i>
                 </button>
               </div>
             </div>
-
-            <div class="col-md-2 col-sm-4">
-              <strong>${formatPreis(position.gesamtpreis)}</strong>
-            </div>
-
-            <div class="col-md-1 col-sm-2 text-sm-end">
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm js-artikel-entfernen"
-                data-artikel-id="${position.artikel_id}"
-                title="Artikel entfernen"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     if (leerenButton) {

@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 05. Apr 2026 um 12:01
--- Server-Version: 12.0.2-MariaDB-ubu2404
+-- Erstellungszeit: 05. Apr 2026 um 20:44
+-- Server-Version: 12.2.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -45,7 +45,8 @@ CREATE TABLE `adresse` (
 --
 
 INSERT INTO `adresse` (`id`, `benutzer_id`, `strasse`, `hausnummer`, `adresszusatz`, `postleitzahl`, `ort`, `land`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 1, 'Straße', '1', NULL, '1234567', 'Stuttgart', 'Deutschland', '2026-03-29 14:49:19', '2026-03-29 14:49:19');
+(1, 1, 'Straße', '1', NULL, '1234567', 'Stuttgart', 'Deutschland', '2026-03-29 14:49:19', '2026-03-29 14:49:19'),
+(2, 6, 'A', '1', NULL, '12345', 'Stuttgart', 'Deutschland', '2026-04-05 20:41:37', '2026-04-05 20:41:37');
 
 -- --------------------------------------------------------
 
@@ -100,6 +101,15 @@ CREATE TABLE `aufgabe` (
   `endzeitpunkt` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Daten für Tabelle `aufgabe`
+--
+
+INSERT INTO `aufgabe` (`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`) VALUES
+(1, 1, 30, 'zahlung_pruefen', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:30', '2026-04-05 20:42:30'),
+(2, 1, 28, 'lager_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:34', '2026-04-05 20:42:34'),
+(3, 1, 28, 'bestaetigung_senden', 'zugewiesen', 0, NULL, '2026-04-05 20:42:30', NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -124,7 +134,8 @@ CREATE TABLE `benutzer` (
 INSERT INTO `benutzer` (`id`, `vorname`, `nachname`, `email`, `passwort_hash`, `rolle`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
 (1, 'Lea', 'Seiler', 'lea@1', '$2b$10$LzOZ5jVZ/if3dTa9YT0Fk.SE5hURCuZWR1NJl6U8VH/Jj0oSNOSG2', 'kunde', '2026-03-29 14:49:19', '2026-03-29 14:49:19'),
 (4, 'Admin', 'Demo', 'admin@test.de', '$2b$12$W2IKRxkWZLYzdxp9dn2QzurFzxB1RgzxALQobSD1I9gUWDHHZ2ucG', 'admin', '2026-03-29 12:40:25', '2026-04-05 11:57:33'),
-(5, 'Yuliia', 'Shostak', 'iushostak7@gmail.com', '$2b$10$FP8bO.n95bFYCnt8XG3SBurGggr5gvCR0ROes/5mBHqj0hiK7XTem', 'kunde', '2026-03-30 18:12:04', '2026-03-30 18:12:04');
+(5, 'Yuliia', 'Shostak', 'iushostak7@gmail.com', '$2b$10$FP8bO.n95bFYCnt8XG3SBurGggr5gvCR0ROes/5mBHqj0hiK7XTem', 'kunde', '2026-03-30 18:12:04', '2026-03-30 18:12:04'),
+(6, 'Lea', 'Seiler', 'leas2000@gmx.de', '$2b$10$U/hWvHAA2Cs1moksBpmsWOv1HMDZumxCMfZ2.WQY5nIvLGnZVXzCK', 'kunde', '2026-04-05 20:41:37', '2026-04-05 20:41:37');
 
 -- --------------------------------------------------------
 
@@ -141,6 +152,13 @@ CREATE TABLE `bestellposition` (
   `gesamtpreis` decimal(10,2) NOT NULL,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `bestellposition`
+--
+
+INSERT INTO `bestellposition` (`id`, `bestellung_id`, `artikel_id`, `anzahl`, `einzelpreis`, `gesamtpreis`, `erstellungszeitpunkt`) VALUES
+(1, 1, 2, 8, 99.99, 799.92, '2026-04-05 20:42:30');
 
 -- --------------------------------------------------------
 
@@ -159,6 +177,13 @@ CREATE TABLE `bestellung` (
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `bestellung`
+--
+
+INSERT INTO `bestellung` (`id`, `benutzer_id`, `lieferadresse_id`, `gesamtpreis`, `zahlungsmethode`, `zahlungsstatus`, `bestellstatus`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
+(1, 6, 2, 799.92, 'paypal', 'bezahlt', 'neu', '2026-04-05 20:42:30', '2026-04-05 20:42:30');
 
 -- --------------------------------------------------------
 
@@ -206,7 +231,7 @@ CREATE TABLE `lagerbestand` (
 
 INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`) VALUES
 (1, 1, 10, '2026-03-17 19:39:02'),
-(2, 2, 8, '2026-03-17 19:39:02'),
+(2, 2, 0, '2026-04-05 20:42:34'),
 (3, 3, 25, '2026-03-17 19:39:02'),
 (4, 4, 15, '2026-03-17 19:39:02'),
 (5, 5, 12, '2026-03-17 19:39:02'),
@@ -233,6 +258,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
+('54s_xCemwLH2sU9Ow7A4z5gYjmRmbSmz', 1775425359, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-04-05T21:41:48.009Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":6,\"vorname\":\"Lea\",\"nachname\":\"Seiler\",\"email\":\"leas2000@gmx.de\",\"rolle\":\"kunde\"}}'),
 ('TvoHY2HU6bmcLup5cuRbw9K2N2gcj5xT', 1775393870, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-04-05T12:57:41.392Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":4,\"vorname\":\"Admin\",\"nachname\":\"Demo\",\"email\":\"admin@test.de\",\"rolle\":\"admin\"}}');
 
 -- --------------------------------------------------------
@@ -254,7 +280,8 @@ CREATE TABLE `warenkorb` (
 --
 
 INSERT INTO `warenkorb` (`id`, `benutzer_id`, `gesamtpreis`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 1, 0.00, '2026-03-30 16:47:38', '2026-03-30 17:02:22');
+(1, 1, 0.00, '2026-03-30 16:47:38', '2026-03-30 17:02:22'),
+(2, 6, 0.00, '2026-04-05 20:41:51', '2026-04-05 20:42:30');
 
 -- --------------------------------------------------------
 
@@ -292,9 +319,9 @@ CREATE TABLE `worker` (
 --
 
 INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(25, 'allgemein', 'aktiv', '2026-04-05 12:01:42', '2026-04-05 11:44:42'),
-(26, 'allgemein', 'aktiv', '2026-04-05 12:01:42', '2026-04-05 11:44:42'),
-(27, 'allgemein', 'aktiv', '2026-04-05 12:01:42', '2026-04-05 11:44:42');
+(28, 'allgemein', 'aktiv', '2026-04-05 20:44:24', '2026-04-05 20:40:24'),
+(29, 'allgemein', 'aktiv', '2026-04-05 20:44:24', '2026-04-05 20:40:24'),
+(30, 'allgemein', 'aktiv', '2026-04-05 20:44:25', '2026-04-05 20:40:25');
 
 --
 -- Indizes der exportierten Tabellen
@@ -393,7 +420,7 @@ ALTER TABLE `worker`
 -- AUTO_INCREMENT für Tabelle `adresse`
 --
 ALTER TABLE `adresse`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT für Tabelle `artikel`
@@ -405,25 +432,25 @@ ALTER TABLE `artikel`
 -- AUTO_INCREMENT für Tabelle `aufgabe`
 --
 ALTER TABLE `aufgabe`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT für Tabelle `benutzer`
 --
 ALTER TABLE `benutzer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellposition`
 --
 ALTER TABLE `bestellposition`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellung`
 --
 ALTER TABLE `bestellung`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `kategorie`
@@ -441,19 +468,19 @@ ALTER TABLE `lagerbestand`
 -- AUTO_INCREMENT für Tabelle `warenkorb`
 --
 ALTER TABLE `warenkorb`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT für Tabelle `warenkorb_position`
 --
 ALTER TABLE `warenkorb_position`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- Constraints der exportierten Tabellen
@@ -511,3 +538,7 @@ ALTER TABLE `warenkorb_position`
   ADD CONSTRAINT `warenkorb_position_ibfk_1` FOREIGN KEY (`warenkorb_id`) REFERENCES `warenkorb` (`id`),
   ADD CONSTRAINT `warenkorb_position_ibfk_2` FOREIGN KEY (`artikel_id`) REFERENCES `artikel` (`id`);
 COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

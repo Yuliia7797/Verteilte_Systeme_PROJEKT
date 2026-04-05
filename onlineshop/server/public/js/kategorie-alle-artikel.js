@@ -70,6 +70,7 @@ function renderKategorieArtikel(artikel) {
   }
 
   artikel.forEach(artikelItem => {
+    const istVerfuegbar = (artikelItem.lagerbestand ?? 0) > 0;
     const card = `
       <div class="col-md-4">
         <div class="card h-100">
@@ -97,8 +98,10 @@ function renderKategorieArtikel(artikel) {
               type="button"
               class="btn btn-main js-in-warenkorb"
               data-artikel-id="${artikelItem.id}"
+              data-lagerbestand="${artikelItem.lagerbestand ?? 0}"
+              style="${!istVerfuegbar ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
             >
-              In den Warenkorb
+              ${istVerfuegbar ? 'In den Warenkorb' : 'Nicht verfügbar'}
             </button>
           </div>
         </div>
@@ -176,6 +179,13 @@ document.addEventListener('click', async (event) => {
   const button = event.target.closest('.js-in-warenkorb');
 
   if (!button) {
+    return;
+  }
+  
+  const lagerbestand = Number(button.dataset.lagerbestand) || 0;
+
+  if (lagerbestand <= 0) {
+    alert('Dieser Artikel ist momentan nicht verfügbar.');
     return;
   }
 

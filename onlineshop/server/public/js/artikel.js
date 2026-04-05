@@ -17,6 +17,7 @@ function createArtikelCard(artikelItem) {
     Für jeden Artikel wird eine Karte mit Bild,
     Name, Beschreibung, Preis und Button erstellt.
   */
+  const istVerfuegbar = (artikelItem.lagerbestand ?? 0) > 0;
   return `
     <div class="col-md-4">
       <div class="card h-100">
@@ -44,8 +45,10 @@ function createArtikelCard(artikelItem) {
             type="button"
             class="btn btn-main js-in-warenkorb"
             data-artikel-id="${artikelItem.id}"
+            data-lagerbestand="${artikelItem.lagerbestand ?? 0}"
+            style="${!istVerfuegbar ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
           >
-            In den Warenkorb
+            ${istVerfuegbar ? 'In den Warenkorb' : 'Nicht verfügbar'}
           </button>
         </div>
       </div>
@@ -137,6 +140,12 @@ document.addEventListener('click', async (event) => {
 
   console.log('Button geklickt');
 
+  const lagerbestand = Number(button.dataset.lagerbestand) || 0;
+
+  if (lagerbestand <= 0) {
+    alert('Dieser Artikel ist momentan nicht verfügbar.');
+    return;
+  }
   const artikelId = Number.parseInt(button.dataset.artikelId, 10);
   console.log('Artikel-ID:', artikelId);
 

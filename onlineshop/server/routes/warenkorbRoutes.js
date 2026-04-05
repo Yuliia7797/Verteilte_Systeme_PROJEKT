@@ -3,11 +3,11 @@
  * eingeloggten Benutzers.
  *
  * Verfügbare Endpunkte:
- * - GET    /warenkorb                 – aktuellen Warenkorb mit Positionen laden
- * - POST   /warenkorb/positionen      – Artikel zum Warenkorb hinzufügen
- * - PUT    /warenkorb/positionen/:id  – Artikelmenge ändern
- * - DELETE /warenkorb/positionen/:id  – Artikel aus Warenkorb entfernen
- * - DELETE /warenkorb/leeren          – gesamten Warenkorb leeren
+ * - GET    /warenkorb                      – aktuellen Warenkorb mit Positionen laden
+ * - POST   /warenkorb/positionen           – Artikel zum Warenkorb hinzufügen
+ * - PUT    /warenkorb/positionen/:artikel_id   – Artikelmenge ändern
+ * - DELETE /warenkorb/positionen/:artikel_id   – Artikel aus Warenkorb entfernen
+ * - DELETE /warenkorb/leeren               – gesamten Warenkorb leeren
  */
 
 'use strict';
@@ -172,9 +172,11 @@ router.get('/', requireLogin, (req, res) => {
            wp.gesamtpreis,
            a.bezeichnung,
            a.beschreibung,
-           a.bild_url
+           a.bild_url,
+           lb.anzahl AS lagerbestand
          FROM warenkorb_position wp
          INNER JOIN artikel a ON wp.artikel_id = a.id
+         LEFT JOIN lagerbestand lb ON a.id = lb.artikel_id
          WHERE wp.warenkorb_id = ?
          ORDER BY wp.id ASC`,
         [warenkorb.id],
@@ -223,7 +225,11 @@ router.post('/positionen', requireLogin, (req, res) => {
     }
 
     connection.query(
-      'SELECT id, preis FROM artikel WHERE id = ? LIMIT 1',
+      `SELECT a.id, a.preis, lb.anzahl AS lagerbestand
+       FROM artikel a
+       LEFT JOIN lagerbestand lb ON a.id = lb.artikel_id
+       WHERE a.id = ?
+       LIMIT 1`,
       [artikelId],
       (artikelError, artikelResults) => {
         if (artikelError) {
@@ -236,7 +242,14 @@ router.post('/positionen', requireLogin, (req, res) => {
         }
 
         const einzelpreis = Number(artikelResults[0].preis);
+        const lagerbestand = Number(artikelResults[0].lagerbestand) || 0;
         const gesamtpreis = einzelpreis * anzahl;
+
+        if (anzahl > lagerbestand) {
+          return res.status(400).json({
+            message: 'Die gewünschte Menge überschreitet den Lagerbestand'
+          });
+        }
 
         connection.query(
           `SELECT id, anzahl
@@ -253,6 +266,13 @@ router.post('/positionen', requireLogin, (req, res) => {
             if (positionResults.length > 0) {
               const vorhandenePosition = positionResults[0];
               const neueAnzahl = Number(vorhandenePosition.anzahl) + anzahl;
+
+              if (neueAnzahl > lagerbestand) {
+                return res.status(400).json({
+                  message: 'Die gewünschte Menge überschreitet den Lagerbestand'
+                });
+              }
+
               const neuerGesamtpreis = einzelpreis * neueAnzahl;
 
               connection.query(
@@ -326,7 +346,11 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
     }
 
     connection.query(
-      'SELECT id, preis FROM artikel WHERE id = ? LIMIT 1',
+      `SELECT a.id, a.preis, lb.anzahl AS lagerbestand
+       FROM artikel a
+       LEFT JOIN lagerbestand lb ON a.id = lb.artikel_id
+       WHERE a.id = ?
+       LIMIT 1`,
       [artikelId],
       (artikelError, artikelResults) => {
         if (artikelError) {
@@ -339,7 +363,14 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
         }
 
         const einzelpreis = Number(artikelResults[0].preis);
+        const lagerbestand = Number(artikelResults[0].lagerbestand) || 0;
         const gesamtpreis = einzelpreis * anzahl;
+
+        if (anzahl > lagerbestand) {
+          return res.status(400).json({
+            message: 'Die gewünschte Menge überschreitet den Lagerbestand'
+          });
+        }
 
         connection.query(
           `UPDATE warenkorb_position

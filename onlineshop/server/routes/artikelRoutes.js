@@ -65,11 +65,13 @@ router.get('/', (req, res) => {
   let query = `
     SELECT
       artikel.*,
-      kategorie.bezeichnung AS kategorie_name
+      kategorie.bezeichnung AS kategorie_name,
+      lagerbestand.anzahl AS lagerbestand
     FROM artikel
     LEFT JOIN kategorie ON artikel.kategorie_id = kategorie.id
+    LEFT JOIN lagerbestand ON artikel.id = lagerbestand.artikel_id
     WHERE 1 = 1
-  `;
+    `;
   const queryParams = [];
 
   /*

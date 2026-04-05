@@ -50,6 +50,7 @@ function renderArtikelDetail(artikel) {
 
   const lagerbestand = artikel.lagerbestand ?? 0;
   const verfuegbarkeitText = lagerbestand > 0 ? 'Auf Lager' : 'Nicht verfügbar';
+  const istVerfuegbar = lagerbestand > 0;
 
   container.innerHTML = `
     <div class="row g-5 align-items-start">
@@ -87,8 +88,10 @@ function renderArtikelDetail(artikel) {
           type="button"
           class="btn btn-main btn-lg mb-4 js-in-warenkorb"
           data-artikel-id="${artikel.id}"
+          data-lagerbestand="${lagerbestand}"
+          style="${!istVerfuegbar ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
         >
-          In den Warenkorb
+          ${istVerfuegbar ? 'In den Warenkorb' : 'Nicht verfügbar'}
         </button>
 
         <hr>
@@ -137,6 +140,12 @@ document.addEventListener('click', async (event) => {
   const button = event.target.closest('.js-in-warenkorb');
 
   if (!button) {
+    return;
+  }
+  const lagerbestand = Number(button.dataset.lagerbestand) || 0;
+
+  if (lagerbestand <= 0) {
+    alert('Dieser Artikel ist momentan nicht verfügbar.');
     return;
   }
 
