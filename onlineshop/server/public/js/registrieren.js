@@ -1,12 +1,15 @@
-/**
- * Diese Datei steuert die clientseitige Logik des Registrierungsformulars.
- * Sie liest alle eingegebenen Benutzerdaten (Name, E-Mail, Passwort, Adresse) aus dem Formular,
- * validiert das Passwort nach definierten Sicherheitsregeln und sendet die Daten
- * per HTTP-POST-Request an den Server:
- * - Bei erfolgreicher Registrierung wird eine Bestätigung angezeigt und das Formular geleert.
- * - Bei ungültigen Daten oder bereits vorhandener E-Mail wird eine Fehlermeldung angezeigt.
- * - Bei einem Netzwerk- oder Serverfehler wird eine allgemeine Fehlermeldung ausgegeben.
- */
+/*
+  Datei: registrieren.js
+  Beschreibung: Diese Datei steuert die clientseitige Logik des Registrierungsformulars.
+    Sie liest alle eingegebenen Benutzerdaten (Name, E-Mail, Passwort, Adresse) aus dem Formular,
+    validiert das Passwort nach definierten Sicherheitsregeln und sendet die Daten per HTTP-POST-Request an den Server:
+    - Bei erfolgreicher Registrierung wird eine Bestätigung angezeigt und das Formular geleert.
+    - Bei ungültigen Daten oder bereits vorhandener E-Mail wird eine Fehlermeldung angezeigt.
+    - Bei einem Netzwerk- oder Serverfehler wird eine allgemeine Fehlermeldung ausgegeben.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

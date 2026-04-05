@@ -1,3 +1,12 @@
+/*
+  Datei: adminkategorien.js
+  Beschreibung: Diese Datei steuert die Verwaltung und Bearbeitung von Kategorien
+    im Admin-Bereich. Sie lädt Kategorien und ermöglicht das Hinzufügen, Bearbeiten
+    und Löschen von Kategorien.
+  Hinweise: Lädt Kategorien, ermöglicht Hinzufügen, Bearbeiten und Löschen
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 // Wartet darauf, dass die Seite vollständig geladen ist
 document.addEventListener('DOMContentLoaded', () => {
   // Elemente aus der HTML-Seite holen

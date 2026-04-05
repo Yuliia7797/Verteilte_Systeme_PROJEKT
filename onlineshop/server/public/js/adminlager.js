@@ -1,3 +1,13 @@
+/*
+  Datei: adminlager.js
+  Beschreibung: Diese Datei steuert die Verwaltung des Lagerbestands im Admin-Bereich.
+    Sie prüft den Admin-Zugriff und ermöglicht das Bearbeiten
+    und Anzeigen des Lagerbestands.
+  Hinweise: Prüft Admin-Zugriff, ermöglicht Bearbeiten und Anzeigen des Lagerbestands
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 // Wenn die Seite geöffnet ist, wird zuerst der Zugriff geprüft
 document.addEventListener('DOMContentLoaded', () => {
   pruefeAdminZugriff();

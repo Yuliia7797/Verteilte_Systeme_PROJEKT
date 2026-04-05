@@ -1,14 +1,17 @@
-/**
- * Diese Datei steuert die Artikelübersicht einer einzelnen Kategorie.
- * Beim Laden der Seite wird die Kategorie-ID aus dem URL-Parameter ausgelesen.
- * Anschließend werden zwei GET-Requests an das Backend gesendet:
- * 1. Alle Kategorien laden, um den Namen der aktuellen Kategorie als Seitenüberschrift zu setzen.
- * 2. Alle Artikel der ausgewählten Kategorie laden und als Cards im Container anzeigen.
- * Jede Card zeigt Bild, Name, Kurzbeschreibung und Preis und verlinkt auf die Detailseite.
- * Zusätzlich kann jeder Artikel per Button in den Warenkorb gelegt werden.
- * Bei fehlender Kategorie-ID, leerem Ergebnis oder einem Serverfehler wird eine
- * entsprechende Fehlermeldung im Container angezeigt.
- */
+/*
+  Datei: kategorie-alle-artikel.js
+  Beschreibung: Diese Datei steuert die Artikelübersicht einer einzelnen Kategorie.
+    Beim Laden der Seite wird die Kategorie-ID aus dem URL-Parameter ausgelesen.
+    Anschließend werden zwei GET-Requests an das Backend gesendet:
+    1. Alle Kategorien laden, um den Namen der aktuellen Kategorie als Seitenüberschrift zu setzen.
+    2. Alle Artikel der ausgewählten Kategorie laden und als Cards im Container anzeigen.
+    Jede Card zeigt Bild, Name, Kurzbeschreibung und Preis und verlinkt auf die Detailseite.
+    Zusätzlich kann jeder Artikel per Button in den Warenkorb gelegt werden.
+    Bei fehlender Kategorie-ID, leerem Ergebnis oder einem Serverfehler wird eine entsprechende Fehlermeldung im Container angezeigt.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

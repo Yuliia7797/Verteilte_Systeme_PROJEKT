@@ -1,15 +1,18 @@
-/**
- * Diese Datei steuert die Kassen-Seite.
- * Sie lädt:
- * - die Session des aktuell eingeloggten Benutzers
- * - die hinterlegte Adresse des Benutzers
- * - den aktuellen Warenkorb
- *
- * Zusätzlich ermöglicht sie:
- * - das Umschalten zwischen hinterlegter und abweichender Lieferadresse
- * - die Auswahl der Zahlungsmethode
- * - das Absenden der Bestellung
- */
+/*
+  Datei: kasse.js
+  Beschreibung: Diese Datei steuert die Kassen-Seite.
+    Sie lädt:
+    - die Session des aktuell eingeloggten Benutzers
+    - die hinterlegte Adresse des Benutzers
+    - den aktuellen Warenkorb
+    Zusätzlich ermöglicht sie:
+    - das Umschalten zwischen hinterlegter und abweichender Lieferadresse
+    - die Auswahl der Zahlungsmethode
+    - das Absenden der Bestellung
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

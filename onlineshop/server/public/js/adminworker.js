@@ -1,9 +1,13 @@
-/**
- * Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
- * Sie lädt die Worker-Daten und die Aufgaben-Daten vom Backend,
- * zeigt diese in Tabellen an und ermöglicht das Aktivieren
- * oder Deaktivieren einzelner Worker.
- */
+
+/*
+  Datei: adminworker.js
+  Beschreibung: Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
+    Sie lädt die Worker-Daten und die Aufgaben-Daten vom Backend, zeigt diese in
+    Tabellen an und ermöglicht das Aktivieren oder Deaktivieren einzelner Worker.
+  Hinweise: Lädt Worker- und Aufgaben-Daten, ermöglicht Aktivieren/Deaktivieren
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

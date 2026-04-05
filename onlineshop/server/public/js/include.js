@@ -1,6 +1,9 @@
 /*
-  Diese Datei lädt wiederverwendbare HTML-Komponenten
-  wie Header und Footer automatisch in die Seite ein.
+  Datei: include.js
+  Beschreibung: Diese Datei lädt wiederverwendbare HTML-Komponenten wie Header und Footer automatisch in die Seite ein.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
 */
 
 document.addEventListener("DOMContentLoaded", async () => {

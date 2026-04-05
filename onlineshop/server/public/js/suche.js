@@ -1,13 +1,12 @@
 /*
-  Diese Datei verarbeitet das Suchformular im Header.
-
-  Wenn der Benutzer einen Suchbegriff eingibt
-  und auf "Suchen" klickt, wird er zur Suchseite
-  weitergeleitet.
-
-  Der Suchbegriff wird als URL-Parameter übergeben.
-  Beispiel:
-  /static/suche.html?q=Harry
+  Datei: suche.js
+  Beschreibung: Diese Datei verarbeitet das Suchformular im Header.
+    Wenn der Benutzer einen Suchbegriff eingibt und auf "Suchen" klickt,
+    wird er zur Suchseite weitergeleitet. Der Suchbegriff wird als URL-Parameter übergeben.
+    Beispiel: /static/suche.html?q=Harry
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
 */
 
 function initSucheFormular() {

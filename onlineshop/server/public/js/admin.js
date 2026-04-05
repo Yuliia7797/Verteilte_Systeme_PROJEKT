@@ -1,3 +1,11 @@
+/*
+  Datei: admin.js
+  Zweck: Initialisierung und Zugriffsschutz für Admin-Bereich
+  Hinweise: Prüft, ob der aktuelle Benutzer ein Admin ist und leitet ggf. weiter
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 // Wartet darauf, dass die HTML-Seite vollständig geladen ist
 document.addEventListener('DOMContentLoaded', () => {
   // Nach dem Laden der Seite wird sofort geprüft,

@@ -1,3 +1,12 @@
+/*
+  Datei: adminartikel.js
+  Beschreibung: Diese Datei steuert die Verwaltung und Bearbeitung von Artikeln
+    im Admin-Bereich. Sie prüft den Admin-Zugriff und ermöglicht das Bearbeiten,
+    Hinzufügen und Löschen von Artikeln.
+  Hinweise: Prüft Admin-Zugriff, ermöglicht Bearbeiten, Hinzufügen und Löschen von Artikeln
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 // Wartet darauf, dass die Seite vollständig geladen ist
 document.addEventListener('DOMContentLoaded', () => {
   // Nach dem Laden der Seite wird zuerst geprüft,

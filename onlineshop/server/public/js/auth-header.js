@@ -1,11 +1,13 @@
-/**
- * Diese Datei steuert die dynamische Anzeige der Navigationsleiste je nach Login-Status.
- * Sobald die Seite vollständig geladen ist, wird der Server nach einer aktiven Session gefragt:
- * - Ist der Benutzer eingeloggt: Login- und Registrieren-Button werden ausgeblendet,
- *   stattdessen werden Konto- und Logout-Button angezeigt.
- * - Ist kein Benutzer eingeloggt: Login- und Registrieren-Button werden angezeigt,
- *   Konto und Logout werden ausgeblendet.
- */
+/*
+  Datei: auth-header.js
+  Beschreibung: Diese Datei steuert die dynamische Anzeige der Navigationsleiste je nach Login-Status.
+    Sobald die Seite vollständig geladen ist, wird der Server nach einer aktiven Session gefragt:
+    - Ist der Benutzer eingeloggt: Login- und Registrieren-Button werden ausgeblendet, stattdessen werden Konto- und Logout-Button angezeigt.
+    - Ist kein Benutzer eingeloggt: Login- und Registrieren-Button werden angezeigt, Konto und Logout werden ausgeblendet.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

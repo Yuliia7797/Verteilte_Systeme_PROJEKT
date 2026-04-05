@@ -1,17 +1,18 @@
-/**
- * Diese Datei steuert die Warenkorb-Seite im Frontend.
- * Sie lädt die Positionen des aktuell eingeloggten Benutzers, zeigt sie an
- * und ermöglicht:
- * - Menge erhöhen
- * - Menge verringern
- * - Artikel entfernen
- * - gesamten Warenkorb leeren
- *
- * Zusätzlich wird der Lagerbestand berücksichtigt:
- * - Wenn die aktuelle Anzahl den Lagerbestand erreicht,
- *   wird der Plus-Button grau dargestellt.
- * - Bei weiterem Klick erscheint eine Fehlermeldung.
- */
+/*
+  Datei: warenkorb.js
+  Beschreibung: Diese Datei steuert die Warenkorb-Seite im Frontend.
+    Sie lädt die Positionen des aktuell eingeloggten Benutzers, zeigt sie an und ermöglicht:
+    - Menge erhöhen
+    - Menge verringern
+    - Artikel entfernen
+    - gesamten Warenkorb leeren
+    Zusätzlich wird der Lagerbestand berücksichtigt:
+    - Wenn die aktuelle Anzahl den Lagerbestand erreicht, wird der Plus-Button grau dargestellt.
+    - Bei weiterem Klick erscheint eine Fehlermeldung.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

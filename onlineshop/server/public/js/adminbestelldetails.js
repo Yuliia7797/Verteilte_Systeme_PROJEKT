@@ -1,8 +1,13 @@
-/**
- * Diese Datei steuert die Detailseite einer einzelnen Bestellung im Admin-Bereich.
- * Sie liest die Bestell-ID aus der URL, lädt die Bestelldaten vom Backend
- * und zeigt allgemeine Informationen, Lieferadresse und Positionen an.
- */
+/*
+  Datei: adminbestelldetails.js
+  Beschreibung: Diese Datei steuert die Detailseite einer einzelnen Bestellung
+    im Admin-Bereich. Sie liest die Bestell-ID aus der URL, lädt die Bestelldaten
+    vom Backend und zeigt allgemeine Informationen, Lieferadresse und Positionen an.
+  Hinweise: Lädt Bestelldaten, zeigt Details und Positionen an
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 
 'use strict';
 

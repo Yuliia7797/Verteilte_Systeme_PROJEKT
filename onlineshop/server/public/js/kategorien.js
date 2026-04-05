@@ -1,9 +1,12 @@
-/**
- * Diese Datei lädt alle Kategorien vom Backend und zeigt sie an zwei Stellen an:
- * als Karten auf der Startseite und als Einträge im Dropdown-Menü im Header.
- * Außerdem wird das Dropdown-Menü initialisiert, sodass es per Klick geöffnet
- * und geschlossen werden kann.
- */
+/*
+  Datei: kategorien.js
+  Beschreibung: Diese Datei lädt alle Kategorien vom Backend und zeigt sie an zwei Stellen an:
+    als Karten auf der Startseite und als Einträge im Dropdown-Menü im Header.
+    Außerdem wird das Dropdown-Menü initialisiert, sodass es per Klick geöffnet und geschlossen werden kann.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 /*
   Diese Funktion lädt alle Kategorien vom Backend.

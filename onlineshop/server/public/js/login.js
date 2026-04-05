@@ -1,11 +1,15 @@
-/**
- * Diese Datei steuert die clientseitige Logik des Login-Formulars.
- * Sie liest die eingegebenen Anmeldedaten (E-Mail und Passwort) aus dem Formular,
- * sendet sie per HTTP-POST-Request an den Server und verarbeitet die Antwort:
- * - Bei erfolgreichem Login wird der Benutzer auf die Startseite weitergeleitet.
- * - Bei ungültigen Anmeldedaten wird eine Fehlermeldung angezeigt.
- * - Bei einem Netzwerk- oder Serverfehler wird eine allgemeine Fehlermeldung ausgegeben.
- */
+/*
+  Datei: login.js
+  Beschreibung: Diese Datei steuert die clientseitige Logik des Login-Formulars.
+    Sie liest die eingegebenen Anmeldedaten (E-Mail und Passwort) aus dem Formular,
+    sendet sie per HTTP-POST-Request an den Server und verarbeitet die Antwort:
+    - Bei erfolgreichem Login wird der Benutzer auf die Startseite weitergeleitet.
+    - Bei ungültigen Anmeldedaten wird eine Fehlermeldung angezeigt.
+    - Bei einem Netzwerk- oder Serverfehler wird eine allgemeine Fehlermeldung ausgegeben.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

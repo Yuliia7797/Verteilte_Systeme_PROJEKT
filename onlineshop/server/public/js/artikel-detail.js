@@ -1,10 +1,14 @@
-/**
- * Diese Datei steuert die Detailansicht eines einzelnen Artikels.
- * Die geladenen Daten (Bild, Name, Beschreibung, Preis, Lagerbestand, Kategorie)
- * werden dynamisch als HTML in den Detailcontainer der Seite eingefügt.
- * Zusätzlich kann der Artikel über einen Button in den Warenkorb gelegt werden.
- * Bei fehlender ID oder einem Serverfehler wird eine Fehlermeldung angezeigt.
- */
+/*
+  Datei: artikel-detail.js
+  Beschreibung: Diese Datei steuert die Detailansicht eines einzelnen Artikels.
+    Die geladenen Daten (Bild, Name, Beschreibung, Preis, Lagerbestand, Kategorie)
+    werden dynamisch als HTML in den Detailcontainer der Seite eingefügt.
+    Zusätzlich kann der Artikel über einen Button in den Warenkorb gelegt werden.
+    Bei fehlender ID oder einem Serverfehler wird eine Fehlermeldung angezeigt.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

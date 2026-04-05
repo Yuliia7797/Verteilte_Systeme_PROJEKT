@@ -1,9 +1,14 @@
-/**
- * Diese Datei steuert die Suchergebnisseite.
- * Der Suchbegriff wird aus dem URL-Parameter ausgelesen, an das Backend gesendet 
- * und die passenden Artikel werden als Cards angezeigt.
- * Bei fehlendem Suchbegriff oder keinen Treffern wird eine entsprechende Meldung ausgegeben.
- */
+/*
+  Datei: suche-ergebnisse.js
+  Beschreibung: Diese Datei steuert die Suchergebnisseite.
+    Der Suchbegriff wird aus dem URL-Parameter ausgelesen, an das Backend gesendet
+    und die passenden Artikel werden als Cards angezeigt.
+    Bei fehlendem Suchbegriff oder keinen Treffern wird eine entsprechende Meldung ausgegeben.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 
 /*
   Diese Funktion liest den Suchbegriff aus der URL.

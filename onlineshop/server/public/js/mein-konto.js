@@ -1,11 +1,16 @@
-/**
- * Diese Datei steuert die "Mein Konto"-Seite.
- * Beim Laden werden die Kontodaten und Bestellungen des eingeloggten Benutzers
- * vom Server geholt und dargestellt. Über den Bearbeiten-Button wechselt die Seite
- * in ein Formular, in dem Name, E-Mail, Adresse und optional das Passwort geändert
- * werden können. Jede Bestellung kann aufgeklappt werden, um die bestellten Artikel
- * mit Bild, Name, Anzahl und Preisen anzuzeigen.
- */
+/*
+  Datei: mein-konto.js
+  Beschreibung: Diese Datei steuert die "Mein Konto"-Seite.
+    Beim Laden werden die Kontodaten und Bestellungen des eingeloggten Benutzers
+    vom Server geholt und dargestellt. Über den Bearbeiten-Button wechselt die Seite
+    in ein Formular, in dem Name, E-Mail, Adresse und optional das Passwort geändert
+    werden können. Jede Bestellung kann aufgeklappt werden, um die bestellten Artikel
+    mit Bild, Name, Anzahl und Preisen anzuzeigen.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 
 'use strict';
 

@@ -1,12 +1,16 @@
-/**
- * Diese Datei steuert die Artikelübersicht auf der Startseite des Onlineshops.
- * Beim Laden der Seite werden alle verfügbaren Artikel per GET-Request vom Backend geladen
- * und dynamisch als Karten (Cards) in den Artikelcontainer der Seite eingefügt.
- * Jede Karte zeigt Bild, Name, Kurzbeschreibung und Preis des Artikels an
- * und verlinkt auf die zugehörige Detailseite.
- * Falls keine Artikel vorhanden sind oder ein Fehler auftritt, wird eine entsprechende
- * Meldung ausgegeben.
- */
+/*
+  Datei: artikel.js
+  Beschreibung: Diese Datei steuert die Artikelübersicht auf der Startseite des Onlineshops.
+    Beim Laden der Seite werden alle verfügbaren Artikel per GET-Request vom Backend geladen
+    und dynamisch als Karten (Cards) in den Artikelcontainer der Seite eingefügt.
+    Jede Karte zeigt Bild, Name, Kurzbeschreibung und Preis des Artikels an
+    und verlinkt auf die zugehörige Detailseite.
+    Falls keine Artikel vorhanden sind oder ein Fehler auftritt, wird eine entsprechende Meldung ausgegeben.
+  Hinweise: Siehe Funktionskommentare unten
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 
 /*
   Diese Funktion erstellt die HTML-Karte

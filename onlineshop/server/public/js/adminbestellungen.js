@@ -1,8 +1,13 @@
-/**
- * Diese Datei steuert die Admin-Seite für die Bestellverwaltung.
- * Sie lädt alle Bestellungen vom Backend und zeigt sie
- * in einer Tabelle auf der Seite adminbestellungen.html an.
- */
+
+/*
+  Datei: adminbestellungen.js
+  Beschreibung: Diese Datei steuert die Admin-Seite für die Bestellverwaltung.
+    Sie lädt alle Bestellungen vom Backend und zeigt sie in einer Tabelle auf der
+    Seite adminbestellungen.html an.
+  Hinweise: Lädt Bestellungen, zeigt sie in einer Tabelle an
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 
