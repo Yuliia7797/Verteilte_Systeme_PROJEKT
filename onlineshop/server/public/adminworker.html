@@ -55,81 +55,78 @@
   <main class="py-5">
     <div class="container">
 
-```
-  <!-- Seitentitel -->
-  <h1 class="section-title text-center mb-5">Worker-Status</h1>
+      <!-- Seitentitel -->
+      <h1 class="section-title text-center mb-5">Worker-Status</h1>
 
-  <!-- =========================
-       WORKER-TABELLE
-  ========================= -->
-  <section class="mb-5">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h4 mb-4">Übersicht der Worker</h2>
+      <!-- =========================
+           WORKER-TABELLE
+      ========================= -->
+      <section class="mb-5">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="h4 mb-4">Übersicht der Worker</h2>
 
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Worker-ID</th>
-                <th>Typ</th>
-                <th>Status</th>
-                <th>Letzte Aktivität</th>
-                <th>Aktion</th>
-              </tr>
-            </thead>
-            <tbody id="worker-tabelle">
-              <!-- Wird dynamisch mit JavaScript gefüllt -->
-              <tr>
-                <td colspan="5" class="text-center">
-                  Lade Worker-Daten...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Worker-ID</th>
+                    <th>Typ</th>
+                    <th>Status</th>
+                    <th>Letzte Aktivität</th>
+                    <th>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="worker-tabelle">
+                  <!-- Wird dynamisch mit JavaScript gefüllt -->
+                  <tr>
+                    <td colspan="5" class="text-center">
+                      Lade Worker-Daten...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
 
-  <!-- =========================
-       AUFGABEN-TABELLE
-  ========================= -->
-  <section>
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h4 mb-4">Übersicht der Aufgaben</h2>
+      <!-- =========================
+           AUFGABEN-TABELLE
+      ========================= -->
+      <section>
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="h4 mb-4">Übersicht der Aufgaben</h2>
 
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Aufgaben-ID</th>
-                <th>Typ</th>
-                <th>Status</th>
-                <th>Worker-ID</th>
-                <th>Versuche</th>
-                <th>Fehlermeldung</th>
-                <th>Erstellt am</th>
-              </tr>
-            </thead>
-            <tbody id="aufgaben-tabelle">
-              <!-- Wird dynamisch mit JavaScript gefüllt -->
-              <tr>
-                <td colspan="7" class="text-center">
-                  Lade Aufgaben-Daten...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Aufgaben-ID</th>
+                    <th>Typ</th>
+                    <th>Status</th>
+                    <th>Worker-ID</th>
+                    <th>Versuche</th>
+                    <th>Fehlermeldung</th>
+                    <th>Erstellt am</th>
+                  </tr>
+                </thead>
+                <tbody id="aufgaben-tabelle">
+                  <!-- Wird dynamisch mit JavaScript gefüllt -->
+                  <tr>
+                    <td colspan="7" class="text-center">
+                      Lade Aufgaben-Daten...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
     </div>
-  </section>
-
-</div>
-```
-
   </main>
 
   <!-- =========================
@@ -143,32 +140,28 @@
   ========================= -->
 
   <!-- Lädt Header & Footer -->
-
   <script src="js/include.js"></script>
 
-  <!-- Session prüfen & Header anpassen -->
+  <!-- Zentrale Authentifizierungslogik (Session, Login, Admin, Logout) -->
+  <script src="js/utils/auth.js"></script>
 
+  <!-- Session prüfen & Header dynamisch anpassen -->
   <script src="js/auth-header.js"></script>
 
   <!-- Suchfunktion im Header -->
-
   <script src="js/suche.js"></script>
 
-  <!-- Kategorien für Dropdown laden -->
-
+  <!-- Kategorien für Dropdown-Menü laden -->
   <script src="js/kategorien.js"></script>
 
-  <!-- Admin-Zugriff prüfen -->
+  <!-- Zentrale Formatierungslogik -->
+  <script src="js/utils/format.js"></script>
 
-  <script src="js/admin.js"></script>
-
-  <!-- Logik für Worker-Übersicht -->
-
+  <!-- Worker-Verwaltung -->
   <script src="js/adminworker.js"></script>
 
-  <!-- Bootstrap JS (Interaktionen) -->
-
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
+
 </html>

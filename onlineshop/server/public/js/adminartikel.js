@@ -3,14 +3,22 @@
   Beschreibung: Diese Datei steuert die Verwaltung und Bearbeitung von Artikeln
     im Admin-Bereich. Sie prüft den Admin-Zugriff und ermöglicht das Bearbeiten,
     Hinzufügen und Löschen von Artikeln.
-  Hinweise: Prüft Admin-Zugriff, ermöglicht Bearbeiten, Hinzufügen und Löschen von Artikeln
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js
+    sowie die zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 // Initialisiert die Seite nach dem Laden des DOM
-document.addEventListener('DOMContentLoaded', () => {
-  pruefeAdminZugriff();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await requireAdmin('/static/login.html', '/static/index.html');
+    await ladeKategorien();
+    await ladeArtikel();
+  } catch (fehler) {
+    console.error('Fehler bei der Initialisierung des Admin-Bereichs:', fehler);
+    return;
+  }
 
   const abbrechenButton = document.getElementById('abbrechen-button');
   const neuerArtikelButton = document.getElementById('neuer-artikel-button');
@@ -114,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('aktuelles-bild-url').value = '';
         versteckeBildVorschau();
 
-        ladeArtikel();
+        await ladeArtikel();
 
         if (artikelId) {
           alert('Artikel erfolgreich aktualisiert.');
@@ -128,41 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
-/**
- * Prüft, ob ein Benutzer eingeloggt ist und Admin-Rechte besitzt.
- * Lädt bei Erfolg die Kategorien und die Artikelliste, leitet sonst weiter.
- *
- * @async
- * @function pruefeAdminZugriff
- * @returns {Promise<void>}
- */
-async function pruefeAdminZugriff() {
-  try {
-    const response = await fetch('/benutzer/session', {
-      method: 'GET',
-      credentials: 'same-origin'
-    });
-
-    if (!response.ok) {
-      weiterleiten('login.html');
-      return;
-    }
-
-    const benutzer = await response.json();
-
-    if (benutzer.rolle !== 'admin') {
-      weiterleiten('index.html');
-      return;
-    }
-
-    await ladeKategorien();
-    ladeArtikel();
-  } catch (fehler) {
-    console.error('Fehler bei der Prüfung des Admin-Zugriffs:', fehler);
-    weiterleiten('login.html');
-  }
-}
 
 /**
  * Lädt alle Kategorien vom Server und füllt das Auswahlfeld im Formular.
@@ -225,7 +198,7 @@ async function ladeArtikel() {
           >
         </td>
         <td>${artikel.bezeichnung}</td>
-        <td>${artikel.preis} €</td>
+        <td>${formatPreis(artikel.preis)}</td>
         <td>${artikel.kategorie_name}</td>
         <td>
           <button class="btn btn-sm btn-outline-primary me-2 bearbeiten-button">Bearbeiten</button>
@@ -286,7 +259,7 @@ async function ladeArtikel() {
             throw new Error('Fehler beim Löschen des Artikels.');
           }
 
-          ladeArtikel();
+          await ladeArtikel();
           alert('Artikel erfolgreich gelöscht.');
         } catch (fehler) {
           console.error('Fehler beim Löschen des Artikels:', fehler);

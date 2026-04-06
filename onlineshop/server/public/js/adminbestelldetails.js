@@ -1,18 +1,25 @@
 /*
   Datei: adminbestelldetails.js
   Beschreibung: Diese Datei steuert die Detailseite einer einzelnen Bestellung
-    im Admin-Bereich. Sie liest die Bestell-ID aus der URL, lädt die Bestelldaten
-    vom Backend und zeigt allgemeine Informationen, Lieferadresse und Positionen an.
-  Hinweise: Lädt Bestelldaten, zeigt Details und Positionen an
+    im Admin-Bereich. Sie prüft beim Laden der Seite den Admin-Zugriff, liest
+    die Bestell-ID aus der URL, lädt die Bestelldaten vom Backend und zeigt
+    allgemeine Informationen, Lieferadresse und Positionen an.
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js sowie die
+    zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 'use strict';
 
 // Lädt die Bestelldetails nach dem Aufbau des DOM
-document.addEventListener('DOMContentLoaded', () => {
-  ladeBestelldetails();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await requireAdmin('/static/login.html', '/static/index.html');
+    await ladeBestelldetails();
+  } catch (fehler) {
+    console.error('Fehler bei der Initialisierung der Bestelldetails:', fehler);
+  }
 });
 
 /**
@@ -32,7 +39,6 @@ async function ladeBestelldetails() {
   const urlParameter = new URLSearchParams(window.location.search);
   const bestellungId = urlParameter.get('id');
 
-  // Ohne Bestell-ID können keine Daten geladen werden
   if (!bestellungId) {
     bestellungInfo.innerHTML = '<p class="text-danger mb-0">Keine Bestell-ID angegeben.</p>';
     lieferadresseInfo.innerHTML = '<p class="text-danger mb-0">Keine Lieferadresse verfügbar.</p>';
@@ -45,7 +51,9 @@ async function ladeBestelldetails() {
   }
 
   try {
-    const antwort = await fetch(`/bestellung/${bestellungId}`);
+    const antwort = await fetch(`/bestellung/${bestellungId}`, {
+      credentials: 'same-origin'
+    });
     const daten = await antwort.json();
 
     if (!antwort.ok) {
@@ -59,11 +67,11 @@ async function ladeBestelldetails() {
       <p><strong>Bestell-ID:</strong> ${bestellung.id ?? '-'}</p>
       <p><strong>Kunde:</strong> ${bestellung.vorname ?? '-'} ${bestellung.nachname ?? '-'}</p>
       <p><strong>E-Mail:</strong> ${bestellung.email ?? '-'}</p>
-      <p><strong>Gesamtpreis:</strong> ${formatierePreis(bestellung.gesamtpreis)}</p>
+      <p><strong>Gesamtpreis:</strong> ${formatPreis(bestellung.gesamtpreis)}</p>
       <p><strong>Zahlungsmethode:</strong> ${bestellung.zahlungsmethode ?? '-'}</p>
       <p><strong>Zahlungsstatus:</strong> ${bestellung.zahlungsstatus ?? '-'}</p>
       <p><strong>Bestellstatus:</strong> ${bestellung.bestellstatus ?? '-'}</p>
-      <p class="mb-0"><strong>Erstellt am:</strong> ${formatiereDatum(bestellung.erstellungszeitpunkt)}</p>
+      <p class="mb-0"><strong>Erstellt am:</strong> ${formatDatumMitUhrzeit(bestellung.erstellungszeitpunkt)}</p>
     `;
 
     lieferadresseInfo.innerHTML = `
@@ -90,8 +98,8 @@ async function ladeBestelldetails() {
         <td>${eintrag.artikel_id ?? '-'}</td>
         <td>${eintrag.artikel ?? '-'}</td>
         <td>${eintrag.anzahl ?? '-'}</td>
-        <td>${formatierePreis(eintrag.einzelpreis)}</td>
-        <td>${formatierePreis(eintrag.gesamtpreis)}</td>
+        <td>${formatPreis(eintrag.einzelpreis)}</td>
+        <td>${formatPreis(eintrag.gesamtpreis)}</td>
       `;
 
       positionenTabelle.appendChild(zeile);
@@ -109,48 +117,4 @@ async function ladeBestelldetails() {
       </tr>
     `;
   }
-}
-
-/**
- * Formatiert ein Datum für die Anzeige im deutschen Format.
- * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
- *
- * @function formatiereDatum
- * @param {string|null|undefined} wert - Datum aus dem Backend
- * @returns {string} Formatiertes Datum oder "-"
- */
-function formatiereDatum(wert) {
-  if (!wert) {
-    return '-';
-  }
-
-  const datum = new Date(wert);
-
-  if (isNaN(datum.getTime())) {
-    return '-';
-  }
-
-  return datum.toLocaleString('de-DE');
-}
-
-/**
- * Formatiert einen Preis mit zwei Nachkommastellen und Euro-Zeichen.
- * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
- *
- * @function formatierePreis
- * @param {number|string|null|undefined} wert - Preis aus dem Backend
- * @returns {string} Formatierter Preis oder "-"
- */
-function formatierePreis(wert) {
-  if (wert === null || wert === undefined || wert === '') {
-    return '-';
-  }
-
-  const preis = Number.parseFloat(wert);
-
-  if (Number.isNaN(preis)) {
-    return '-';
-  }
-
-  return `${preis.toFixed(2)} €`;
 }

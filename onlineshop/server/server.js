@@ -1,11 +1,40 @@
+/*
+  Datei: server.js
+  Beschreibung:
+    Diese Datei startet den Express-Webserver für den Online-Shop.
+
+    Hauptaufgaben:
+    - Aufbau und Test der Datenbankverbindung
+    - Konfiguration von Middleware (JSON, URL-Encoding, Sessions)
+    - Einrichtung eines gemeinsamen Session-Stores in MariaDB
+    - Schutz vor zu vielen Anfragen (Rate Limiting / DoS-Schutz)
+    - Bereitstellung statischer Dateien (Frontend)
+    - Einbindung aller API-Routen (Artikel, Warenkorb, Bestellung, etc.)
+    - Starten des HTTP-Servers
+
+    Der Server dient als zentrale Schnittstelle zwischen
+    Frontend, Datenbank und Worker-System.
+
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 'use strict';
+
+
+// =========================
+// Imports
+// =========================
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+
+// Eigene Module
 const connection = require('./db');
 
+// Routen
 const artikelRoutes = require('./routes/artikelRoutes');
 const kategorienRoutes = require('./routes/kategorienRoutes');
 const warenkorbRoutes = require('./routes/warenkorbRoutes');
@@ -15,9 +44,15 @@ const workerRoutes = require('./routes/workerRoutes');
 const benutzerRoutes = require('./routes/benutzerRoutes');
 const adresseRoutes = require('./routes/adresseRoutes');
 
+
+// =========================
+// Datenbankverbindung testen
+// =========================
+
 console.log('Verbinde mit Datenbank...');
 
-// Verbindungstest
+// Führt eine einfache Testabfrage aus, um sicherzustellen,
+// dass die Verbindung zur Datenbank funktioniert
 connection.query('SELECT 1 + 1 AS solution', function (error, results) {
   if (error) {
     throw error;
@@ -31,15 +66,29 @@ connection.query('SELECT 1 + 1 AS solution', function (error, results) {
   }
 });
 
-// Express App
+
+// =========================
+// Express App Setup
+// =========================
+
 const PORT = process.env.PORT || 8080;
 const HOST = '0.0.0.0';
+
 const app = express();
 
+// Middleware zum Parsen von Formulardaten (application/x-www-form-urlencoded)
 app.use(express.urlencoded({ extended: true }));
+
+// Middleware zum Parsen von JSON-Requests
 app.use(express.json());
 
-// Gemeinsamer Session-Store in MariaDB für alle Serverinstanzen
+
+// =========================
+// Session-Konfiguration
+// =========================
+
+// Gemeinsamer Session-Store in MariaDB,
+// damit Sessions bei mehreren Serverinstanzen erhalten bleiben
 const sessionStore = new MySQLStore({
   host: process.env.MYSQL_HOSTNAME,
   port: 3306,
@@ -48,20 +97,27 @@ const sessionStore = new MySQLStore({
   database: process.env.MYSQL_DATABASE
 });
 
+// Session-Middleware
 app.use(session({
-  key: 'connect.sid',
-  secret: 'mein_geheimes_login_secret',
+  key: 'connect.sid', // Name des Session-Cookies
+  secret: 'mein_geheimes_login_secret', // Secret zur Signierung
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true,
-    secure: false,
-    maxAge: 1000 * 60 * 60
+    httpOnly: true,  // Cookie nicht über JS zugreifbar (Sicherheit)
+    secure: false,   // true bei HTTPS!
+    maxAge: 1000 * 60 * 60 // 1 Stunde gültig
   }
 }));
 
-// Rate Limiter (DoS-Schutz)
+
+// =========================
+// Rate Limiting (DoS-Schutz)
+// =========================
+
+// Begrenzung der Anzahl an Requests pro Zeitfenster,
+// um Missbrauch und Überlastung zu verhindern
 const limiter = rateLimit({
   windowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
   max: Number.parseInt(process.env.RATE_LIMIT_MAX || '10000', 10),
@@ -70,17 +126,28 @@ const limiter = rateLimit({
   message: { message: 'Zu viele Anfragen. Bitte später erneut versuchen.' }
 });
 
+// Rate Limiter wird global angewendet
 app.use(limiter);
 
-// Startseite → statische Seite
+
+// =========================
+// Routing & statische Inhalte
+// =========================
+
+// Startseite → Weiterleitung auf statische Seite (Frontend)
 app.get('/', (req, res) => {
   res.redirect('/static');
 });
 
-// Statische Dateien aus dem Ordner "public"
+// Statische Dateien (z. B. HTML, CSS, JS) aus dem "public"-Ordner
 app.use('/static', express.static('public'));
 
-// Routen einbinden
+
+// =========================
+// API-Routen
+// =========================
+
+// Jede Route kapselt einen bestimmten Bereich der Anwendung
 app.use('/artikel', artikelRoutes);
 app.use('/kategorien', kategorienRoutes);
 app.use('/warenkorb', warenkorbRoutes);
@@ -90,7 +157,12 @@ app.use('/worker', workerRoutes);
 app.use('/benutzer', benutzerRoutes);
 app.use('/adresse', adresseRoutes);
 
+
+// =========================
 // Server starten
+// =========================
+
+// Startet den HTTP-Server und hört auf eingehende Anfragen
 app.listen(PORT, HOST, () => {
   console.log(`Server läuft auf http://${HOST}:${PORT}`);
 });

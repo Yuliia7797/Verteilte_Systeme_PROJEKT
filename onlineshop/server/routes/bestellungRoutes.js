@@ -3,8 +3,8 @@
  * Sie stellt folgende Endpunkte bereit:
  * - GET   /bestellung              – alle Bestellungen mit Benutzerdaten laden
  * - GET   /bestellung/:id          – einzelne Bestellung mit Lieferadresse und Positionen laden
- * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen,
- *                                    automatisch Worker-Aufgaben anlegen und Warenkorb leeren
+ * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen
+ *                                    und Worker-Aufgaben für Lager, Warenkorb und Bestellstatus anlegen
  * - PATCH /bestellung/:id/status   – Bestellstatus aktualisieren
  */
 
@@ -15,9 +15,14 @@ const router = express.Router();
 const connection = require('../db');
 const istAdmin = require('../istAdmin');
 
-/*
-  Prüft, ob ein Benutzer eingeloggt ist.
-*/
+/**
+ * Prüft, ob ein Benutzer eingeloggt ist.
+ *
+ * @function requireLogin
+ * @param {Object} req - Express Request
+ * @param {Object} res - Express Response
+ * @param {Function} next - Express Next-Funktion
+ */
 function requireLogin(req, res, next) {
   if (!req.session || !req.session.benutzer || !req.session.benutzer.id) {
     return res.status(401).json({ message: 'Nicht eingeloggt' });
@@ -26,11 +31,11 @@ function requireLogin(req, res, next) {
   next();
 }
 
-/*
-  GET /bestellung
-  Lädt alle Bestellungen mit Benutzerdaten.
-  Dieser Endpunkt darf nur von Admins genutzt werden.
-*/
+/**
+ * GET /bestellung
+ * Lädt alle Bestellungen mit Benutzerdaten.
+ * Dieser Endpunkt darf nur von Admins genutzt werden.
+ */
 router.get('/', istAdmin, (req, res) => {
   connection.query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.zahlungsstatus,
@@ -50,12 +55,12 @@ router.get('/', istAdmin, (req, res) => {
   );
 });
 
-/*
-  GET /bestellung/:id
-  Lädt eine einzelne Bestellung mit Benutzerdaten,
-  Lieferadresse und Bestellpositionen.
-  Dieser Endpunkt darf nur von Admins genutzt werden.
-*/
+/**
+ * GET /bestellung/:id
+ * Lädt eine einzelne Bestellung mit Benutzerdaten,
+ * Lieferadresse und Bestellpositionen.
+ * Dieser Endpunkt darf nur von Admins genutzt werden.
+ */
 router.get('/:id', istAdmin, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
 
@@ -104,11 +109,11 @@ router.get('/:id', istAdmin, (req, res) => {
   );
 });
 
-/*
-  POST /bestellung
-  Erstellt eine neue Bestellung mit allen Positionen,
-  legt danach automatisch Aufgaben an und leert den Warenkorb.
-*/
+/**
+ * POST /bestellung
+ * Erstellt eine neue Bestellung mit allen Positionen
+ * und legt danach Worker-Aufgaben für Lager, Warenkorb und Bestellstatus an.
+ */
 router.post('/', requireLogin, (req, res) => {
   const benutzerId = req.session.benutzer.id;
   const { lieferadresse_id, zahlungsmethode, positionen } = req.body;
@@ -152,12 +157,10 @@ router.post('/', requireLogin, (req, res) => {
       let gesamtpreis = 0;
 
       for (const pos of positionen) {
-        // Prüfen, ob der Artikel existiert
         if (!artikelMap[pos.artikel_id]) {
           return res.status(400).json({ message: 'Artikel ' + pos.artikel_id + ' nicht gefunden' });
         }
 
-        // Prüfen, ob genügend Lagerbestand vorhanden ist
         if (artikelMap[pos.artikel_id].lagerbestand < pos.anzahl) {
           return res.status(400).json({
             message: 'Für Artikel ' + pos.artikel_id + ' ist nicht genügend Lagerbestand vorhanden'
@@ -202,9 +205,9 @@ router.post('/', requireLogin, (req, res) => {
               }
 
               const aufgaben = [
-                [bestellung_id, null, 'zahlung_pruefen', 'wartend'],
+                [bestellung_id, null, 'bestellstatus_aktualisieren', 'wartend'],
                 [bestellung_id, null, 'lager_aktualisieren', 'wartend'],
-                [bestellung_id, null, 'bestaetigung_senden', 'wartend']
+                [bestellung_id, null, 'warenkorb_leeren', 'wartend']
               ];
 
               connection.query(
@@ -215,66 +218,11 @@ router.post('/', requireLogin, (req, res) => {
                     console.error(aufgabenError);
                   }
 
-                  connection.query(
-                    'SELECT id FROM warenkorb WHERE benutzer_id = ? LIMIT 1',
-                    [benutzerId],
-                    (warenkorbError, warenkorbResult) => {
-                      if (warenkorbError) {
-                        console.error(warenkorbError);
-                        return res.status(201).json({
-                          message: 'Bestellung erfolgreich erstellt, Warenkorb konnte nicht geleert werden',
-                          bestellung_id,
-                          gesamtpreis
-                        });
-                      }
-
-                      if (warenkorbResult.length === 0) {
-                        return res.status(201).json({
-                          message: 'Bestellung erfolgreich erstellt',
-                          bestellung_id,
-                          gesamtpreis
-                        });
-                      }
-
-                      const warenkorbId = warenkorbResult[0].id;
-
-                      connection.query(
-                        'DELETE FROM warenkorb_position WHERE warenkorb_id = ?',
-                        [warenkorbId],
-                        (deleteError) => {
-                          if (deleteError) {
-                            console.error(deleteError);
-                            return res.status(201).json({
-                              message: 'Bestellung erfolgreich erstellt, Warenkorb konnte nicht geleert werden',
-                              bestellung_id,
-                              gesamtpreis
-                            });
-                          }
-
-                          connection.query(
-                            'UPDATE warenkorb SET gesamtpreis = 0.00, aenderungszeitpunkt = NOW() WHERE id = ?',
-                            [warenkorbId],
-                            (updateWarenkorbError) => {
-                              if (updateWarenkorbError) {
-                                console.error(updateWarenkorbError);
-                                return res.status(201).json({
-                                  message: 'Bestellung erfolgreich erstellt, Warenkorb konnte nicht vollständig aktualisiert werden',
-                                  bestellung_id,
-                                  gesamtpreis
-                                });
-                              }
-
-                              res.status(201).json({
-                                message: 'Bestellung erfolgreich erstellt',
-                                bestellung_id,
-                                gesamtpreis
-                              });
-                            }
-                          );
-                        }
-                      );
-                    }
-                  );
+                  res.status(201).json({
+                    message: 'Bestellung erfolgreich erstellt',
+                    bestellung_id,
+                    gesamtpreis
+                  });
                 }
               );
             }
@@ -285,11 +233,11 @@ router.post('/', requireLogin, (req, res) => {
   );
 });
 
-/*
-  PATCH /bestellung/:id/status
-  Aktualisiert den Status einer Bestellung.
-  Dieser Endpunkt darf nur von Admins genutzt werden.
-*/
+/**
+ * PATCH /bestellung/:id/status
+ * Aktualisiert den Status einer Bestellung.
+ * Dieser Endpunkt darf nur von Admins genutzt werden.
+ */
 router.patch('/:id/status', istAdmin, (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const { bestellstatus } = req.body;

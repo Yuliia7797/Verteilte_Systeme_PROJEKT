@@ -105,11 +105,12 @@ CREATE TABLE `aufgabe` (
 -- Daten für Tabelle `aufgabe`
 --
 
-INSERT INTO `aufgabe` (`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`) VALUES
-(1, 1, NULL, 'zahlung_pruefen', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:30', '2026-04-05 20:42:30'),
-(2, 1, NULL, 'lager_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-05 20:42:30', '2026-04-05 20:42:34', '2026-04-05 20:42:34'),
-(3, 1, 31, 'bestaetigung_senden', 'zugewiesen', 0, NULL, '2026-04-05 20:42:30', NULL, NULL);
-
+INSERT INTO `aufgabe`
+(`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`)
+VALUES
+(1, 1, NULL, 'bestellstatus_aktualisieren', 'wartend', 0, NULL, NOW(), NULL, NULL),
+(2, 1, NULL, 'lager_aktualisieren', 'wartend', 0, NULL, NOW(), NULL, NULL),
+(3, 1, NULL, 'warenkorb_leeren', 'wartend', 0, NULL, NOW(), NULL, NULL);
 -- --------------------------------------------------------
 
 --

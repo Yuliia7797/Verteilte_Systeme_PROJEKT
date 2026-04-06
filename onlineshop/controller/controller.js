@@ -1,4 +1,22 @@
+/*
+  Datei: controller.js
+  Beschreibung:
+    Diese Datei implementiert den Controller für das Worker-System.
+
+    Der Controller übernimmt die zentrale Koordination zwischen Aufgaben
+    (aufgabe) und Workern (worker). Er überwacht Worker anhand von Heartbeats,
+    gibt blockierte Aufgaben frei und verteilt neue Aufgaben an freie Worker.
+
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
+
 'use strict';
+
+
+// =========================
+// Imports & Konfiguration
+// =========================
 
 const mysql = require('mysql');
 
@@ -14,9 +32,19 @@ const pool = mysql.createPool(dbInfo);
 
 console.log("Controller startet und verbindet sich mit der Datenbank...");
 
-// ─── Hilfsfunktion: einfache SQL-Abfrage ───────────────────────────────────
-// Führt eine SQL-Abfrage über den Connection-Pool aus.
-// Gibt bei Erfolg die Ergebnisse zurück, bei Fehler wird das Promise abgelehnt.
+
+// =========================
+// Datenbank-Helfer
+// =========================
+
+/**
+ * Führt eine SQL-Abfrage über den Connection-Pool aus.
+ *
+ * @function query
+ * @param {string} sql - SQL-Abfrage
+ * @param {Array<any>} [params=[]] - Parameter für die Abfrage
+ * @returns {Promise<any>} Ergebnis der SQL-Abfrage
+ */
 function query(sql, params = []) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, function (error, results) {
@@ -26,9 +54,18 @@ function query(sql, params = []) {
     });
 }
 
-// ─── Nächste wartende Aufgabe holen ────────────────────────────────────────
-// Sucht die nächste offene Aufgabe mit dem Status 'wartend'.
-// Es wird immer nur eine Aufgabe geholt, und zwar die mit der kleinsten ID.
+
+// =========================
+// Aufgaben & Worker abrufen
+// =========================
+
+/**
+ * Holt die nächste wartende Aufgabe.
+ *
+ * @async
+ * @function getWaitingTask
+ * @returns {Promise<Object|null>} Nächste Aufgabe oder null
+ */
 async function getWaitingTask() {
     const results = await query(
         `SELECT *
@@ -41,9 +78,14 @@ async function getWaitingTask() {
     return results.length ? results[0] : null;
 }
 
-// ─── Freien aktiven Worker finden ──────────────────────────────────────────
-// Sucht einen aktiven Worker, der aktuell keine Aufgabe mit Status
-// 'zugewiesen' oder 'in_bearbeitung' bearbeitet.
+/**
+ * Holt einen freien aktiven Worker.
+ * Ein Worker ist frei, wenn er keine Aufgabe bearbeitet.
+ *
+ * @async
+ * @function getFreeWorker
+ * @returns {Promise<Object|null>} Freier Worker oder null
+ */
 async function getFreeWorker() {
     const results = await query(
         `SELECT *
@@ -62,9 +104,21 @@ async function getFreeWorker() {
     return results.length ? results[0] : null;
 }
 
-// ─── Aufgabe einem Worker zuweisen ─────────────────────────────────────────
-// Trägt die Worker-ID in die Aufgabe ein und setzt den Status auf
-// 'zugewiesen'. Es werden nur Aufgaben geändert, die noch 'wartend' sind.
+
+// =========================
+// Aufgabenverwaltung
+// =========================
+
+/**
+ * Weist eine Aufgabe einem Worker zu.
+ * Setzt den Status von 'wartend' auf 'zugewiesen'.
+ *
+ * @async
+ * @function assignTaskToWorker
+ * @param {number} taskId - ID der Aufgabe
+ * @param {number} workerId - ID des Workers
+ * @returns {Promise<void>}
+ */
 async function assignTaskToWorker(taskId, workerId) {
     await query(
         `UPDATE aufgabe
@@ -75,9 +129,18 @@ async function assignTaskToWorker(taskId, workerId) {
     );
 }
 
-// ─── Inaktive Worker erkennen und markieren ────────────────────────────────
-// Setzt Worker auf 'inaktiv', wenn deren letzter Heartbeat älter als
-// 60 Sekunden ist. So kann der Controller ausgefallene Worker erkennen.
+
+// =========================
+// Worker-Überwachung
+// =========================
+
+/**
+ * Markiert Worker als inaktiv, wenn ihr letzter Heartbeat zu alt ist.
+ *
+ * @async
+ * @function markInactiveWorkers
+ * @returns {Promise<void>}
+ */
 async function markInactiveWorkers() {
     await query(
         `UPDATE worker
@@ -87,9 +150,18 @@ async function markInactiveWorkers() {
     );
 }
 
-// ─── Aufgaben von inaktiven Workern wieder freigeben ───────────────────────
-// Setzt Aufgaben zurück auf 'wartend', wenn sie einem inaktiven Worker
-// zugewiesen waren oder gerade von ihm bearbeitet wurden.
+
+// =========================
+// Fehlerbehandlung / Recovery
+// =========================
+
+/**
+ * Gibt Aufgaben wieder frei, die von inaktiven Workern blockiert wurden.
+ *
+ * @async
+ * @function releaseTasksFromInactiveWorkers
+ * @returns {Promise<void>}
+ */
 async function releaseTasksFromInactiveWorkers() {
     await query(
         `UPDATE aufgabe
@@ -103,9 +175,19 @@ async function releaseTasksFromInactiveWorkers() {
     );
 }
 
-// ─── Hauptschleife des Controllers ─────────────────────────────────────────
-// Prüft regelmäßig auf inaktive Worker, gibt deren Aufgaben frei und
-// verteilt wartende Aufgaben an freie aktive Worker.
+
+// =========================
+// Controller-Logik
+// =========================
+
+/**
+ * Hauptschleife des Controllers.
+ * Überwacht Worker und verteilt Aufgaben.
+ *
+ * @async
+ * @function controllerLoop
+ * @returns {Promise<void>}
+ */
 async function controllerLoop() {
     console.log("Controller-Loop gestartet. Prüfe alle 5 Sekunden auf freie Worker und wartende Aufgaben...");
 
@@ -124,6 +206,7 @@ async function controllerLoop() {
                 task = await getWaitingTask();
                 worker = await getFreeWorker();
             }
+
         } catch (error) {
             console.error("Fehler im Controller-Loop:", error.message);
         }
@@ -132,9 +215,19 @@ async function controllerLoop() {
     }
 }
 
-// ─── Controller-Prozess starten ────────────────────────────────────────────
-// Startet die Hauptschleife des Controllers. Bei Fehlern wird nach kurzer
-// Wartezeit automatisch ein neuer Versuch gestartet.
+
+// =========================
+// Startlogik
+// =========================
+
+/**
+ * Startet den Controller-Prozess.
+ * Führt bei Fehlern automatische Wiederholungsversuche durch.
+ *
+ * @async
+ * @function start
+ * @returns {Promise<void>}
+ */
 async function start() {
     let versuch = 0;
 
@@ -142,11 +235,14 @@ async function start() {
         try {
             versuch++;
             console.log(`Verbindungsversuch ${versuch}...`);
+
             await new Promise(resolve => setTimeout(resolve, 5000));
             await controllerLoop();
+
         } catch (error) {
             console.error(`Versuch ${versuch} fehlgeschlagen: ${error.message}`);
             console.log("Warte 5 Sekunden und versuche erneut...");
+
             await new Promise(resolve => setTimeout(resolve, 5000));
         }
     }

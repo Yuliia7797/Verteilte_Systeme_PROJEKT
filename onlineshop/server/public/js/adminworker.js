@@ -1,19 +1,26 @@
 /*
   Datei: adminworker.js
   Beschreibung: Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
-    Sie lädt die Worker-Daten und die Aufgaben-Daten vom Backend, zeigt diese in
-    Tabellen an und ermöglicht das Aktivieren oder Deaktivieren einzelner Worker.
-  Hinweise: Lädt Worker- und Aufgaben-Daten, ermöglicht Aktivieren/Deaktivieren
+    Sie prüft beim Laden der Seite den Admin-Zugriff, lädt anschließend
+    Worker- und Aufgaben-Daten vom Backend, zeigt diese in Tabellen an
+    und ermöglicht das Aktivieren oder Deaktivieren einzelner Worker.
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js sowie die
+    zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 'use strict';
 
 // Lädt nach dem Aufbau des DOM die Worker- und Aufgabenübersicht
-document.addEventListener('DOMContentLoaded', () => {
-  ladeWorker();
-  ladeAufgaben();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await requireAdmin('/static/login.html', '/static/index.html');
+    await ladeWorker();
+    await ladeAufgaben();
+  } catch (fehler) {
+    console.error('Fehler bei der Initialisierung der Worker-Übersicht:', fehler);
+  }
 });
 
 /**
@@ -28,7 +35,9 @@ async function ladeWorker() {
   const workerTabelle = document.getElementById('worker-tabelle');
 
   try {
-    const antwort = await fetch('/worker');
+    const antwort = await fetch('/worker', {
+      credentials: 'same-origin'
+    });
     const worker = await antwort.json();
 
     if (!antwort.ok) {
@@ -58,7 +67,7 @@ async function ladeWorker() {
         <td>${eintrag.id ?? '-'}</td>
         <td>${eintrag.typ ?? '-'}</td>
         <td>${eintrag.status ?? '-'}</td>
-        <td>${formatiereDatum(eintrag.letzter_heartbeat)}</td>
+        <td>${formatDatumMitUhrzeit(eintrag.letzter_heartbeat)}</td>
         <td>
           <button
             type="button"
@@ -96,7 +105,9 @@ async function ladeAufgaben() {
   const aufgabenTabelle = document.getElementById('aufgaben-tabelle');
 
   try {
-    const antwort = await fetch('/worker/aufgaben');
+    const antwort = await fetch('/worker/aufgaben', {
+      credentials: 'same-origin'
+    });
     const aufgaben = await antwort.json();
 
     if (!antwort.ok) {
@@ -124,7 +135,7 @@ async function ladeAufgaben() {
         <td>${eintrag.worker_id ?? '-'}</td>
         <td>${eintrag.versuch_anzahl ?? '-'}</td>
         <td>${eintrag.fehlermeldung ?? '-'}</td>
-        <td>${formatiereDatum(eintrag.erstellungszeitpunkt)}</td>
+        <td>${formatDatumMitUhrzeit(eintrag.erstellungszeitpunkt)}</td>
       `;
 
       aufgabenTabelle.appendChild(zeile);
@@ -159,6 +170,7 @@ async function aendereWorkerStatus(workerId, neuerStatus) {
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'same-origin',
       body: JSON.stringify({
         status: neuerStatus
       })
@@ -170,31 +182,9 @@ async function aendereWorkerStatus(workerId, neuerStatus) {
       throw new Error(daten.message || 'Fehler beim Aktualisieren des Worker-Status.');
     }
 
-    ladeWorker();
+    await ladeWorker();
   } catch (fehler) {
     console.error('Fehler beim Ändern des Worker-Status:', fehler);
     alert('Der Worker-Status konnte nicht geändert werden.');
   }
-}
-
-/**
- * Formatiert ein Datum für die Anzeige im deutschen Format.
- * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
- *
- * @function formatiereDatum
- * @param {string|null|undefined} wert - Datum aus dem Backend
- * @returns {string} Formatiertes Datum oder "-"
- */
-function formatiereDatum(wert) {
-  if (!wert) {
-    return '-';
-  }
-
-  const datum = new Date(wert);
-
-  if (isNaN(datum.getTime())) {
-    return '-';
-  }
-
-  return datum.toLocaleString('de-DE');
 }

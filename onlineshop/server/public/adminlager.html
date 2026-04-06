@@ -52,37 +52,34 @@
   <main class="py-5">
     <div class="container">
 
-```
-  <!-- Seitentitel -->
-  <h1 class="section-title text-center mb-5">Lagerverwaltung</h1>
+      <!-- Seitentitel -->
+      <h1 class="section-title text-center mb-5">Lagerverwaltung</h1>
 
-  <!-- =========================
-       LAGERBESTAND-TABELLE
-  ========================= -->
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>Artikel-ID</th>
-              <th>Artikelname</th>
-              <th>Aktueller Bestand</th>
-              <th>Neuer Bestand</th>
-              <th>Aktion</th>
-            </tr>
-          </thead>
-          <tbody id="lagerbestand-tabelle">
-            <!-- Wird dynamisch mit JavaScript gefüllt -->
-          </tbody>
-        </table>
+      <!-- =========================
+           LAGERBESTAND-TABELLE
+      ========================= -->
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Artikel-ID</th>
+                  <th>Artikelname</th>
+                  <th>Aktueller Bestand</th>
+                  <th>Neuer Bestand</th>
+                  <th>Aktion</th>
+                </tr>
+              </thead>
+              <tbody id="lagerbestand-tabelle">
+                <!-- Wird dynamisch mit JavaScript gefüllt -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
     </div>
-  </div>
-
-</div>
-```
-
   </main>
 
   <!-- =========================
@@ -96,27 +93,24 @@
   ========================= -->
 
   <!-- Lädt Header & Footer -->
-
   <script src="js/include.js"></script>
 
-  <!-- Session prüfen & Header anpassen -->
+  <!-- Zentrale Authentifizierungslogik (Session, Login, Admin, Logout) -->
+  <script src="js/utils/auth.js"></script>
 
+  <!-- Session prüfen & Header dynamisch anpassen -->
   <script src="js/auth-header.js"></script>
 
   <!-- Suchfunktion im Header -->
-
   <script src="js/suche.js"></script>
 
-  <!-- Kategorien für Dropdown laden -->
-
+  <!-- Kategorien für Dropdown-Menü laden -->
   <script src="js/kategorien.js"></script>
 
   <!-- Logik für Lagerverwaltung -->
-
   <script src="js/adminlager.js"></script>
 
   <!-- Bootstrap JS (Interaktionen) -->
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>

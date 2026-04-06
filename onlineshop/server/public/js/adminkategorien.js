@@ -3,13 +3,19 @@
   Beschreibung: Diese Datei steuert die Verwaltung und Bearbeitung von Kategorien
     im Admin-Bereich. Sie lädt Kategorien und ermöglicht das Hinzufügen, Bearbeiten
     und Löschen von Kategorien.
-  Hinweise: Lädt Kategorien, ermöglicht Hinzufügen, Bearbeiten und Löschen
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 // Initialisiert die Seite nach dem Laden des DOM
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await requireAdmin('/static/login.html', '/static/index.html');
+  } catch (fehler) {
+    console.error('Fehler bei der Initialisierung der Kategorienverwaltung:', fehler);
+    return;
+  }
   const kategorienTabelle = document.getElementById('kategorien-tabelle');
   const neueKategorieButton = document.getElementById('neue-kategorie-button');
   const formularBereich = document.getElementById('kategorie-formular-bereich');

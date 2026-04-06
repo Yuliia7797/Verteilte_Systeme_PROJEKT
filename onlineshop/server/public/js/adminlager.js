@@ -1,57 +1,34 @@
 /*
   Datei: adminlager.js
   Beschreibung: Diese Datei steuert die Verwaltung des Lagerbestands im Admin-Bereich.
-    Sie prüft den Admin-Zugriff und ermöglicht das Bearbeiten
+    Sie prüft beim Laden der Seite den Admin-Zugriff und ermöglicht das Bearbeiten
     und Anzeigen des Lagerbestands.
-  Hinweise: Prüft Admin-Zugriff, ermöglicht Bearbeiten und Anzeigen des Lagerbestands
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
-// Startet die Zugriffsprüfung nach dem Laden des DOM
-document.addEventListener('DOMContentLoaded', () => {
-  pruefeAdminZugriff();
-});
+'use strict';
 
 /**
- * Prüft, ob ein Benutzer eingeloggt ist und Admin-Rechte besitzt.
- * Lädt bei Erfolg den Lagerbestand, leitet sonst weiter.
+ * Startet die Initialisierung der Seite nach dem Laden des DOM.
  *
- * @async
- * @function pruefeAdminZugriff
- * @returns {Promise<void>}
+ * @function
+ * @returns {void}
  */
-async function pruefeAdminZugriff() {
+document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const response = await fetch('/benutzer/session', {
-      method: 'GET',
-      credentials: 'same-origin'
-    });
-
-    if (!response.ok) {
-      weiterleiten('login.html');
-      return;
-    }
-
-    const benutzer = await response.json();
-
-    if (benutzer.rolle !== 'admin') {
-      weiterleiten('index.html');
-      return;
-    }
-
-    ladeLagerbestand();
+    await requireAdmin('/static/login.html', '/static/index.html');
+    await ladeLagerbestand();
   } catch (fehler) {
-    console.error('Fehler bei der Prüfung des Admin-Zugriffs:', fehler);
-    weiterleiten('login.html');
+    console.error('Fehler bei der Initialisierung des Lagerbestands:', fehler);
   }
-}
+});
 
 /**
  * Lädt den aktuellen Lagerbestand vom Server und zeigt ihn in der Tabelle an.
  * Ermöglicht das Bearbeiten und Speichern einzelner Bestände.
  *
- * @async
  * @function ladeLagerbestand
  * @returns {Promise<void>}
  */
@@ -65,7 +42,7 @@ async function ladeLagerbestand() {
     const tbody = document.getElementById('lagerbestand-tabelle');
     tbody.innerHTML = '';
 
-    daten.forEach(eintrag => {
+    daten.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 
       zeile.innerHTML = `
@@ -85,7 +62,6 @@ async function ladeLagerbestand() {
       const inputFeld = zeile.querySelector('input');
       const speichernButton = zeile.querySelector('button');
 
-      // Speichert den aktualisierten Lagerbestand eines Artikels
       speichernButton.addEventListener('click', async () => {
         const neuerBestand = parseInt(inputFeld.value, 10);
 
@@ -109,7 +85,7 @@ async function ladeLagerbestand() {
             throw new Error('Fehler beim Speichern des Lagerbestands.');
           }
 
-          ladeLagerbestand();
+          await ladeLagerbestand();
           alert('Lagerbestand erfolgreich gespeichert.');
         } catch (fehler) {
           console.error('Fehler beim Speichern:', fehler);

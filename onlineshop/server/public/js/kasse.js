@@ -9,9 +9,10 @@
     - das Umschalten zwischen hinterlegter und abweichender Lieferadresse
     - die Auswahl der Zahlungsmethode
     - das Absenden der Bestellung
-  Hinweise: Siehe Funktionskommentare unten
+  Hinweise: Verwendet für den Login-Schutz die zentrale Auth-Logik aus auth.js
+    sowie die zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 'use strict';
@@ -27,47 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * Registriert alle benötigten Event-Handler der Kassen-Seite.
- *
- * @function registriereEvents
- */
-function registriereEvents() {
-  const checkboxAbweichendeAdresse = document.getElementById('abweichende-lieferadresse-checkbox');
-  const bestellungAbsendenButton = document.getElementById('bestellung-absenden-button');
-
-  if (checkboxAbweichendeAdresse) {
-    checkboxAbweichendeAdresse.addEventListener('change', () => {
-      aktualisiereAdressModus();
-    });
-  }
-
-  if (bestellungAbsendenButton) {
-    bestellungAbsendenButton.addEventListener('click', async () => {
-      await bestellungAbsenden();
-    });
-  }
-}
-
-/**
- * Lädt alle für die Kassen-Seite benötigten Daten und initialisiert die Ansicht.
- *
- * @async
- * @function initialisiereKasse
- * @returns {Promise<void>}
- */
-async function initialisiereKasse() {
-  try {
-    await ladeSession();
-    await ladeBenutzerAdresse();
-    await ladeWarenkorb();
-    aktualisiereAdressModus();
-  } catch (error) {
-    console.error('Fehler beim Initialisieren der Kasse:', error);
-    zeigeMeldung(error.message || 'Die Kasse konnte nicht geladen werden.', 'danger');
-  }
-}
-
-/**
  * Lädt die Session des aktuell eingeloggten Benutzers
  * und füllt die Basisdaten im Formular vor.
  *
@@ -76,17 +36,7 @@ async function initialisiereKasse() {
  * @returns {Promise<void>}
  */
 async function ladeSession() {
-  const response = await fetch('/benutzer/session', {
-    method: 'GET',
-    credentials: 'same-origin'
-  });
-
-  if (response.status === 401 || !response.ok) {
-    weiterleiten('/static/login.html');
-    throw new Error('Nicht eingeloggt');
-  }
-
-  eingeloggterBenutzer = await response.json();
+  eingeloggterBenutzer = await requireLogin('/static/login.html');
 
   setzeFeldWert('vorname', eingeloggterBenutzer.vorname || '');
   setzeFeldWert('nachname', eingeloggterBenutzer.nachname || '');
@@ -527,21 +477,6 @@ function setzeText(elementId, text) {
   }
 }
 
-/**
- * Formatiert einen Wert als Euro-Betrag im deutschen Format.
- *
- * @function formatPreis
- * @param {number|string} wert - Zu formatierender Preiswert
- * @returns {string} Formatierter Preis
- */
-function formatPreis(wert) {
-  const nummer = Number(wert) || 0;
-
-  return nummer.toLocaleString('de-DE', {
-    style: 'currency',
-    currency: 'EUR'
-  });
-}
 
 /**
  * Zeigt eine Statusmeldung im Kassenbereich an.

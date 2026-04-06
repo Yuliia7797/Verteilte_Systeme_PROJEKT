@@ -1,55 +1,27 @@
 /*
   Datei: admin.js
-  Beschreibung: Initialisierung und Zugriffsschutz für Admin-Bereich
+  Beschreibung: Initialisierung und Zugriffsschutz für den Admin-Bereich.
+    Beim Laden der Seite wird geprüft, ob ein eingeloggter Benutzer
+    mit Admin-Rechten vorhanden ist. Bei fehlender Berechtigung
+    erfolgt automatisch eine Weiterleitung.
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
+'use strict';
 
 /**
  * Startet die Zugriffsprüfung, sobald das DOM geladen ist.
  *
  * @function
+ * @returns {void}
  */
-document.addEventListener('DOMContentLoaded', () => {
-  pruefeAdminZugriff();
-});
-
-/**
- * Prüft, ob ein Benutzer eingeloggt ist und Admin-Rechte besitzt.
- * Leitet bei fehlender Berechtigung automatisch weiter.
- *
- * @async
- * @function pruefeAdminZugriff
- * @returns {Promise<void>}
- */
-async function pruefeAdminZugriff() {
+document.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Session vom Server abrufen
-    const response = await fetch('/benutzer/session', {
-      method: 'GET',
-      credentials: 'same-origin'
-    });
-
-    // Keine gültige Session → Login-Seite
-    if (!response.ok) {
-      weiterleiten('login.html');
-      return;
-    }
-
-    const benutzer = await response.json();
-
-    // Kein Admin → zurück zur Startseite
-    if (benutzer.rolle !== 'admin') {
-      weiterleiten('index.html');
-      return;
-    }
-
+    await requireAdmin('/static/login.html', '/static/index.html');
     console.log('Admin-Zugriff erlaubt.');
   } catch (fehler) {
     console.error('Fehler bei der Admin-Prüfung:', fehler);
-
-    // Fehler → Login-Seite
-    weiterleiten('login.html');
   }
-}
+});

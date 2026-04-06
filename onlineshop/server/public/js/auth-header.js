@@ -1,25 +1,18 @@
 /*
   Datei: auth-header.js
   Beschreibung: Diese Datei steuert die dynamische Anzeige der Navigationsleiste je nach Login-Status.
-    Sobald die Seite vollständig geladen ist, wird der Server nach einer aktiven Session gefragt:
-    - Ist der Benutzer eingeloggt: Login- und Registrieren-Button werden ausgeblendet, stattdessen werden Konto- und Logout-Button angezeigt.
-    - Ist kein Benutzer eingeloggt: Login- und Registrieren-Button werden angezeigt, Konto und Logout werden ausgeblendet.
-  Hinweise: Siehe Funktionskommentare unten
+    Sobald die Includes vollständig geladen sind, wird die aktuelle Benutzersession geprüft:
+    - Ist der Benutzer eingeloggt, werden Login und Registrieren ausgeblendet
+      und stattdessen Konto, Logout und gegebenenfalls Admin angezeigt.
+    - Ist kein Benutzer eingeloggt, werden Login und Registrieren angezeigt
+      und geschützte Navigationseinträge ausgeblendet.
+    Zusätzlich wird beim echten Schließen des Tabs ein Logout per Beacon ausgelöst.
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 'use strict';
-
-/**
- * Markiert eine Navigation, damit beim Verlassen der Seite
- * kein automatischer Logout ausgelöst wird.
- *
- * @function setzeNavigationsflag
- */
-function setzeNavigationsflag() {
-  sessionStorage.setItem('navigiert', '1');
-}
 
 // Speichert, ob der Tab gerade geschlossen oder versteckt wird
 let tabWirdGeschlossen = false;
@@ -55,17 +48,6 @@ window.addEventListener('popstate', () => {
   setzeNavigationsflag();
 });
 
-/**
- * Führt eine Weiterleitung durch und setzt vorher das Navigations-Flag.
- *
- * @function weiterleiten
- * @param {string} url - Ziel-URL für die Weiterleitung
- */
-function weiterleiten(url) {
-  setzeNavigationsflag();
-  window.location.href = url;
-}
-
 // Aktualisiert den Header, sobald die Includes vollständig geladen sind
 document.addEventListener('includesLoaded', () => {
   aktualisiereHeader();
@@ -75,7 +57,6 @@ document.addEventListener('includesLoaded', () => {
  * Prüft den aktuellen Session-Status und passt die sichtbaren
  * Navigationselemente entsprechend an.
  *
- * @async
  * @function aktualisiereHeader
  * @returns {Promise<void>}
  */
@@ -91,36 +72,18 @@ async function aktualisiereHeader() {
     return;
   }
 
-  try {
-    const response = await fetch('/benutzer/session', {
-      method: 'GET',
-      credentials: 'same-origin'
-    });
+  const benutzer = await holeSession();
 
-    if (response.ok) {
-      const benutzer = await response.json();
+  if (benutzer) {
+    loginButton.style.display = 'none';
+    registrierenButton.style.display = 'none';
+    kontoItem.style.display = '';
+    logoutButton.style.display = '';
 
-      loginButton.style.display = 'none';
-      registrierenButton.style.display = 'none';
-      kontoItem.style.display = '';
-      logoutButton.style.display = '';
-
-      if (adminItem) {
-        adminItem.style.display = benutzer.rolle === 'admin' ? '' : 'none';
-      }
-    } else {
-      loginButton.style.display = '';
-      registrierenButton.style.display = '';
-      kontoItem.style.display = 'none';
-      logoutButton.style.display = 'none';
-
-      if (adminItem) {
-        adminItem.style.display = 'none';
-      }
+    if (adminItem) {
+      adminItem.style.display = benutzer.rolle === 'admin' ? '' : 'none';
     }
-  } catch (error) {
-    console.error('Fehler beim Prüfen der Session:', error);
-
+  } else {
     loginButton.style.display = '';
     registrierenButton.style.display = '';
     kontoItem.style.display = 'none';
@@ -134,25 +97,20 @@ async function aktualisiereHeader() {
   authWrapper.style.display = 'flex';
   authWrapper.classList.add('align-items-center');
 
-  // Verknüpft den Logout-Button mit der Logout-Funktion
-  logoutButton.addEventListener('click', async (event) => {
-    event.preventDefault();
-    setzeNavigationsflag();
+  if (!logoutButton.dataset.logoutRegistriert) {
+    logoutButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      setzeNavigationsflag();
 
-    try {
-      const response = await fetch('/benutzer/logout', {
-        method: 'POST',
-        credentials: 'same-origin'
-      });
+      const erfolgreich = await logout();
 
-      if (response.ok) {
+      if (erfolgreich) {
         weiterleiten('/static/login.html');
       } else {
         alert('Logout fehlgeschlagen.');
       }
-    } catch (error) {
-      console.error('Fehler beim Logout:', error);
-      alert('Serverfehler beim Logout.');
-    }
-  });
+    });
+
+    logoutButton.dataset.logoutRegistriert = 'true';
+  }
 }

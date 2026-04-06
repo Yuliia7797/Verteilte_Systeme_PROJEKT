@@ -9,7 +9,7 @@
     Zusätzlich wird der Lagerbestand berücksichtigt:
     - Wenn die aktuelle Anzahl den Lagerbestand erreicht, wird der Plus-Button grau dargestellt.
     - Bei weiterem Klick erscheint eine Fehlermeldung.
-  Hinweise: Siehe Funktionskommentare unten
+  Hinweise: Verwendet die zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
 */
@@ -466,22 +466,6 @@ function aktualisiereZusammenfassung(zusammenfassung) {
   }
 }
 
-/**
- * Formatiert einen Wert als Euro-Betrag
- * im deutschen Zahlenformat.
- *
- * @function formatPreis
- * @param {number|string} wert - Zu formatierender Preiswert
- * @returns {string} Formatierter Preis
- */
-function formatPreis(wert) {
-  const nummer = Number(wert) || 0;
-
-  return nummer.toLocaleString('de-DE', {
-    style: 'currency',
-    currency: 'EUR'
-  });
-}
 
 /**
  * Zeigt eine Statusmeldung im Warenkorbbereich an

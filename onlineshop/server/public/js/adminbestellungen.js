@@ -1,18 +1,24 @@
 /*
   Datei: adminbestellungen.js
   Beschreibung: Diese Datei steuert die Admin-Seite für die Bestellverwaltung.
-    Sie lädt alle Bestellungen vom Backend und zeigt sie in einer Tabelle auf der
-    Seite adminbestellungen.html an.
-  Hinweise: Lädt Bestellungen, zeigt sie in einer Tabelle an
+    Sie prüft beim Laden der Seite den Admin-Zugriff, lädt anschließend alle
+    Bestellungen vom Backend und zeigt sie in einer Tabelle an.
+  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js sowie die
+    zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
-  Erstellt: 05.04.2026
+  Erstellt: 06.04.2026
 */
 
 'use strict';
 
 // Lädt die Bestellungen nach dem Aufbau des DOM
-document.addEventListener('DOMContentLoaded', () => {
-  ladeBestellungen();
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await requireAdmin('/static/login.html', '/static/index.html');
+    await ladeBestellungen();
+  } catch (fehler) {
+    console.error('Fehler bei der Initialisierung der Bestellverwaltung:', fehler);
+  }
 });
 
 /**
@@ -27,7 +33,9 @@ async function ladeBestellungen() {
   const bestellungenTabelle = document.getElementById('bestellungen-tabelle');
 
   try {
-    const antwort = await fetch('/bestellung');
+    const antwort = await fetch('/bestellung', {
+      credentials: 'same-origin'
+    });
     const bestellungen = await antwort.json();
 
     if (!antwort.ok) {
@@ -54,11 +62,11 @@ async function ladeBestellungen() {
         <td>${eintrag.id ?? '-'}</td>
         <td>${kunde}</td>
         <td>${eintrag.email ?? '-'}</td>
-        <td>${formatierePreis(eintrag.gesamtpreis)}</td>
+        <td>${formatPreis(eintrag.gesamtpreis)}</td>
         <td>${eintrag.zahlungsmethode ?? '-'}</td>
         <td>${eintrag.zahlungsstatus ?? '-'}</td>
         <td>${eintrag.bestellstatus ?? '-'}</td>
-        <td>${formatiereDatum(eintrag.erstellungszeitpunkt)}</td>
+        <td>${formatDatumMitUhrzeit(eintrag.erstellungszeitpunkt)}</td>
         <td>
           <a href="adminbestelldetails.html?id=${eintrag.id}" class="btn btn-sm btn-outline-primary">
             Details
@@ -79,48 +87,4 @@ async function ladeBestellungen() {
       </tr>
     `;
   }
-}
-
-/**
- * Formatiert ein Datum für die Anzeige im deutschen Format.
- * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
- *
- * @function formatiereDatum
- * @param {string|null|undefined} wert - Datum aus dem Backend
- * @returns {string} Formatiertes Datum oder "-"
- */
-function formatiereDatum(wert) {
-  if (!wert) {
-    return '-';
-  }
-
-  const datum = new Date(wert);
-
-  if (isNaN(datum.getTime())) {
-    return '-';
-  }
-
-  return datum.toLocaleString('de-DE');
-}
-
-/**
- * Formatiert einen Preis mit zwei Nachkommastellen und Euro-Zeichen.
- * Gibt bei ungültigen oder fehlenden Werten ein Platzhalterzeichen zurück.
- *
- * @function formatierePreis
- * @param {number|string|null|undefined} wert - Preis aus dem Backend
- * @returns {string} Formatierter Preis oder "-"
- */
-function formatierePreis(wert) {
-  if (wert === null || wert === undefined || wert === '') {
-    return '-';
-  }
-
-  const preis = Number.parseFloat(wert);
-
-  if (Number.isNaN(preis)) {
-    return '-';
-  }
-
-  return `${preis.toFixed(2)} €`;
 }

@@ -6,7 +6,7 @@
     in ein Formular, in dem Name, E-Mail, Adresse und optional das Passwort geändert
     werden können. Jede Bestellung kann aufgeklappt werden, um die bestellten Artikel
     mit Bild, Name, Anzahl und Preisen anzuzeigen.
-  Hinweise: Siehe Funktionskommentare unten
+  Hinweise: Verwendet die zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
 */
@@ -284,8 +284,8 @@ function zeigeBestellungen(bestellungen) {
   }
 
   container.innerHTML = bestellungen.map((bestellung) => {
-    const datum = formatiereDatum(bestellung.erstellungszeitpunkt);
-    const preis = formatierePreis(bestellung.gesamtpreis);
+    const datum = formatDatum(bestellung.erstellungszeitpunkt);
+    const preis = formatPreis(bestellung.gesamtpreis);
     const adresse = formatiereAdresse(bestellung);
 
     return `
@@ -339,37 +339,6 @@ function zeigeBestellungen(bestellungen) {
   }).join('');
 }
 
-/**
- * Formatiert ein Datum für die Anzeige
- * im deutschen Datumsformat.
- *
- * @function formatiereDatum
- * @param {string} datumString - Datum als String
- * @returns {string} Formatiertes Datum
- */
-function formatiereDatum(datumString) {
-  const datum = new Date(datumString);
-
-  return datum.toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-}
-
-/**
- * Formatiert einen Preis als deutschen Währungsbetrag.
- *
- * @function formatierePreis
- * @param {number|string} preis - Preiswert
- * @returns {string} Formatierter Preis
- */
-function formatierePreis(preis) {
-  return Number(preis).toLocaleString('de-DE', {
-    style: 'currency',
-    currency: 'EUR'
-  });
-}
 
 /**
  * Öffnet oder schließt die Artikeldetails einer Bestellung.
@@ -435,8 +404,8 @@ function zeigeBestellungsPositionen(container, positionen) {
           <div>
             <a href="/static/artikel.html?id=${pos.artikel_id}" class="fw-bold text-decoration-none text-dark">${pos.artikel}</a>
             <p class="mb-0 text-muted">Anzahl: ${pos.anzahl}</p>
-            <p class="mb-0 text-muted">Einzelpreis: ${formatierePreis(pos.einzelpreis)}</p>
-            <p class="mb-0">Gesamtpreis: ${formatierePreis(pos.gesamtpreis)}</p>
+            <p class="mb-0 text-muted">Einzelpreis: ${formatPreis(pos.einzelpreis)}</p>
+            <p class="mb-0">Gesamtpreis: ${formatPreis(pos.gesamtpreis)}</p>
           </div>
         </div>
       `).join('')}
