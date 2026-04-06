@@ -67,34 +67,46 @@
   ========================= -->
 
   <div id="footer-placeholder"></div>
-
   <!-- =========================
-       SCRIPTS / FUNKTIONALITÄT
+     SCRIPTS / FUNKTIONALITÄT
   ========================= -->
 
   <!-- Lädt Header & Footer -->
   <script src="js/include.js"></script>
 
-  <!-- Zentrale Authentifizierungslogik -->
+  <!-- Zentrale Authentifizierungslogik (Session, Login, Admin, Logout) -->
   <script src="js/utils/auth.js"></script>
 
-  <!-- Zentrale Formatierungslogik für Preise -->
+  <!-- Zentrale Formatierungslogik für Preise und Datumswerte -->
   <script src="js/utils/format.js"></script>
 
-  <!-- Header dynamisch -->
+  <!-- Zentrale Warenkorb-Logik (Artikel zum Warenkorb hinzufügen) -->
+  <script src="js/utils/warenkorb-actions.js"></script>
+
+  <!-- Zentrale URL-Parameter-Logik -->
+  <script src="js/utils/url.js"></script>
+
+  <!-- Zentrale Komponente für einzelne Artikelkarten -->
+  <script src="js/components/artikel-card.js"></script>
+
+  <!-- Zentrale Logik zum Rendern von Artikellisten -->
+  <script src="js/components/artikel-list.js"></script>
+
+  <!-- Session prüfen & Header dynamisch anpassen -->
   <script src="js/auth-header.js"></script>
 
   <!-- Suchfunktion im Header -->
   <script src="js/suche.js"></script>
 
-  <!-- Kategorien für Dropdown-Menü -->
+  <!-- Kategorien für Dropdown-Menü laden -->
   <script src="js/kategorien.js"></script>
 
-  <!-- Suchseite Logik -->
+  <!-- Logik für Suchergebnisse -->
   <script src="js/suche-ergebnisse.js"></script>
 
-  <!-- Bootstrap -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 
 </html>

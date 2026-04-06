@@ -28,6 +28,46 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
+ * Registriert alle benötigten Event-Listener
+ * für die Kassen-Seite.
+ *
+ * @function registriereEvents
+ */
+function registriereEvents() {
+  const checkbox = document.getElementById('abweichende-lieferadresse-checkbox');
+  const bestellungAbsendenButton = document.getElementById('bestellung-absenden-button');
+
+  if (checkbox) {
+    checkbox.addEventListener('change', aktualisiereAdressModus);
+  }
+
+  if (bestellungAbsendenButton) {
+    bestellungAbsendenButton.addEventListener('click', bestellungAbsenden);
+  }
+}
+
+/**
+ * Führt die Initialisierung der Kassen-Seite aus.
+ * Lädt Benutzer, Adresse und Warenkorb
+ * und setzt anschließend den Adressmodus korrekt.
+ *
+ * @async
+ * @function initialisiereKasse
+ * @returns {Promise<void>}
+ */
+async function initialisiereKasse() {
+  try {
+    await ladeSession();
+    await ladeBenutzerAdresse();
+    await ladeWarenkorb();
+    aktualisiereAdressModus();
+  } catch (error) {
+    console.error('Fehler bei der Initialisierung der Kasse:', error);
+    zeigeMeldung(error.message || 'Kassenseite konnte nicht geladen werden.', 'danger');
+  }
+}
+
+/**
  * Lädt die Session des aktuell eingeloggten Benutzers
  * und füllt die Basisdaten im Formular vor.
  *
@@ -476,7 +516,6 @@ function setzeText(elementId, text) {
     element.textContent = text;
   }
 }
-
 
 /**
  * Zeigt eine Statusmeldung im Kassenbereich an.

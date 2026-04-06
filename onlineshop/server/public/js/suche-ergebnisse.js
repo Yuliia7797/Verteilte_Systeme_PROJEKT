@@ -1,9 +1,12 @@
 /*
   Datei: suche-ergebnisse.js
-  Beschreibung: Diese Datei steuert die Suchergebnisseite.
-    Der Suchbegriff wird aus dem URL-Parameter ausgelesen, an das Backend gesendet
-    und die passenden Artikel werden als Cards angezeigt.
-    Bei fehlendem Suchbegriff oder keinen Treffern wird eine entsprechende Meldung ausgegeben.
+  Beschreibung: Diese Datei steuert die Darstellung der Suchergebnisse.
+    Beim Laden der Seite wird der Suchbegriff aus dem URL-Parameter ausgelesen.
+    Anschließend werden die passenden Artikel per GET-Request vom Backend geladen
+    und im Ergebniscontainer angezeigt.
+    Das Rendern der einzelnen Karten erfolgt über zentrale Komponenten.
+    Zusätzlich kann jeder Artikel per Button in den Warenkorb gelegt werden.
+    Bei fehlendem Suchbegriff, leerem Ergebnis oder einem Fehler wird eine passende Meldung ausgegeben.
   Hinweise: Siehe Funktionskommentare unten
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
@@ -14,151 +17,96 @@
 /**
  * Liest den Suchbegriff aus der URL.
  *
- * Beispiel: suche.html?q=Harry → "Harry"
- *
  * @function getSuchbegriffFromUrl
- * @returns {string|null} Suchbegriff oder null
+ * @returns {string} Suchbegriff oder leerer String
  */
 function getSuchbegriffFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('q');
+  return (params.get('q') || '').trim();
 }
 
 /**
- * Zeigt den aktuellen Suchbegriff oberhalb der Ergebnisse an.
- * Gibt einen Hinweis aus, wenn kein Suchbegriff vorhanden ist.
+ * Setzt den Suchbegriff in der Seite als sichtbare Ausgabe.
  *
- * @function renderSuchbegriff
- * @param {string|null} suchbegriff - Der Suchbegriff aus der URL
+ * @function setSuchbegriffAnzeige
+ * @param {string} suchbegriff - Suchbegriff aus der URL
+ * @returns {void}
  */
-function renderSuchbegriff(suchbegriff) {
+function setSuchbegriffAnzeige(suchbegriff) {
   const suchbegriffAnzeige = document.getElementById('suchbegriff-anzeige');
 
   if (!suchbegriffAnzeige) {
+    console.error('Das Element mit der ID "suchbegriff-anzeige" wurde nicht gefunden.');
     return;
   }
 
-  if (!suchbegriff) {
-    suchbegriffAnzeige.textContent = 'Bitte gib einen Suchbegriff ein.';
-    return;
+  if (suchbegriff) {
+    suchbegriffAnzeige.textContent = `Ergebnisse für: "${suchbegriff}"`;
+    document.title = `Suche: ${suchbegriff} - MyShop`;
+  } else {
+    suchbegriffAnzeige.textContent = 'Kein Suchbegriff angegeben.';
+    document.title = 'Suchergebnisse - MyShop';
   }
-
-  suchbegriffAnzeige.textContent = `Ergebnisse für: "${suchbegriff}"`;
 }
 
 /**
- * Erstellt die HTML-Karte für einen gefundenen Artikel.
- *
- * @function createSuchArtikelCard
- * @param {Object} artikelItem - Artikeldaten
- * @returns {string} HTML-Markup der Karte
- */
-function createSuchArtikelCard(artikelItem) {
-  return `
-    <div class="col-md-4">
-      <div class="card h-100">
-        <a href="/static/artikel.html?id=${artikelItem.id}">
-          <img
-            src="${artikelItem.bild_url}"
-            alt="${artikelItem.bezeichnung}"
-            class="card-img-top"
-          >
-        </a>
-
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">${artikelItem.bezeichnung}</h5>
-          <p class="card-text">${artikelItem.beschreibung || ''}</p>
-          <p class="fw-bold mt-auto">${Number(artikelItem.preis).toFixed(2)} €</p>
-
-          <a href="/static/artikel.html?id=${artikelItem.id}" class="btn btn-main">
-            Zum Artikel
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-/**
- * Rendert alle gefundenen Artikel im Ergebnis-Container.
- * Zeigt eine Meldung an, wenn keine Treffer vorhanden sind.
- *
- * @function renderSuchergebnisse
- * @param {Array<Object>} artikelListe - Liste der gefundenen Artikel
- */
-function renderSuchergebnisse(artikelListe) {
-  const container = document.getElementById('suche-artikel-container');
-
-  if (!container) {
-    return;
-  }
-
-  container.innerHTML = '';
-
-  if (!artikelListe || artikelListe.length === 0) {
-    container.innerHTML = `
-      <div class="col-12">
-        <p class="text-center">Keine passenden Artikel gefunden.</p>
-      </div>
-    `;
-    return;
-  }
-
-  artikelListe.forEach((artikelItem) => {
-    container.innerHTML += createSuchArtikelCard(artikelItem);
-  });
-}
-
-/**
- * Zeigt eine Fehlermeldung im Ergebnisbereich an.
+ * Zeigt eine Fehlermeldung im Suchergebnis-Container an.
  *
  * @function renderSucheFehler
- * @param {string} fehlermeldung - Fehlermeldungstext
+ * @param {string} message - Fehlermeldung
+ * @returns {void}
  */
-function renderSucheFehler(fehlermeldung) {
+function renderSucheFehler(message) {
   const container = document.getElementById('suche-artikel-container');
 
   if (!container) {
+    console.error('Der Container mit der ID "suche-artikel-container" wurde nicht gefunden.');
     return;
   }
 
   container.innerHTML = `
     <div class="col-12">
-      <div class="alert alert-danger text-center">
-        ${fehlermeldung}
+      <div class="alert alert-danger">
+        ${message}
       </div>
     </div>
   `;
 }
 
 /**
- * Lädt die Suchergebnisse vom Backend anhand des URL-Suchbegriffs
- * und zeigt sie auf der Seite an.
+ * Lädt die Suchergebnisse vom Server und rendert sie im Container.
  *
  * @async
- * @function loadSuchergebnisse
+ * @function ladeSuchergebnisse
  * @returns {Promise<void>}
  */
-async function loadSuchergebnisse() {
+async function ladeSuchergebnisse() {
   try {
     const suchbegriff = getSuchbegriffFromUrl();
-
-    renderSuchbegriff(suchbegriff);
+    setSuchbegriffAnzeige(suchbegriff);
 
     if (!suchbegriff) {
-      renderSucheFehler('Kein Suchbegriff wurde übergeben.');
+      renderSucheFehler('Bitte gib einen Suchbegriff ein.');
       return;
     }
 
-    const response = await fetch(`/artikel?suche=${encodeURIComponent(suchbegriff)}`);
+    const response = await fetch(`/artikel/suche?q=${encodeURIComponent(suchbegriff)}`);
 
     if (!response.ok) {
       throw new Error('Suchergebnisse konnten nicht geladen werden');
     }
 
-    const artikelListe = await response.json();
+    const artikel = await response.json();
 
-    renderSuchergebnisse(artikelListe);
+    if (typeof window.renderArtikelListe === 'function') {
+      window.renderArtikelListe('suche-artikel-container', artikel, {
+        leerText: 'Keine passenden Artikel gefunden.',
+        zeigeBeschreibung: true,
+        spaltenKlasse: 'col-md-4'
+      });
+    } else {
+      console.error('artikel-list.js wurde nicht korrekt geladen.');
+    }
   } catch (error) {
     console.error('Fehler beim Laden der Suchergebnisse:', error);
     renderSucheFehler('Die Suchergebnisse konnten nicht geladen werden.');
@@ -166,7 +114,21 @@ async function loadSuchergebnisse() {
 }
 
 /**
- * Startet das Laden der Suchergebnisse,
- * sobald das DOM vollständig geladen ist.
+ * Initialisiert die Suchergebnisseite und registriert
+ * die zentrale Warenkorb-Logik.
+ *
+ * @async
+ * @function initSucheErgebnisseSeite
+ * @returns {Promise<void>}
  */
-document.addEventListener('DOMContentLoaded', loadSuchergebnisse);
+async function initSucheErgebnisseSeite() {
+  await ladeSuchergebnisse();
+
+  if (typeof window.registriereAddToCartHandler === 'function') {
+    window.registriereAddToCartHandler(document);
+  } else {
+    console.error('warenkorb-actions.js wurde nicht korrekt geladen.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initSucheErgebnisseSeite);

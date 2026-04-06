@@ -36,8 +36,7 @@ async function ladeBestelldetails() {
   const lieferadresseInfo = document.getElementById('lieferadresse-info');
   const positionenTabelle = document.getElementById('positionen-tabelle');
 
-  const urlParameter = new URLSearchParams(window.location.search);
-  const bestellungId = urlParameter.get('id');
+  const bestellungId = getQueryParam('id');
 
   if (!bestellungId) {
     bestellungInfo.innerHTML = '<p class="text-danger mb-0">Keine Bestell-ID angegeben.</p>';

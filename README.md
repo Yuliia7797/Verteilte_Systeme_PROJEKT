@@ -5,9 +5,9 @@
 3. Dort (falls vorhanden) die lokale Anleitung in der jeweiligen `README.md` lesen.
 4. In der Regel starten die Projekte mit:
 
-```sh
+
 docker-compose up --build
-```
+
 
 ## Node.js
 

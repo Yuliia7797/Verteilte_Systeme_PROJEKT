@@ -19,8 +19,7 @@
  * @returns {string|null} Artikel-ID oder null
  */
 function getArtikelIdFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('id');
+  return getQueryParam('id');
 }
 
 /**
@@ -142,71 +141,22 @@ async function loadArtikelDetail() {
 }
 
 /**
- * Behandelt Klicks auf den "In den Warenkorb"-Button.
- * Fügt den Artikel dem Warenkorb hinzu.
+ * Initialisiert die Artikeldetailseite und registriert
+ * die zentrale Warenkorb-Logik.
+ *
+ * @async
+ * @function initArtikelDetailSeite
+ * @returns {Promise<void>}
  */
-document.addEventListener('click', async (event) => {
-  const button = event.target.closest('.js-in-warenkorb');
+async function initArtikelDetailSeite() {
+  await loadArtikelDetail();
 
-  if (!button) {
-    return;
+  if (typeof window.registriereAddToCartHandler === 'function') {
+    window.registriereAddToCartHandler(document);
+  } else {
+    console.error('warenkorb-actions.js wurde nicht korrekt geladen.');
   }
-
-  const lagerbestand = Number(button.dataset.lagerbestand) || 0;
-
-  if (lagerbestand <= 0) {
-    alert('Dieser Artikel ist momentan nicht verfügbar.');
-    return;
-  }
-
-  const artikelId = Number.parseInt(button.dataset.artikelId, 10);
-
-  if (!Number.isInteger(artikelId)) {
-    alert('Ungültige Artikel-ID.');
-    return;
-  }
-
-  try {
-    button.disabled = true;
-
-    const response = await fetch('/warenkorb/positionen', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        artikel_id: artikelId,
-        anzahl: 1
-      })
-    });
-
-    let data = {};
-
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
-
-    if (response.status === 401) {
-      alert('Bitte melde dich an, um Artikel in den Warenkorb zu legen.');
-      weiterleiten('/static/login.html');
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Fehler beim Hinzufügen zum Warenkorb');
-    }
-
-    alert(data.message || 'Artikel wurde zum Warenkorb hinzugefügt.');
-  } catch (error) {
-    console.error('Fehler beim Hinzufügen zum Warenkorb:', error);
-    alert(error.message || 'Serverfehler beim Hinzufügen zum Warenkorb.');
-  } finally {
-    button.disabled = false;
-  }
-});
+}
 
 // Lädt die Artikeldetails nach dem Aufbau des DOM
-document.addEventListener('DOMContentLoaded', loadArtikelDetail);
+document.addEventListener('DOMContentLoaded', initArtikelDetailSeite);
