@@ -90,8 +90,8 @@ async function ladeSuchergebnisse() {
       return;
     }
 
-    const response = await fetch(`/artikel/suche?q=${encodeURIComponent(suchbegriff)}`);
-
+    const response = await fetch(`/artikel?suche=${encodeURIComponent(suchbegriff)}`);
+   
     if (!response.ok) {
       throw new Error('Suchergebnisse konnten nicht geladen werden');
     }

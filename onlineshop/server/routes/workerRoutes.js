@@ -13,102 +13,116 @@ const router = express.Router();
 const connection = require('../db');
 const istAdmin = require('../istAdmin');
 
-/*
-  GET /worker
-  Lädt alle Worker aus der Datenbank.
-  Dieser Endpunkt darf nur von Admins genutzt werden.
-*/
-router.get('/', istAdmin, (req, res) => {
-  // Alle Worker nach Erstellungszeitpunkt absteigend laden
-  connection.query(
-    'SELECT * FROM worker ORDER BY erstellungszeitpunkt DESC',
-    (error, results) => {
+/**
+ * Führt eine SQL-Abfrage aus.
+ *
+ * @function query
+ * @param {string} sql - SQL-Abfrage
+ * @param {Array<any>} [params=[]] - Parameter für die SQL-Abfrage
+ * @returns {Promise<any>} Ergebnis der SQL-Abfrage
+ */
+function query(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    connection.query(sql, params, (error, results) => {
       if (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Datenbankfehler' });
+        reject(error);
+      } else {
+        resolve(results);
       }
+    });
+  });
+}
 
-      res.status(200).json(results);
-    }
-  );
+/**
+ * GET /worker
+ * Lädt alle Worker aus der Datenbank.
+ * Dieser Endpunkt darf nur von Admins genutzt werden.
+ */
+router.get('/', istAdmin, async (req, res) => {
+  try {
+    const results = await query(
+      `SELECT *
+       FROM worker
+       ORDER BY erstellungszeitpunkt DESC, id DESC`
+    );
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Datenbankfehler' });
+  }
 });
 
-/*
-  GET /worker/aufgaben
-  Lädt alle Aufgaben mit Informationen zu Bestellung und Worker.
-  Dieser Endpunkt darf nur von Admins genutzt werden.
-*/
-router.get('/aufgaben', istAdmin, (req, res) => {
-  /*
-    Alle Aufgaben laden und zusätzlich
-    Bestellstatus und Worker-ID anzeigen.
-  */
-  connection.query(
-    `SELECT au.id, au.typ, au.status, au.versuch_anzahl, au.fehlermeldung,
-            au.erstellungszeitpunkt, au.startzeitpunkt, au.endzeitpunkt,
-            b.bestellstatus, w.id AS worker_id
-     FROM aufgabe au
-     LEFT JOIN bestellung b ON au.bestellung_id = b.id
-     LEFT JOIN worker w ON au.worker_id = w.id
-     ORDER BY au.erstellungszeitpunkt DESC`,
-    (error, results) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Datenbankfehler' });
-      }
+/**
+ * GET /worker/aufgaben
+ * Lädt alle Aufgaben mit Informationen zu Bestellung und Worker.
+ * Dieser Endpunkt darf nur von Admins genutzt werden.
+ */
+router.get('/aufgaben', istAdmin, async (req, res) => {
+  try {
+    const results = await query(
+      `SELECT au.id,
+              au.bestellung_id,
+              au.typ,
+              au.status,
+              au.worker_id,
+              au.versuch_anzahl,
+              au.fehlermeldung,
+              au.erstellungszeitpunkt,
+              au.startzeitpunkt,
+              au.endzeitpunkt,
+              b.bestellstatus
+       FROM aufgabe au
+       LEFT JOIN bestellung b ON au.bestellung_id = b.id
+       ORDER BY au.erstellungszeitpunkt DESC, au.id DESC`
+    );
 
-      res.status(200).json(results);
-    }
-  );
+    res.status(200).json(results);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Datenbankfehler' });
+  }
 });
 
-/*
-  PATCH /worker/:id/status
-  Ändert den Status eines Workers.
-  Erlaubte Werte sind "aktiv" und "inaktiv".
-  Dieser Endpunkt darf nur von Admins genutzt werden.
-*/
-router.patch('/:id/status', istAdmin, (req, res) => {
-  // Worker-ID aus der URL lesen und in eine Zahl umwandeln
+/**
+ * PATCH /worker/:id/status
+ * Ändert den Status eines Workers.
+ * Erlaubte Werte sind "aktiv" und "inaktiv".
+ * Dieser Endpunkt darf nur von Admins genutzt werden.
+ */
+router.patch('/:id/status', istAdmin, async (req, res) => {
   const workerId = Number.parseInt(req.params.id, 10);
-
-  // Neuen Status aus dem Request-Body lesen
   const { status } = req.body;
 
-  // Prüfen, ob die Worker-ID gültig ist
   if (!Number.isInteger(workerId)) {
     return res.status(400).json({ message: 'Ungültige Worker-ID' });
   }
 
-  // Prüfen, ob ein erlaubter Status übergeben wurde
   if (!status || !['aktiv', 'inaktiv'].includes(status)) {
     return res.status(400).json({
       message: 'Ungültiger Status. Erlaubt sind nur "aktiv" oder "inaktiv".'
     });
   }
 
-  // Status des Workers in der Datenbank aktualisieren
-  connection.query(
-    'UPDATE worker SET status = ? WHERE id = ?',
-    [status, workerId],
-    (error, results) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Fehler beim Aktualisieren des Worker-Status' });
-      }
+  try {
+    const results = await query(
+      'UPDATE worker SET status = ? WHERE id = ?',
+      [status, workerId]
+    );
 
-      // Prüfen, ob ein Worker mit dieser ID existiert
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ message: 'Worker nicht gefunden' });
-      }
-
-      res.status(200).json({
-        message: 'Worker-Status erfolgreich aktualisiert',
-        worker_id: workerId,
-        status: status
-      });
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: 'Worker nicht gefunden' });
     }
-  );
+
+    res.status(200).json({
+      message: 'Worker-Status erfolgreich aktualisiert',
+      worker_id: workerId,
+      status: status
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Fehler beim Aktualisieren des Worker-Status' });
+  }
 });
 
 module.exports = router;

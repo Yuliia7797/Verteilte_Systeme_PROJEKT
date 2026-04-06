@@ -44,6 +44,14 @@ console.log('Worker startet und verbindet sich mit der Datenbank...');
 // Datenbank-Helfer
 // =========================
 
+/**
+ * Führt eine SQL-Abfrage über den Connection-Pool aus.
+ *
+ * @function query
+ * @param {string} sql - SQL-Abfrage
+ * @param {Array<any>} [params=[]] - Parameter für die Abfrage
+ * @returns {Promise<any>} Ergebnis der SQL-Abfrage
+ */
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
     pool.query(sql, params, function (error, results) {
@@ -56,6 +64,12 @@ function query(sql, params = []) {
   });
 }
 
+/**
+ * Holt eine einzelne Datenbankverbindung aus dem Pool.
+ *
+ * @function getConnection
+ * @returns {Promise<any>} Datenbankverbindung
+ */
 function getConnection() {
   return new Promise((resolve, reject) => {
     pool.getConnection(function (err, connection) {
@@ -73,17 +87,15 @@ function getConnection() {
 // Worker-Registrierung & Überwachung
 // =========================
 
+/**
+ * Registriert den Worker in der Tabelle "worker".
+ * Der Worker meldet sich als aktiver allgemeiner Worker an.
+ *
+ * @async
+ * @function registerWorker
+ * @returns {Promise<void>}
+ */
 async function registerWorker() {
-  await query(
-    `UPDATE aufgabe
-     SET worker_id = NULL
-     WHERE worker_id IN (
-       SELECT id FROM worker WHERE status = 'inaktiv'
-     )`
-  );
-
-  await query("DELETE FROM worker WHERE status = 'inaktiv'");
-
   const result = await query(
     "INSERT INTO worker (typ, status, letzter_heartbeat) VALUES ('allgemein', 'aktiv', NOW())"
   );
@@ -92,27 +104,36 @@ async function registerWorker() {
   console.log('Worker registriert mit ID:', workerId);
 }
 
+/**
+ * Sendet einen Heartbeat für den aktuellen Worker.
+ *
+ * @async
+ * @function sendHeartbeat
+ * @returns {Promise<void>}
+ */
 async function sendHeartbeat() {
-  if (workerId) {
-    await query(
-      "UPDATE worker SET letzter_heartbeat = NOW() WHERE id = ?",
-      [workerId]
-    );
+  if (!workerId) {
+    return;
   }
-}
 
-async function markInaktiveWorker() {
   await query(
-    `UPDATE worker
-     SET status = 'inaktiv'
-     WHERE status = 'aktiv'
-       AND id != ?
-       AND letzter_heartbeat < DATE_SUB(NOW(), INTERVAL 60 SECOND)`,
+    "UPDATE worker SET letzter_heartbeat = NOW() WHERE id = ?",
     [workerId]
   );
 }
 
+/**
+ * Prüft, ob der aktuelle Worker noch als aktiv markiert ist.
+ *
+ * @async
+ * @function istWorkerAktiv
+ * @returns {Promise<boolean>} true, wenn der Worker aktiv ist
+ */
 async function istWorkerAktiv() {
+  if (!workerId) {
+    return false;
+  }
+
   const results = await query(
     "SELECT status FROM worker WHERE id = ? LIMIT 1",
     [workerId]
@@ -125,12 +146,46 @@ async function istWorkerAktiv() {
   return results[0].status === 'aktiv';
 }
 
+/**
+ * Markiert den aktuellen Worker beim Beenden als inaktiv.
+ *
+ * @async
+ * @function workerAbmelden
+ * @returns {Promise<void>}
+ */
+async function workerAbmelden() {
+  if (!workerId) {
+    return;
+  }
+
+  try {
+    await query(
+      "UPDATE worker SET status = 'inaktiv' WHERE id = ?",
+      [workerId]
+    );
+  } catch (error) {
+    console.error('Fehler beim Abmelden des Workers:', error.message);
+  }
+}
+
 
 // =========================
 // Task-Queue / Task-Status
 // =========================
 
-async function getNextTask() {
+/**
+ * Holt die nächste Aufgabe, die bereits diesem Worker vom Controller
+ * zugewiesen wurde, und setzt sie atomar auf "in_bearbeitung".
+ *
+ * Wichtig:
+ * Der Worker sucht NICHT nach globalen "wartend"-Aufgaben.
+ * Nur der Controller verteilt Aufgaben.
+ *
+ * @async
+ * @function getAssignedTask
+ * @returns {Promise<Object|null>} Zugewiesene Aufgabe oder null
+ */
+async function getAssignedTask() {
   const workerAktiv = await istWorkerAktiv();
 
   if (!workerAktiv) {
@@ -147,7 +202,14 @@ async function getNextTask() {
       }
 
       conn.query(
-        "SELECT * FROM aufgabe WHERE status = 'wartend' ORDER BY id ASC LIMIT 1 FOR UPDATE",
+        `SELECT *
+         FROM aufgabe
+         WHERE worker_id = ?
+           AND status = 'zugewiesen'
+         ORDER BY id ASC
+         LIMIT 1
+         FOR UPDATE`,
+        [workerId],
         function (err, results) {
           if (err) {
             return conn.rollback(() => {
@@ -168,15 +230,23 @@ async function getNextTask() {
           conn.query(
             `UPDATE aufgabe
              SET status = 'in_bearbeitung',
-                 worker_id = ?,
                  startzeitpunkt = NOW()
-             WHERE id = ?`,
-            [workerId, task.id],
-            function (err) {
+             WHERE id = ?
+               AND worker_id = ?
+               AND status = 'zugewiesen'`,
+            [task.id, workerId],
+            function (err, updateResult) {
               if (err) {
                 return conn.rollback(() => {
                   conn.release();
                   reject(err);
+                });
+              }
+
+              if (!updateResult.affectedRows) {
+                return conn.rollback(() => {
+                  conn.release();
+                  resolve(null);
                 });
               }
 
@@ -186,6 +256,9 @@ async function getNextTask() {
                 if (err) {
                   return reject(err);
                 }
+
+                task.status = 'in_bearbeitung';
+                task.startzeitpunkt = new Date();
 
                 resolve(task);
               });
@@ -197,13 +270,35 @@ async function getNextTask() {
   });
 }
 
+/**
+ * Markiert eine Aufgabe als erfolgreich abgeschlossen.
+ *
+ * @async
+ * @function markAsDone
+ * @param {number} taskId - ID der Aufgabe
+ * @returns {Promise<void>}
+ */
 async function markAsDone(taskId) {
   await query(
-    "UPDATE aufgabe SET status = 'abgeschlossen', endzeitpunkt = NOW() WHERE id = ?",
-    [taskId]
+    `UPDATE aufgabe
+     SET status = 'abgeschlossen',
+         endzeitpunkt = NOW()
+     WHERE id = ?
+       AND worker_id = ?
+       AND status = 'in_bearbeitung'`,
+    [taskId, workerId]
   );
 }
 
+/**
+ * Markiert eine Aufgabe als fehlgeschlagen und erhöht die Anzahl der Versuche.
+ *
+ * @async
+ * @function markAsFailed
+ * @param {number} taskId - ID der Aufgabe
+ * @param {string} fehlermeldung - Fehlermeldung zur Aufgabe
+ * @returns {Promise<void>}
+ */
 async function markAsFailed(taskId, fehlermeldung) {
   await query(
     `UPDATE aufgabe
@@ -211,19 +306,10 @@ async function markAsFailed(taskId, fehlermeldung) {
          fehlermeldung = ?,
          endzeitpunkt = NOW(),
          versuch_anzahl = versuch_anzahl + 1
-     WHERE id = ?`,
-    [fehlermeldung, taskId]
-  );
-}
-
-async function resetHaengengebliebeneAufgaben() {
-  await query(
-    `UPDATE aufgabe
-     SET status = 'wartend',
-         worker_id = NULL,
-         startzeitpunkt = NULL
-     WHERE status = 'in_bearbeitung'
-       AND startzeitpunkt < DATE_SUB(NOW(), INTERVAL 5 MINUTE)`
+     WHERE id = ?
+       AND worker_id = ?
+       AND status = 'in_bearbeitung'`,
+    [fehlermeldung, taskId, workerId]
   );
 }
 
@@ -232,6 +318,14 @@ async function resetHaengengebliebeneAufgaben() {
 // Shop-Aufgaben / Business-Logik
 // =========================
 
+/**
+ * Reduziert den Lagerbestand aller Artikel einer Bestellung.
+ *
+ * @async
+ * @function lagerAktualisieren
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
 async function lagerAktualisieren(bestellungId) {
   console.log('  -> Lagerbestand aktualisieren für Bestellung:', bestellungId);
 
@@ -250,6 +344,14 @@ async function lagerAktualisieren(bestellungId) {
   }
 }
 
+/**
+ * Leert den Warenkorb des Benutzers, der die Bestellung aufgegeben hat.
+ *
+ * @async
+ * @function warenkorbLeeren
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
 async function warenkorbLeeren(bestellungId) {
   console.log('  -> Warenkorb leeren für Bestellung:', bestellungId);
 
@@ -269,11 +371,16 @@ async function warenkorbLeeren(bestellungId) {
     [benutzerId]
   );
 
-  if (!warenkorbResult.length) return;
+  if (!warenkorbResult.length) {
+    return;
+  }
 
   const warenkorbId = warenkorbResult[0].id;
 
-  await query("DELETE FROM warenkorb_position WHERE warenkorb_id = ?", [warenkorbId]);
+  await query(
+    "DELETE FROM warenkorb_position WHERE warenkorb_id = ?",
+    [warenkorbId]
+  );
 
   await query(
     "UPDATE warenkorb SET gesamtpreis = 0.00, aenderungszeitpunkt = NOW() WHERE id = ?",
@@ -281,6 +388,14 @@ async function warenkorbLeeren(bestellungId) {
   );
 }
 
+/**
+ * Aktualisiert den Status einer Bestellung auf "bestaetigt".
+ *
+ * @async
+ * @function bestellstatusAktualisieren
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
 async function bestellstatusAktualisieren(bestellungId) {
   console.log('  -> Bestellstatus aktualisieren:', bestellungId);
 
@@ -295,6 +410,17 @@ async function bestellstatusAktualisieren(bestellungId) {
 // Aufgabenverarbeitung
 // =========================
 
+/**
+ * Führt die Business-Logik für eine zugewiesene Aufgabe aus.
+ *
+ * @async
+ * @function processTask
+ * @param {Object} task - Aufgabe aus der Datenbank
+ * @param {number} task.id - ID der Aufgabe
+ * @param {string} task.typ - Typ der Aufgabe
+ * @param {number} task.bestellung_id - Zugehörige Bestell-ID
+ * @returns {Promise<void>}
+ */
 async function processTask(task) {
   console.log('Verarbeite Aufgabe:', task.id, task.typ);
 
@@ -303,12 +429,15 @@ async function processTask(task) {
       case 'lager_aktualisieren':
         await lagerAktualisieren(task.bestellung_id);
         break;
+
       case 'warenkorb_leeren':
         await warenkorbLeeren(task.bestellung_id);
         break;
+
       case 'bestellstatus_aktualisieren':
         await bestellstatusAktualisieren(task.bestellung_id);
         break;
+
       default:
         throw new Error(`Unbekannter Typ: ${task.typ}`);
     }
@@ -324,14 +453,21 @@ async function processTask(task) {
 // Worker-Laufzeit
 // =========================
 
+/**
+ * Hauptschleife des Workers.
+ * Der Worker verarbeitet nur Aufgaben, die bereits vom Controller
+ * zugewiesen wurden.
+ *
+ * @async
+ * @function workerLoop
+ * @returns {Promise<void>}
+ */
 async function workerLoop() {
   console.log('Worker läuft...');
 
-  await resetHaengengebliebeneAufgaben();
-
   while (true) {
     try {
-      const task = await getNextTask();
+      const task = await getAssignedTask();
 
       if (task) {
         await processTask(task);
@@ -346,6 +482,13 @@ async function workerLoop() {
   }
 }
 
+/**
+ * Startet den Worker-Prozess mit automatischen Wiederholungsversuchen.
+ *
+ * @async
+ * @function start
+ * @returns {Promise<void>}
+ */
 async function start() {
   let versuch = 0;
 
@@ -358,8 +501,11 @@ async function start() {
       await registerWorker();
 
       setInterval(async () => {
-        await sendHeartbeat();
-        await markInaktiveWorker();
+        try {
+          await sendHeartbeat();
+        } catch (error) {
+          console.error('Heartbeat-Fehler:', error.message);
+        }
       }, 15000);
 
       await workerLoop();
@@ -369,5 +515,38 @@ async function start() {
     }
   }
 }
+
+
+// =========================
+// Graceful Shutdown
+// =========================
+
+/**
+ * Behandelt das saubere Beenden des Worker-Prozesses.
+ *
+ * @async
+ * @function handleShutdown
+ * @param {string} signal - Empfangendes Prozesssignal
+ * @returns {Promise<void>}
+ */
+async function handleShutdown(signal) {
+  console.log(`\nSignal empfangen: ${signal}. Worker wird sauber beendet...`);
+
+  try {
+    await workerAbmelden();
+  } finally {
+    pool.end(function () {
+      process.exit(0);
+    });
+  }
+}
+
+process.on('SIGINT', () => {
+  handleShutdown('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  handleShutdown('SIGTERM');
+});
 
 start();

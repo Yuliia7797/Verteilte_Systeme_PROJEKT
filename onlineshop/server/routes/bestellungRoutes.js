@@ -22,6 +22,7 @@ const istAdmin = require('../istAdmin');
  * @param {Object} req - Express Request
  * @param {Object} res - Express Response
  * @param {Function} next - Express Next-Funktion
+ * @returns {void}
  */
 function requireLogin(req, res, next) {
   if (!req.session || !req.session.benutzer || !req.session.benutzer.id) {
@@ -29,6 +30,278 @@ function requireLogin(req, res, next) {
   }
 
   next();
+}
+
+/**
+ * Holt eine einzelne Verbindung aus dem Pool.
+ *
+ * @function getConnection
+ * @returns {Promise<Object>} Datenbankverbindung
+ */
+function getConnection() {
+  return new Promise((resolve, reject) => {
+    connection.getConnection((error, conn) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(conn);
+      }
+    });
+  });
+}
+
+/**
+ * Führt eine SQL-Abfrage über eine bestehende Verbindung aus.
+ *
+ * @function queryWithConnection
+ * @param {Object} conn - Datenbankverbindung
+ * @param {string} sql - SQL-Abfrage
+ * @param {Array<any>} [params=[]] - Parameter der SQL-Abfrage
+ * @returns {Promise<any>} SQL-Ergebnis
+ */
+function queryWithConnection(conn, sql, params = []) {
+  return new Promise((resolve, reject) => {
+    conn.query(sql, params, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+/**
+ * Startet eine Transaktion.
+ *
+ * @function beginTransaction
+ * @param {Object} conn - Datenbankverbindung
+ * @returns {Promise<void>}
+ */
+function beginTransaction(conn) {
+  return new Promise((resolve, reject) => {
+    conn.beginTransaction((error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Bestätigt eine Transaktion.
+ *
+ * @function commitTransaction
+ * @param {Object} conn - Datenbankverbindung
+ * @returns {Promise<void>}
+ */
+function commitTransaction(conn) {
+  return new Promise((resolve, reject) => {
+    conn.commit((error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Führt einen Rollback einer Transaktion aus.
+ *
+ * @function rollbackTransaction
+ * @param {Object} conn - Datenbankverbindung
+ * @returns {Promise<void>}
+ */
+function rollbackTransaction(conn) {
+  return new Promise((resolve) => {
+    conn.rollback(() => {
+      resolve();
+    });
+  });
+}
+
+/**
+ * Prüft, ob eine Lieferadresse zum aktuellen Benutzer gehört.
+ *
+ * @async
+ * @function pruefeLieferadresse
+ * @param {Object} conn - Datenbankverbindung
+ * @param {number} lieferadresseId - ID der Lieferadresse
+ * @param {number} benutzerId - ID des Benutzers
+ * @returns {Promise<boolean>} true, wenn die Adresse dem Benutzer gehört
+ */
+async function pruefeLieferadresse(conn, lieferadresseId, benutzerId) {
+  const result = await queryWithConnection(
+    conn,
+    `SELECT id
+     FROM adresse
+     WHERE id = ?
+       AND benutzer_id = ?
+     LIMIT 1`,
+    [lieferadresseId, benutzerId]
+  );
+
+  return result.length > 0;
+}
+
+/**
+ * Lädt Artikelpreise und Lagerbestände für die übergebenen Artikel-IDs.
+ *
+ * @async
+ * @function ladeArtikelDaten
+ * @param {Object} conn - Datenbankverbindung
+ * @param {Array<number>} artikelIds - Liste der Artikel-IDs
+ * @returns {Promise<Array<Object>>} Artikel mit Preis und Lagerbestand
+ */
+async function ladeArtikelDaten(conn, artikelIds) {
+  return queryWithConnection(
+    conn,
+    `SELECT a.id, a.preis, l.anzahl AS lagerbestand
+     FROM artikel a
+     LEFT JOIN lagerbestand l ON a.id = l.artikel_id
+     WHERE a.id IN (?)`,
+    [artikelIds]
+  );
+}
+
+/**
+ * Validiert die Bestellpositionen und berechnet den Gesamtpreis.
+ *
+ * @async
+ * @function validierePositionenUndBerechneGesamtpreis
+ * @param {Array<Object>} positionen - Bestellpositionen aus dem Request
+ * @param {Array<Object>} artikelResult - Geladene Artikeldaten
+ * @returns {Promise<Object>} Objekt mit artikelMap und gesamtpreis
+ */
+async function validierePositionenUndBerechneGesamtpreis(positionen, artikelResult) {
+  const artikelMap = {};
+
+  artikelResult.forEach((artikel) => {
+    artikelMap[artikel.id] = {
+      preis: parseFloat(artikel.preis),
+      lagerbestand: artikel.lagerbestand !== null
+        ? Number.parseInt(artikel.lagerbestand, 10)
+        : 0
+    };
+  });
+
+  let gesamtpreis = 0;
+
+  for (const pos of positionen) {
+    const artikelId = Number.parseInt(pos.artikel_id, 10);
+    const anzahl = Number.parseInt(pos.anzahl, 10);
+
+    if (!Number.isInteger(artikelId) || !Number.isInteger(anzahl) || anzahl <= 0) {
+      throw new Error('Ungültige Bestellposition');
+    }
+
+    if (!artikelMap[artikelId]) {
+      throw new Error(`Artikel ${artikelId} nicht gefunden`);
+    }
+
+    if (artikelMap[artikelId].lagerbestand < anzahl) {
+      throw new Error(`Für Artikel ${artikelId} ist nicht genügend Lagerbestand vorhanden`);
+    }
+
+    gesamtpreis += artikelMap[artikelId].preis * anzahl;
+  }
+
+  gesamtpreis = Math.round(gesamtpreis * 100) / 100;
+
+  return {
+    artikelMap,
+    gesamtpreis
+  };
+}
+
+/**
+ * Erstellt eine Bestellung in der Datenbank.
+ *
+ * @async
+ * @function erstelleBestellung
+ * @param {Object} conn - Datenbankverbindung
+ * @param {number} benutzerId - Benutzer-ID
+ * @param {number} lieferadresseId - Lieferadresse-ID
+ * @param {number} gesamtpreis - Gesamtpreis der Bestellung
+ * @param {string} zahlungsmethode - Zahlungsmethode
+ * @returns {Promise<number>} ID der neuen Bestellung
+ */
+async function erstelleBestellung(conn, benutzerId, lieferadresseId, gesamtpreis, zahlungsmethode) {
+  const result = await queryWithConnection(
+    conn,
+    `INSERT INTO bestellung
+     (benutzer_id, lieferadresse_id, gesamtpreis, zahlungsmethode, zahlungsstatus, bestellstatus)
+     VALUES (?, ?, ?, ?, 'bezahlt', 'neu')`,
+    [benutzerId, lieferadresseId, gesamtpreis, zahlungsmethode]
+  );
+
+  return result.insertId;
+}
+
+/**
+ * Speichert alle Bestellpositionen für eine Bestellung.
+ *
+ * @async
+ * @function speichereBestellpositionen
+ * @param {Object} conn - Datenbankverbindung
+ * @param {number} bestellungId - ID der Bestellung
+ * @param {Array<Object>} positionen - Bestellpositionen
+ * @param {Object} artikelMap - Artikel-Mapping mit Preisen
+ * @returns {Promise<void>}
+ */
+async function speichereBestellpositionen(conn, bestellungId, positionen, artikelMap) {
+  const positionenWerte = positionen.map((pos) => {
+    const artikelId = Number.parseInt(pos.artikel_id, 10);
+    const anzahl = Number.parseInt(pos.anzahl, 10);
+    const einzelpreis = artikelMap[artikelId].preis;
+    const gesamtpreis = Math.round(einzelpreis * anzahl * 100) / 100;
+
+    return [
+      bestellungId,
+      artikelId,
+      anzahl,
+      einzelpreis,
+      gesamtpreis
+    ];
+  });
+
+  await queryWithConnection(
+    conn,
+    `INSERT INTO bestellposition
+     (bestellung_id, artikel_id, anzahl, einzelpreis, gesamtpreis)
+     VALUES ?`,
+    [positionenWerte]
+  );
+}
+
+/**
+ * Legt die drei Standard-Aufgaben für eine neue Bestellung an.
+ * Die Aufgaben werden bewusst nur als "wartend" angelegt.
+ * Der Controller übernimmt später die Verteilung an freie Worker.
+ *
+ * @async
+ * @function legeAufgabenAn
+ * @param {Object} conn - Datenbankverbindung
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
+async function legeAufgabenAn(conn, bestellungId) {
+  const aufgaben = [
+    [bestellungId, null, 'bestellstatus_aktualisieren', 'wartend'],
+    [bestellungId, null, 'lager_aktualisieren', 'wartend'],
+    [bestellungId, null, 'warenkorb_leeren', 'wartend']
+  ];
+
+  await queryWithConnection(
+    conn,
+    `INSERT INTO aufgabe (bestellung_id, worker_id, typ, status)
+     VALUES ?`,
+    [aufgaben]
+  );
 }
 
 /**
@@ -93,9 +366,9 @@ router.get('/:id', istAdmin, (req, res) => {
          JOIN artikel ar ON bp.artikel_id = ar.id
          WHERE bp.bestellung_id = ?`,
         [id],
-        (error, positionenResult) => {
-          if (error) {
-            console.error(error);
+        (positionenError, positionenResult) => {
+          if (positionenError) {
+            console.error(positionenError);
             return res.status(500).json({ message: 'Datenbankfehler bei Positionen' });
           }
 
@@ -114,11 +387,13 @@ router.get('/:id', istAdmin, (req, res) => {
  * Erstellt eine neue Bestellung mit allen Positionen
  * und legt danach Worker-Aufgaben für Lager, Warenkorb und Bestellstatus an.
  */
-router.post('/', requireLogin, (req, res) => {
+router.post('/', requireLogin, async (req, res) => {
   const benutzerId = req.session.benutzer.id;
-  const { lieferadresse_id, zahlungsmethode, positionen } = req.body;
+  const lieferadresseId = Number.parseInt(req.body.lieferadresse_id, 10);
+  const zahlungsmethode = req.body.zahlungsmethode;
+  const positionen = Array.isArray(req.body.positionen) ? req.body.positionen : [];
 
-  if (!lieferadresse_id || !zahlungsmethode || !positionen || positionen.length === 0) {
+  if (!Number.isInteger(lieferadresseId) || !zahlungsmethode || positionen.length === 0) {
     return res.status(400).json({
       message: 'lieferadresse_id, zahlungsmethode und positionen sind Pflichtfelder'
     });
@@ -132,105 +407,73 @@ router.post('/', requireLogin, (req, res) => {
     });
   }
 
-  const artikelIds = positionen.map((p) => p.artikel_id);
+  const artikelIds = positionen.map((pos) => Number.parseInt(pos.artikel_id, 10));
 
-  connection.query(
-    `SELECT a.id, a.preis, l.anzahl AS lagerbestand
-     FROM artikel a
-     LEFT JOIN lagerbestand l ON a.id = l.artikel_id
-     WHERE a.id IN (?)`,
-    [artikelIds],
-    (error, artikelResult) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Fehler beim Laden der Artikelpreise' });
-      }
+  if (artikelIds.some((artikelId) => !Number.isInteger(artikelId))) {
+    return res.status(400).json({ message: 'Ungültige Artikel-ID in den Positionen' });
+  }
 
-      const artikelMap = {};
-      artikelResult.forEach((a) => {
-        artikelMap[a.id] = {
-          preis: parseFloat(a.preis),
-          lagerbestand: a.lagerbestand !== null ? Number.parseInt(a.lagerbestand, 10) : 0
-        };
+  let conn;
+
+  try {
+    conn = await getConnection();
+    await beginTransaction(conn);
+
+    const adresseGueltig = await pruefeLieferadresse(conn, lieferadresseId, benutzerId);
+
+    if (!adresseGueltig) {
+      await rollbackTransaction(conn);
+      conn.release();
+
+      return res.status(403).json({
+        message: 'Die Lieferadresse gehört nicht zum eingeloggten Benutzer'
       });
-
-      let gesamtpreis = 0;
-
-      for (const pos of positionen) {
-        if (!artikelMap[pos.artikel_id]) {
-          return res.status(400).json({ message: 'Artikel ' + pos.artikel_id + ' nicht gefunden' });
-        }
-
-        if (artikelMap[pos.artikel_id].lagerbestand < pos.anzahl) {
-          return res.status(400).json({
-            message: 'Für Artikel ' + pos.artikel_id + ' ist nicht genügend Lagerbestand vorhanden'
-          });
-        }
-
-        gesamtpreis += artikelMap[pos.artikel_id].preis * pos.anzahl;
-      }
-
-      gesamtpreis = Math.round(gesamtpreis * 100) / 100;
-
-      connection.query(
-        `INSERT INTO bestellung
-         (benutzer_id, lieferadresse_id, gesamtpreis, zahlungsmethode, zahlungsstatus, bestellstatus)
-         VALUES (?, ?, ?, ?, 'bezahlt', 'neu')`,
-        [benutzerId, lieferadresse_id, gesamtpreis, zahlungsmethode],
-        (error, bestellungResult) => {
-          if (error) {
-            console.error(error);
-            return res.status(500).json({ message: 'Fehler beim Erstellen der Bestellung' });
-          }
-
-          const bestellung_id = bestellungResult.insertId;
-
-          const positionenWerte = positionen.map((pos) => [
-            bestellung_id,
-            pos.artikel_id,
-            pos.anzahl,
-            artikelMap[pos.artikel_id].preis,
-            artikelMap[pos.artikel_id].preis * pos.anzahl
-          ]);
-
-          connection.query(
-            `INSERT INTO bestellposition
-             (bestellung_id, artikel_id, anzahl, einzelpreis, gesamtpreis)
-             VALUES ?`,
-            [positionenWerte],
-            (error) => {
-              if (error) {
-                console.error(error);
-                return res.status(500).json({ message: 'Fehler beim Speichern der Positionen' });
-              }
-
-              const aufgaben = [
-                [bestellung_id, null, 'bestellstatus_aktualisieren', 'wartend'],
-                [bestellung_id, null, 'lager_aktualisieren', 'wartend'],
-                [bestellung_id, null, 'warenkorb_leeren', 'wartend']
-              ];
-
-              connection.query(
-                'INSERT INTO aufgabe (bestellung_id, worker_id, typ, status) VALUES ?',
-                [aufgaben],
-                (aufgabenError) => {
-                  if (aufgabenError) {
-                    console.error(aufgabenError);
-                  }
-
-                  res.status(201).json({
-                    message: 'Bestellung erfolgreich erstellt',
-                    bestellung_id,
-                    gesamtpreis
-                  });
-                }
-              );
-            }
-          );
-        }
-      );
     }
-  );
+
+    const artikelResult = await ladeArtikelDaten(conn, artikelIds);
+    const { artikelMap, gesamtpreis } =
+      await validierePositionenUndBerechneGesamtpreis(positionen, artikelResult);
+
+    const bestellungId = await erstelleBestellung(
+      conn,
+      benutzerId,
+      lieferadresseId,
+      gesamtpreis,
+      zahlungsmethode
+    );
+
+    await speichereBestellpositionen(conn, bestellungId, positionen, artikelMap);
+    await legeAufgabenAn(conn, bestellungId);
+
+    await commitTransaction(conn);
+    conn.release();
+
+    res.status(201).json({
+      message: 'Bestellung erfolgreich erstellt',
+      bestellung_id: bestellungId,
+      gesamtpreis: gesamtpreis
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (conn) {
+      await rollbackTransaction(conn);
+      conn.release();
+    }
+
+    if (
+      error.message &&
+      (
+        error.message.startsWith('Artikel ') ||
+        error.message === 'Ungültige Bestellposition' ||
+        error.message.includes('Lagerbestand')
+      )
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: 'Fehler beim Erstellen der Bestellung' });
+  }
 });
 
 /**

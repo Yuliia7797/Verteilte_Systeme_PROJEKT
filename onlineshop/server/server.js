@@ -46,123 +46,192 @@ const adresseRoutes = require('./routes/adresseRoutes');
 
 
 // =========================
-// Datenbankverbindung testen
+// Konfiguration
 // =========================
 
-console.log('Verbinde mit Datenbank...');
+const PORT = process.env.PORT || 8080;
+const HOST = '0.0.0.0';
 
-// Führt eine einfache Testabfrage aus, um sicherzustellen,
-// dass die Verbindung zur Datenbank funktioniert
-connection.query('SELECT 1 + 1 AS solution', function (error, results) {
-  if (error) {
-    throw error;
-  }
+const SESSION_SECRET =
+  process.env.SESSION_SECRET || 'mein_geheimes_login_secret';
 
-  if (results[0].solution === 2) {
-    console.log('Datenbankverbindung erfolgreich');
-  } else {
-    console.error('Datenbankverbindung fehlgeschlagen!');
-    process.exit(5);
-  }
-});
+const RATE_LIMIT_WINDOW_MS = Number.parseInt(
+  process.env.RATE_LIMIT_WINDOW_MS || '60000',
+  10
+);
+
+const RATE_LIMIT_MAX = Number.parseInt(
+  process.env.RATE_LIMIT_MAX || '10000',
+  10
+);
 
 
 // =========================
 // Express App Setup
 // =========================
 
-const PORT = process.env.PORT || 8080;
-const HOST = '0.0.0.0';
-
 const app = express();
 
-// Middleware zum Parsen von Formulardaten (application/x-www-form-urlencoded)
-app.use(express.urlencoded({ extended: true }));
 
-// Middleware zum Parsen von JSON-Requests
-app.use(express.json());
+// =========================
+// Hilfsfunktionen
+// =========================
+
+/**
+ * Führt eine einfache Testabfrage aus, um sicherzustellen,
+ * dass die Verbindung zur Datenbank funktioniert.
+ *
+ * @function testDatabaseConnection
+ * @returns {Promise<void>}
+ */
+function testDatabaseConnection() {
+  return new Promise((resolve, reject) => {
+    console.log('Verbinde mit Datenbank...');
+
+    connection.query('SELECT 1 + 1 AS solution', function (error, results) {
+      if (error) {
+        return reject(error);
+      }
+
+      if (results[0].solution === 2) {
+        console.log('Datenbankverbindung erfolgreich');
+        resolve();
+      } else {
+        reject(new Error('Datenbankverbindung fehlgeschlagen!'));
+      }
+    });
+  });
+}
+
+/**
+ * Erstellt den gemeinsamen Session-Store in MariaDB.
+ *
+ * @function createSessionStore
+ * @returns {any} Konfigurierter MySQL-Session-Store
+ */
+function createSessionStore() {
+  return new MySQLStore({
+    host: process.env.MYSQL_HOSTNAME,
+    port: 3306,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE
+  });
+}
+
+/**
+ * Registriert alle globalen Middlewares der Anwendung.
+ *
+ * @function registerMiddleware
+ * @param {import('express').Express} app - Express-Anwendung
+ * @param {any} sessionStore - Gemeinsamer Session-Store
+ * @returns {void}
+ */
+function registerMiddleware(app, sessionStore) {
+  // Middleware zum Parsen von Formulardaten (application/x-www-form-urlencoded)
+  app.use(express.urlencoded({ extended: true }));
+
+  // Middleware zum Parsen von JSON-Requests
+  app.use(express.json());
+
+  // Session-Middleware
+  app.use(session({
+    key: 'connect.sid',
+    secret: SESSION_SECRET,
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false, // auf true setzen, wenn HTTPS verwendet wird
+      maxAge: 1000 * 60 * 60 // 1 Stunde
+    }
+  }));
+
+  // Rate Limiting (DoS-Schutz)
+  const limiter = rateLimit({
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    max: RATE_LIMIT_MAX,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Zu viele Anfragen. Bitte später erneut versuchen.' }
+  });
+
+  app.use(limiter);
+}
+
+/**
+ * Registriert statische Inhalte und Basis-Routing.
+ *
+ * @function registerStaticAndBaseRoutes
+ * @param {import('express').Express} app - Express-Anwendung
+ * @returns {void}
+ */
+function registerStaticAndBaseRoutes(app) {
+  // Startseite → Weiterleitung auf statische Seite (Frontend)
+  app.get('/', function (req, res) {
+    res.redirect('/static');
+  });
+
+  // Statische Dateien (z. B. HTML, CSS, JS) aus dem "public"-Ordner
+  app.use('/static', express.static('public'));
+}
+
+/**
+ * Registriert alle API-Routen der Anwendung.
+ *
+ * @function registerApiRoutes
+ * @param {import('express').Express} app - Express-Anwendung
+ * @returns {void}
+ */
+function registerApiRoutes(app) {
+  app.use('/artikel', artikelRoutes);
+  app.use('/kategorien', kategorienRoutes);
+  app.use('/warenkorb', warenkorbRoutes);
+  app.use('/bestellung', bestellungRoutes);
+  app.use('/lagerbestand', lagerbestandRoutes);
+  app.use('/worker', workerRoutes);
+  app.use('/benutzer', benutzerRoutes);
+  app.use('/adresse', adresseRoutes);
+}
+
+/**
+ * Startet den HTTP-Server.
+ *
+ * @function startHttpServer
+ * @param {import('express').Express} app - Express-Anwendung
+ * @returns {void}
+ */
+function startHttpServer(app) {
+  app.listen(PORT, HOST, function () {
+    console.log(`Server läuft auf http://${HOST}:${PORT}`);
+  });
+}
+
+/**
+ * Initialisiert die Anwendung in der korrekten Reihenfolge.
+ *
+ * @async
+ * @function start
+ * @returns {Promise<void>}
+ */
+async function start() {
+  await testDatabaseConnection();
+
+  const sessionStore = createSessionStore();
+
+  registerMiddleware(app, sessionStore);
+  registerStaticAndBaseRoutes(app);
+  registerApiRoutes(app);
+  startHttpServer(app);
+}
 
 
 // =========================
-// Session-Konfiguration
+// Start
 // =========================
 
-// Gemeinsamer Session-Store in MariaDB,
-// damit Sessions bei mehreren Serverinstanzen erhalten bleiben
-const sessionStore = new MySQLStore({
-  host: process.env.MYSQL_HOSTNAME,
-  port: 3306,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE
-});
-
-// Session-Middleware
-app.use(session({
-  key: 'connect.sid', // Name des Session-Cookies
-  secret: 'mein_geheimes_login_secret', // Secret zur Signierung
-  store: sessionStore,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,  // Cookie nicht über JS zugreifbar (Sicherheit)
-    secure: false,   // true bei HTTPS!
-    maxAge: 1000 * 60 * 60 // 1 Stunde gültig
-  }
-}));
-
-
-// =========================
-// Rate Limiting (DoS-Schutz)
-// =========================
-
-// Begrenzung der Anzahl an Requests pro Zeitfenster,
-// um Missbrauch und Überlastung zu verhindern
-const limiter = rateLimit({
-  windowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
-  max: Number.parseInt(process.env.RATE_LIMIT_MAX || '10000', 10),
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Zu viele Anfragen. Bitte später erneut versuchen.' }
-});
-
-// Rate Limiter wird global angewendet
-app.use(limiter);
-
-
-// =========================
-// Routing & statische Inhalte
-// =========================
-
-// Startseite → Weiterleitung auf statische Seite (Frontend)
-app.get('/', (req, res) => {
-  res.redirect('/static');
-});
-
-// Statische Dateien (z. B. HTML, CSS, JS) aus dem "public"-Ordner
-app.use('/static', express.static('public'));
-
-
-// =========================
-// API-Routen
-// =========================
-
-// Jede Route kapselt einen bestimmten Bereich der Anwendung
-app.use('/artikel', artikelRoutes);
-app.use('/kategorien', kategorienRoutes);
-app.use('/warenkorb', warenkorbRoutes);
-app.use('/bestellung', bestellungRoutes);
-app.use('/lagerbestand', lagerbestandRoutes);
-app.use('/worker', workerRoutes);
-app.use('/benutzer', benutzerRoutes);
-app.use('/adresse', adresseRoutes);
-
-
-// =========================
-// Server starten
-// =========================
-
-// Startet den HTTP-Server und hört auf eingehende Anfragen
-app.listen(PORT, HOST, () => {
-  console.log(`Server läuft auf http://${HOST}:${PORT}`);
+start().catch(function (error) {
+  console.error('Server konnte nicht gestartet werden:', error.message);
+  process.exit(1);
 });
