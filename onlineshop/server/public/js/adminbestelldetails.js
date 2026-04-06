@@ -41,11 +41,7 @@ async function ladeBestelldetails() {
   if (!bestellungId) {
     bestellungInfo.innerHTML = '<p class="text-danger mb-0">Keine Bestell-ID angegeben.</p>';
     lieferadresseInfo.innerHTML = '<p class="text-danger mb-0">Keine Lieferadresse verfügbar.</p>';
-    positionenTabelle.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center text-danger">Keine Positionsdaten verfügbar.</td>
-      </tr>
-    `;
+    renderTableError(positionenTabelle, 5, 'Keine Positionsdaten verfügbar.');
     return;
   }
 
@@ -80,11 +76,7 @@ async function ladeBestelldetails() {
     `;
 
     if (!Array.isArray(positionen) || positionen.length === 0) {
-      positionenTabelle.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center">Keine Positionen gefunden.</td>
-        </tr>
-      `;
+      renderTableEmpty(positionenTabelle, 5, 'Keine Positionen gefunden.');
       return;
     }
 
@@ -108,12 +100,6 @@ async function ladeBestelldetails() {
 
     bestellungInfo.innerHTML = '<p class="text-danger mb-0">Bestelldaten konnten nicht geladen werden.</p>';
     lieferadresseInfo.innerHTML = '<p class="text-danger mb-0">Lieferadresse konnte nicht geladen werden.</p>';
-    positionenTabelle.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center text-danger">
-          Positionsdaten konnten nicht geladen werden.
-        </td>
-      </tr>
-    `;
+    renderTableError(positionenTabelle, 5, 'Positionsdaten konnten nicht geladen werden.');
   }
 }

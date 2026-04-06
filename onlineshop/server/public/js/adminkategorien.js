@@ -8,6 +8,8 @@
   Erstellt: 06.04.2026
 */
 
+'use strict';
+
 // Initialisiert die Seite nach dem Laden des DOM
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -16,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Fehler bei der Initialisierung der Kategorienverwaltung:', fehler);
     return;
   }
+
   const kategorienTabelle = document.getElementById('kategorien-tabelle');
   const neueKategorieButton = document.getElementById('neue-kategorie-button');
   const formularBereich = document.getElementById('kategorie-formular-bereich');
@@ -96,12 +99,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       kategorienTabelle.innerHTML = '';
 
-      if (!kategorien.length) {
-        kategorienTabelle.innerHTML = `
-          <tr>
-            <td colspan="3" class="text-center text-muted">Keine Kategorien vorhanden.</td>
-          </tr>
-        `;
+      if (!Array.isArray(kategorien) || kategorien.length === 0) {
+        renderTableEmpty(kategorienTabelle, 3, 'Keine Kategorien vorhanden.');
         return;
       }
 
@@ -154,14 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     } catch (fehler) {
       console.error('Fehler beim Laden der Kategorien:', fehler);
-
-      kategorienTabelle.innerHTML = `
-        <tr>
-          <td colspan="3" class="text-center text-danger">
-            Kategorien konnten nicht geladen werden.
-          </td>
-        </tr>
-      `;
+      renderTableError(kategorienTabelle, 3, 'Kategorien konnten nicht geladen werden.');
     }
   }
 });

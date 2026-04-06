@@ -71,12 +71,10 @@ function renderKategorieArtikelFehler(message) {
   }
 
   container.innerHTML = `
-    <div class="col-12">
-      <div class="alert alert-danger">
-        ${message}
-      </div>
-    </div>
+    <div class="col-12" id="kategorie-artikel-fehler"></div>
   `;
+
+  zeigeFehler('kategorie-artikel-fehler', message);
 }
 
 /**
@@ -121,6 +119,7 @@ async function ladeKategorieArtikel() {
       });
     } else {
       console.error('artikel-list.js wurde nicht korrekt geladen.');
+      renderKategorieArtikelFehler('Die Artikelliste konnte nicht geladen werden.');
     }
   } catch (error) {
     console.error('Fehler beim Laden der Kategorie-Artikel:', error);

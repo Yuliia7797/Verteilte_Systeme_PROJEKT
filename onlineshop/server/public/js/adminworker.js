@@ -1,9 +1,8 @@
 /*
   Datei: adminworker.js
   Beschreibung: Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
-    Sie prüft beim Laden der Seite den Admin-Zugriff, lädt anschließend
-    Worker- und Aufgaben-Daten vom Backend, zeigt diese in Tabellen an
-    und ermöglicht das Aktivieren oder Deaktivieren einzelner Worker.
+    Sie prüft beim Laden der Seite den Admin-Zugriff, lädt die Worker- und
+    Aufgabendaten vom Backend und zeigt sie in Tabellen an.
   Hinweise: Verwendet die zentrale Auth-Logik aus auth.js sowie die
     zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
@@ -12,7 +11,7 @@
 
 'use strict';
 
-// Lädt nach dem Aufbau des DOM die Worker- und Aufgabenübersicht
+// Lädt die Worker-Übersicht nach dem Aufbau des DOM
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await requireAdmin('/static/login.html', '/static/index.html');
@@ -45,11 +44,7 @@ async function ladeWorker() {
     }
 
     if (!Array.isArray(worker) || worker.length === 0) {
-      workerTabelle.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center">Keine Worker gefunden.</td>
-        </tr>
-      `;
+      renderTableEmpty(workerTabelle, 5, 'Keine Worker gefunden.');
       return;
     }
 
@@ -83,14 +78,7 @@ async function ladeWorker() {
     });
   } catch (fehler) {
     console.error('Fehler beim Laden der Worker:', fehler);
-
-    workerTabelle.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center text-danger">
-          Worker-Daten konnten nicht geladen werden.
-        </td>
-      </tr>
-    `;
+    renderTableError(workerTabelle, 5, 'Worker-Daten konnten nicht geladen werden.');
   }
 }
 
@@ -115,11 +103,7 @@ async function ladeAufgaben() {
     }
 
     if (!Array.isArray(aufgaben) || aufgaben.length === 0) {
-      aufgabenTabelle.innerHTML = `
-        <tr>
-          <td colspan="7" class="text-center">Keine Aufgaben gefunden.</td>
-        </tr>
-      `;
+      renderTableEmpty(aufgabenTabelle, 7, 'Keine Aufgaben gefunden.');
       return;
     }
 
@@ -142,14 +126,7 @@ async function ladeAufgaben() {
     });
   } catch (fehler) {
     console.error('Fehler beim Laden der Aufgaben:', fehler);
-
-    aufgabenTabelle.innerHTML = `
-      <tr>
-        <td colspan="7" class="text-center text-danger">
-          Aufgaben-Daten konnten nicht geladen werden.
-        </td>
-      </tr>
-    `;
+    renderTableError(aufgabenTabelle, 7, 'Aufgaben-Daten konnten nicht geladen werden.');
   }
 }
 

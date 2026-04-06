@@ -43,11 +43,7 @@ async function ladeBestellungen() {
     }
 
     if (!Array.isArray(bestellungen) || bestellungen.length === 0) {
-      bestellungenTabelle.innerHTML = `
-        <tr>
-          <td colspan="9" class="text-center">Keine Bestellungen gefunden.</td>
-        </tr>
-      `;
+      renderTableEmpty(bestellungenTabelle, 9, 'Keine Bestellungen gefunden.');
       return;
     }
 
@@ -78,13 +74,6 @@ async function ladeBestellungen() {
     });
   } catch (fehler) {
     console.error('Fehler beim Laden der Bestellungen:', fehler);
-
-    bestellungenTabelle.innerHTML = `
-      <tr>
-        <td colspan="9" class="text-center text-danger">
-          Bestellungen konnten nicht geladen werden.
-        </td>
-      </tr>
-    `;
+    renderTableError(bestellungenTabelle, 9, 'Bestellungen konnten nicht geladen werden.');
   }
 }

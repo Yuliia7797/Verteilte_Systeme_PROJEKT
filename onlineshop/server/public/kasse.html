@@ -46,7 +46,7 @@
   <main class="py-5">
     <div class="container">
 
-      
+
       <!-- Seitentitel -->
       <h1 class="section-title text-center mb-5">Kasse</h1>
 
@@ -256,7 +256,7 @@
 
       </div>
     </div>
-    
+
 
   </main>
 
@@ -267,30 +267,37 @@
   <div id="footer-placeholder"></div>
 
   <!-- =========================
-       SCRIPTS / FUNKTIONALITÄT
+     SCRIPTS / FUNKTIONALITÄT
   ========================= -->
+
   <!-- Lädt Header & Footer -->
   <script src="js/include.js"></script>
 
-  <!-- Zentrale Authentifizierung -->
+  <!-- Zentrale Authentifizierungslogik (Session, Login, Admin, Logout) -->
   <script src="js/utils/auth.js"></script>
 
-  <!-- Formatierung -->
+  <!-- Zentrale Formatierungslogik für Preise und Datumswerte -->
   <script src="js/utils/format.js"></script>
 
-  <!-- Header -->
+  <!-- Zentrale Formular-Logik -->
+  <script src="js/utils/forms.js"></script>
+
+  <!-- Logik zum Auslesen von URL-Parametern -->
+  <script src="js/utils/url.js"></script>
+
+  <!-- Session prüfen & Header dynamisch anpassen -->
   <script src="js/auth-header.js"></script>
 
-  <!-- Suche -->
+  <!-- Suchfunktion im Header -->
   <script src="js/suche.js"></script>
 
-  <!-- Kategorien -->
+  <!-- Kategorien für Dropdown-Menü laden -->
   <script src="js/kategorien.js"></script>
 
-  <!-- Kasse -->
+  <!-- Logik für die Kassenseite -->
   <script src="js/kasse.js"></script>
 
-  <!-- Bootstrap -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

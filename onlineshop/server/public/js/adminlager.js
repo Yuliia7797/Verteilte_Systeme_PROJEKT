@@ -33,14 +33,20 @@ document.addEventListener('DOMContentLoaded', async () => {
  * @returns {Promise<void>}
  */
 async function ladeLagerbestand() {
+  const tbody = document.getElementById('lagerbestand-tabelle');
+
   try {
     const response = await fetch('/lagerbestand');
     const daten = await response.json();
 
     console.log('Geladene Lagerdaten:', daten);
 
-    const tbody = document.getElementById('lagerbestand-tabelle');
     tbody.innerHTML = '';
+
+    if (!Array.isArray(daten) || daten.length === 0) {
+      renderTableEmpty(tbody, 5, 'Keine Lagerdaten vorhanden.');
+      return;
+    }
 
     daten.forEach((eintrag) => {
       const zeile = document.createElement('tr');
@@ -95,5 +101,6 @@ async function ladeLagerbestand() {
     });
   } catch (fehler) {
     console.error('Fehler beim Laden des Lagerbestands:', fehler);
+    renderTableError(tbody, 5, 'Der Lagerbestand konnte nicht geladen werden.');
   }
 }

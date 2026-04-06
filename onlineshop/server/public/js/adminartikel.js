@@ -9,6 +9,8 @@
   Erstellt: 06.04.2026
 */
 
+'use strict';
+
 // Initialisiert die Seite nach dem Laden des DOM
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -155,7 +157,7 @@ async function ladeKategorien() {
     const kategorieSelect = document.getElementById('kategorie-id');
     kategorieSelect.innerHTML = '<option value="">Bitte auswählen</option>';
 
-    daten.forEach(kategorie => {
+    daten.forEach((kategorie) => {
       const option = document.createElement('option');
       option.value = kategorie.id;
       option.textContent = kategorie.bezeichnung;
@@ -176,16 +178,22 @@ async function ladeKategorien() {
  * @returns {Promise<void>}
  */
 async function ladeArtikel() {
+  const tbody = document.getElementById('artikel-tabelle');
+
   try {
     const response = await fetch('/artikel');
     const daten = await response.json();
 
     console.log('Geladene Artikel:', daten);
 
-    const tbody = document.getElementById('artikel-tabelle');
     tbody.innerHTML = '';
 
-    daten.forEach(artikel => {
+    if (!Array.isArray(daten) || daten.length === 0) {
+      renderTableEmpty(tbody, 6, 'Keine Artikel vorhanden.');
+      return;
+    }
+
+    daten.forEach((artikel) => {
       const zeile = document.createElement('tr');
 
       zeile.innerHTML = `
@@ -269,6 +277,7 @@ async function ladeArtikel() {
     });
   } catch (fehler) {
     console.error('Fehler beim Laden der Artikel:', fehler);
+    renderTableError(tbody, 6, 'Die Artikel konnten nicht geladen werden.');
   }
 }
 
@@ -277,6 +286,7 @@ async function ladeArtikel() {
  *
  * @function zeigeBildVorschau
  * @param {string} bildUrl - URL des anzuzeigenden Bildes
+ * @returns {void}
  */
 function zeigeBildVorschau(bildUrl) {
   const bildVorschauBereich = document.getElementById('bild-vorschau-bereich');
@@ -290,6 +300,7 @@ function zeigeBildVorschau(bildUrl) {
  * Blendet die Bildvorschau aus und entfernt das aktuell angezeigte Bild.
  *
  * @function versteckeBildVorschau
+ * @returns {void}
  */
 function versteckeBildVorschau() {
   const bildVorschauBereich = document.getElementById('bild-vorschau-bereich');

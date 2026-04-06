@@ -63,7 +63,7 @@ async function initialisiereKasse() {
     aktualisiereAdressModus();
   } catch (error) {
     console.error('Fehler bei der Initialisierung der Kasse:', error);
-    zeigeMeldung(error.message || 'Kassenseite konnte nicht geladen werden.', 'danger');
+    zeigeFehler('kasse-meldung', error.message || 'Kassenseite konnte nicht geladen werden.');
   }
 }
 
@@ -78,9 +78,9 @@ async function initialisiereKasse() {
 async function ladeSession() {
   eingeloggterBenutzer = await requireLogin('/static/login.html');
 
-  setzeFeldWert('vorname', eingeloggterBenutzer.vorname || '');
-  setzeFeldWert('nachname', eingeloggterBenutzer.nachname || '');
-  setzeFeldWert('email', eingeloggterBenutzer.email || '');
+  setInputValue('vorname', eingeloggterBenutzer.vorname || '');
+  setInputValue('nachname', eingeloggterBenutzer.nachname || '');
+  setInputValue('email', eingeloggterBenutzer.email || '');
 }
 
 /**
@@ -109,55 +109,12 @@ async function ladeBenutzerAdresse() {
 
   if (Array.isArray(adressen) && adressen.length > 0) {
     standardAdresse = adressen[0];
-    fuelleAdresseInsFormular(standardAdresse);
-  }
-}
-
-/**
- * Schreibt eine Adresse in die Formularfelder.
- *
- * @function fuelleAdresseInsFormular
- * @param {Object|null} adresse - Adressdaten
- */
-function fuelleAdresseInsFormular(adresse) {
-  if (!adresse) {
-    return;
-  }
-
-  setzeFeldWert('strasse', adresse.strasse);
-  setzeFeldWert('hausnummer', adresse.hausnummer);
-  setzeFeldWert('adresszusatz', adresse.adresszusatz);
-  setzeFeldWert('postleitzahl', adresse.postleitzahl);
-  setzeFeldWert('ort', adresse.ort);
-  setzeFeldWert('land', adresse.land);
-}
-
-/**
- * Leert alle Adressfelder im Formular.
- *
- * @function leereAdressFelder
- */
-function leereAdressFelder() {
-  setzeFeldWert('strasse', '');
-  setzeFeldWert('hausnummer', '');
-  setzeFeldWert('adresszusatz', '');
-  setzeFeldWert('postleitzahl', '');
-  setzeFeldWert('ort', '');
-  setzeFeldWert('land', '');
-}
-
-/**
- * Setzt den Wert eines Formularfelds, falls das Feld existiert.
- *
- * @function setzeFeldWert
- * @param {string} feldId - ID des Formularfelds
- * @param {string} wert - Zu setzender Wert
- */
-function setzeFeldWert(feldId, wert) {
-  const feld = document.getElementById(feldId);
-
-  if (feld) {
-    feld.value = wert || '';
+    fuelleAdressdatenInsFormular(standardAdresse, {
+      mitTelefon: true,
+      mitEmail: false,
+      mitVorname: false,
+      mitNachname: false
+    });
   }
 }
 
@@ -175,9 +132,19 @@ function aktualisiereAdressModus() {
   }
 
   if (checkbox.checked) {
-    leereAdressFelder();
+    leereAdressdatenImFormular({
+      mitTelefon: true,
+      mitEmail: false,
+      mitVorname: false,
+      mitNachname: false
+    });
   } else {
-    fuelleAdresseInsFormular(standardAdresse);
+    fuelleAdressdatenInsFormular(standardAdresse, {
+      mitTelefon: true,
+      mitEmail: false,
+      mitVorname: false,
+      mitNachname: false
+    });
   }
 }
 
@@ -287,20 +254,22 @@ async function bestellungAbsenden() {
   const agbCheckbox = document.getElementById('agb-checkbox');
   const bestellungAbsendenButton = document.getElementById('bestellung-absenden-button');
 
+  entferneMeldung('kasse-meldung');
+
   if (!agbCheckbox || !agbCheckbox.checked) {
-    zeigeMeldung('Bitte akzeptiere die AGB und Datenschutzbestimmungen.', 'danger');
+    zeigeFehler('kasse-meldung', 'Bitte akzeptiere die AGB und Datenschutzbestimmungen.');
     return;
   }
 
   if (!warenkorbDaten || !Array.isArray(warenkorbDaten.positionen) || warenkorbDaten.positionen.length === 0) {
-    zeigeMeldung('Dein Warenkorb ist leer.', 'danger');
+    zeigeFehler('kasse-meldung', 'Dein Warenkorb ist leer.');
     return;
   }
 
   const zahlungsmethode = leseZahlungsmethode();
 
   if (!zahlungsmethode) {
-    zeigeMeldung('Bitte wähle eine Zahlungsmethode aus.', 'danger');
+    zeigeFehler('kasse-meldung', 'Bitte wähle eine Zahlungsmethode aus.');
     return;
   }
 
@@ -345,14 +314,14 @@ async function bestellungAbsenden() {
       throw new Error(data.message || 'Bestellung konnte nicht abgeschlossen werden.');
     }
 
-    zeigeMeldung(data.message || 'Deine Bestellung wurde erfolgreich aufgegeben.', 'success');
+    zeigeErfolg('kasse-meldung', data.message || 'Deine Bestellung wurde erfolgreich aufgegeben.');
 
     window.setTimeout(() => {
       weiterleiten(`/static/bestellungAbgeschlossen.html?bestellung=${data.bestellung_id}`);
     }, 1500);
   } catch (error) {
     console.error('Fehler beim Absenden der Bestellung:', error);
-    zeigeMeldung(error.message || 'Serverfehler beim Absenden der Bestellung.', 'danger');
+    zeigeFehler('kasse-meldung', error.message || 'Serverfehler beim Absenden der Bestellung.');
   } finally {
     if (bestellungAbsendenButton) {
       bestellungAbsendenButton.disabled = false;
@@ -445,30 +414,12 @@ function erstelleBestellpositionen() {
  * @returns {Object} Lieferadressdaten aus dem Formular
  */
 function leseLieferadresseAusFormular() {
-  return {
-    vorname: leseFeldwert('vorname'),
-    nachname: leseFeldwert('nachname'),
-    email: leseFeldwert('email'),
-    telefon: leseFeldwert('telefon'),
-    strasse: leseFeldwert('strasse'),
-    hausnummer: leseFeldwert('hausnummer'),
-    adresszusatz: leseFeldwert('adresszusatz'),
-    postleitzahl: leseFeldwert('postleitzahl'),
-    ort: leseFeldwert('ort'),
-    land: leseFeldwert('land')
-  };
-}
-
-/**
- * Liest den getrimmten Wert eines Formularfelds aus.
- *
- * @function leseFeldwert
- * @param {string} feldId - ID des Formularfelds
- * @returns {string} Feldwert oder leerer String
- */
-function leseFeldwert(feldId) {
-  const feld = document.getElementById(feldId);
-  return feld ? feld.value.trim() : '';
+  return liesAdressdatenAusFormular({
+    mitTelefon: true,
+    mitEmail: true,
+    mitVorname: true,
+    mitNachname: true
+  });
 }
 
 /**
@@ -515,37 +466,4 @@ function setzeText(elementId, text) {
   if (element) {
     element.textContent = text;
   }
-}
-
-/**
- * Zeigt eine Statusmeldung im Kassenbereich an.
- *
- * @function zeigeMeldung
- * @param {string} text - Meldungstext
- * @param {string} [typ='success'] - Bootstrap-Typ der Meldung
- */
-function zeigeMeldung(text, typ = 'success') {
-  const meldung = document.getElementById('kasse-meldung');
-
-  if (!meldung) {
-    return;
-  }
-
-  meldung.innerHTML = `<div class="alert alert-${typ} mb-0">${escapeHtml(text)}</div>`;
-}
-
-/**
- * Escaped HTML-Sonderzeichen für eine sichere Ausgabe im DOM.
- *
- * @function escapeHtml
- * @param {string} text - Zu escapender Text
- * @returns {string} Sicherer HTML-Text
- */
-function escapeHtml(text) {
-  return String(text ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
 }

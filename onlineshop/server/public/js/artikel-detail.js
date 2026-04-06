@@ -27,6 +27,7 @@ function getArtikelIdFromUrl() {
  *
  * @function renderArtikelDetailFehler
  * @param {string} message - Fehlermeldung
+ * @returns {void}
  */
 function renderArtikelDetailFehler(message) {
   const container = document.getElementById('artikel-detail-container');
@@ -36,11 +37,7 @@ function renderArtikelDetailFehler(message) {
     return;
   }
 
-  container.innerHTML = `
-    <div class="alert alert-danger">
-      ${message}
-    </div>
-  `;
+  zeigeFehler('artikel-detail-container', message);
 }
 
 /**
@@ -48,6 +45,7 @@ function renderArtikelDetailFehler(message) {
  *
  * @function renderArtikelDetail
  * @param {Object} artikel - Artikeldaten vom Backend
+ * @returns {void}
  */
 function renderArtikelDetail(artikel) {
   const container = document.getElementById('artikel-detail-container');
@@ -133,7 +131,6 @@ async function loadArtikelDetail() {
 
     const artikel = await response.json();
     renderArtikelDetail(artikel);
-
   } catch (error) {
     console.error('Fehler beim Laden der Artikeldetails:', error);
     renderArtikelDetailFehler('Artikeldetails konnten nicht geladen werden.');

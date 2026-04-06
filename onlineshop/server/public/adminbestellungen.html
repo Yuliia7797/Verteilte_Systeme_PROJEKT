@@ -48,7 +48,7 @@
   <main class="py-5">
     <div class="container">
 
-      
+
       <!-- Seitentitel -->
       <h1 class="section-title text-center mb-5">Bestellverwaltung</h1>
 
@@ -90,7 +90,7 @@
       </section>
 
     </div>
-    
+
 
   </main>
 
@@ -101,13 +101,23 @@
   <div id="footer-placeholder"></div>
 
   <!-- =========================
-       SCRIPTS / FUNKTIONALITÄT
+     SCRIPTS / FUNKTIONALITÄT
   ========================= -->
+
   <!-- Lädt Header & Footer -->
   <script src="js/include.js"></script>
 
   <!-- Zentrale Authentifizierungslogik (Session, Login, Admin, Logout) -->
   <script src="js/utils/auth.js"></script>
+
+  <!-- Zentrale Formatierungslogik -->
+  <script src="js/utils/format.js"></script>
+
+  <!-- Zentrale Tabellen-Logik (Empty / Error States) -->
+  <script src="js/utils/table.js"></script>
+
+  <!-- Zentrale UI-Logik für Meldungen und Fehlerausgaben -->
+  <script src="js/utils/ui.js"></script>
 
   <!-- Session prüfen & Header dynamisch anpassen -->
   <script src="js/auth-header.js"></script>
@@ -117,9 +127,6 @@
 
   <!-- Kategorien für Dropdown-Menü laden -->
   <script src="js/kategorien.js"></script>
-
-  <!-- Zentrale Formatierungslogik -->
-  <script src="js/utils/format.js"></script>
 
   <!-- Bestellungen -->
   <script src="js/adminbestellungen.js"></script>
