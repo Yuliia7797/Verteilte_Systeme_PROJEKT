@@ -26,20 +26,27 @@ function getSuchbegriffFromUrl() {
 }
 
 /**
- * Setzt den Suchbegriff sichtbar auf der Seite.
+ * Setzt den Suchbegriff in der Seite als sichtbare Ausgabe.
  *
  * @function setSuchbegriffAnzeige
  * @param {string} suchbegriff - Suchbegriff aus der URL
  * @returns {void}
  */
 function setSuchbegriffAnzeige(suchbegriff) {
-  const el = document.getElementById('suchbegriff-anzeige');
+  const suchbegriffAnzeige = document.getElementById('suchbegriff-anzeige');
 
-  if (!el) return;
+  if (!suchbegriffAnzeige) {
+    console.error('Das Element mit der ID "suchbegriff-anzeige" wurde nicht gefunden.');
+    return;
+  }
 
-  el.textContent = suchbegriff
-    ? `Ergebnisse für: "${suchbegriff}"`
-    : 'Kein Suchbegriff angegeben.';
+  if (suchbegriff) {
+    suchbegriffAnzeige.textContent = `Ergebnisse für: "${suchbegriff}"`;
+    document.title = `Suche: ${suchbegriff} - MyShop`;
+  } else {
+    suchbegriffAnzeige.textContent = 'Kein Suchbegriff angegeben.';
+    document.title = 'Suchergebnisse - MyShop';
+  }
 }
 
 /**
@@ -51,13 +58,23 @@ function setSuchbegriffAnzeige(suchbegriff) {
  */
 function renderSucheFehler(message) {
   const container = document.getElementById('suche-artikel-container');
-  if (!container) return;
 
-  container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+  if (!container) {
+    console.error('Der Container mit der ID "suche-artikel-container" wurde nicht gefunden.');
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="col-12">
+      <div class="alert alert-danger">
+        ${message}
+      </div>
+    </div>
+  `;
 }
 
 /**
- * Lädt die Suchergebnisse vom Server und rendert sie.
+ * Lädt die Suchergebnisse vom Server und rendert sie im Container.
  *
  * @async
  * @function ladeSuchergebnisse
@@ -65,36 +82,53 @@ function renderSucheFehler(message) {
  */
 async function ladeSuchergebnisse() {
   try {
-    const q = getSuchbegriffFromUrl();
-    setSuchbegriffAnzeige(q);
+    const suchbegriff = getSuchbegriffFromUrl();
+    setSuchbegriffAnzeige(suchbegriff);
 
-    if (!q) {
-      renderSucheFehler('Bitte Suchbegriff eingeben.');
+    if (!suchbegriff) {
+      renderSucheFehler('Bitte gib einen Suchbegriff ein.');
       return;
     }
 
-    const artikel = await window.apiGet(`/artikel/suche?q=${encodeURIComponent(q)}`);
+    const response = await fetch(`/artikel?suche=${encodeURIComponent(suchbegriff)}`);
+   
+    if (!response.ok) {
+      throw new Error('Suchergebnisse konnten nicht geladen werden');
+    }
 
-    window.renderArtikelListe('suche-artikel-container', artikel, {
-      leerText: 'Keine Treffer gefunden.'
-    });
+    const artikel = await response.json();
 
+    if (typeof window.renderArtikelListe === 'function') {
+      window.renderArtikelListe('suche-artikel-container', artikel, {
+        leerText: 'Keine passenden Artikel gefunden.',
+        zeigeBeschreibung: true,
+        spaltenKlasse: 'col-md-4'
+      });
+    } else {
+      console.error('artikel-list.js wurde nicht korrekt geladen.');
+    }
   } catch (error) {
-    console.error(error);
-    renderSucheFehler('Fehler bei der Suche.');
+    console.error('Fehler beim Laden der Suchergebnisse:', error);
+    renderSucheFehler('Die Suchergebnisse konnten nicht geladen werden.');
   }
 }
 
 /**
- * Initialisiert die Suchergebnisseite und registriert die Warenkorb-Logik.
+ * Initialisiert die Suchergebnisseite und registriert
+ * die zentrale Warenkorb-Logik.
  *
  * @async
- * @function initSuche
+ * @function initSucheErgebnisseSeite
  * @returns {Promise<void>}
  */
-async function initSuche() {
+async function initSucheErgebnisseSeite() {
   await ladeSuchergebnisse();
-  window.registriereAddToCartHandler(document);
+
+  if (typeof window.registriereAddToCartHandler === 'function') {
+    window.registriereAddToCartHandler(document);
+  } else {
+    console.error('warenkorb-actions.js wurde nicht korrekt geladen.');
+  }
 }
 
-document.addEventListener('DOMContentLoaded', initSuche);
+document.addEventListener('DOMContentLoaded', initSucheErgebnisseSeite);

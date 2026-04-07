@@ -22,8 +22,7 @@
  * @returns {string|null} Kategorie-ID oder null
  */
 function getKategorieIdFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('id');
+  return getQueryParam('id');
 }
 
 /**
@@ -32,7 +31,7 @@ function getKategorieIdFromUrl() {
  *
  * @function setKategorieTitel
  * @param {Array<Object>} kategorien - Liste aller Kategorien
- * @param {string} kategorieId - Kategorie-ID aus der URL
+ * @param {string} kategorieId - Aktuelle Kategorie-ID aus der URL
  * @returns {void}
  */
 function setKategorieTitel(kategorien, kategorieId) {
@@ -67,19 +66,20 @@ function renderKategorieArtikelFehler(message) {
   const container = document.getElementById('kategorie-artikel-container');
 
   if (!container) {
-    console.error('Container nicht gefunden.');
+    console.error('Der Container mit der ID "kategorie-artikel-container" wurde nicht gefunden.');
     return;
   }
 
   container.innerHTML = `
-    <div class="col-12">
-      <div class="alert alert-danger">${message}</div>
-    </div>
+    <div class="col-12" id="kategorie-artikel-fehler"></div>
   `;
+
+  zeigeFehler('kategorie-artikel-fehler', message);
 }
 
 /**
- * Lädt Kategorien und Artikel der ausgewählten Kategorie und rendert die Seite.
+ * Lädt die Kategorien und die Artikel der ausgewählten Kategorie
+ * und rendert die Seite entsprechend.
  *
  * @async
  * @function ladeKategorieArtikel
@@ -94,23 +94,42 @@ async function ladeKategorieArtikel() {
       return;
     }
 
-    const kategorien = await window.apiGet('/kategorien');
+    const kategorienResponse = await fetch('/kategorien');
+
+    if (!kategorienResponse.ok) {
+      throw new Error('Kategorien konnten nicht geladen werden');
+    }
+
+    const kategorien = await kategorienResponse.json();
     setKategorieTitel(kategorien, kategorieId);
 
-    const artikel = await window.apiGet(`/artikel?kategorie_id=${kategorieId}`);
+    const artikelResponse = await fetch(`/artikel?kategorie_id=${kategorieId}`);
 
-    window.renderArtikelListe('kategorie-artikel-container', artikel, {
-      leerText: 'Keine Artikel in dieser Kategorie gefunden.'
-    });
+    if (!artikelResponse.ok) {
+      throw new Error('Artikel der Kategorie konnten nicht geladen werden');
+    }
 
+    const artikel = await artikelResponse.json();
+
+    if (typeof window.renderArtikelListe === 'function') {
+      window.renderArtikelListe('kategorie-artikel-container', artikel, {
+        leerText: 'Keine Artikel in dieser Kategorie gefunden.',
+        zeigeBeschreibung: true,
+        spaltenKlasse: 'col-md-4'
+      });
+    } else {
+      console.error('artikel-list.js wurde nicht korrekt geladen.');
+      renderKategorieArtikelFehler('Die Artikelliste konnte nicht geladen werden.');
+    }
   } catch (error) {
-    console.error('Fehler:', error);
-    renderKategorieArtikelFehler('Fehler beim Laden.');
+    console.error('Fehler beim Laden der Kategorie-Artikel:', error);
+    renderKategorieArtikelFehler('Die Artikel dieser Kategorie konnten nicht geladen werden.');
   }
 }
 
 /**
- * Initialisiert die Kategorieseite und registriert die Warenkorb-Logik.
+ * Initialisiert die Kategorieseite und registriert
+ * die zentrale Warenkorb-Logik.
  *
  * @async
  * @function initKategorieArtikelSeite
@@ -118,7 +137,12 @@ async function ladeKategorieArtikel() {
  */
 async function initKategorieArtikelSeite() {
   await ladeKategorieArtikel();
-  window.registriereAddToCartHandler(document);
+
+  if (typeof window.registriereAddToCartHandler === 'function') {
+    window.registriereAddToCartHandler(document);
+  } else {
+    console.error('warenkorb-actions.js wurde nicht korrekt geladen.');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initKategorieArtikelSeite);
