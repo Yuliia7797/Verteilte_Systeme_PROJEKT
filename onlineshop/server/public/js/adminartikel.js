@@ -2,7 +2,7 @@
   Datei: adminartikel.js
   Beschreibung: Diese Datei steuert die Verwaltung und Bearbeitung von Artikeln
     im Admin-Bereich. Sie prüft den Admin-Zugriff und ermöglicht das Bearbeiten,
-    Hinzufügen und Löschen von Artikeln.
+    Hinzufügen und Deaktivieren von Artikeln.
   Hinweise: Verwendet die zentrale Auth-Logik aus auth.js
     sowie die zentrale Formatierungslogik aus format.js
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
@@ -171,7 +171,7 @@ async function ladeKategorien() {
 
 /**
  * Lädt alle Artikel vom Server und zeigt sie in der Tabelle an.
- * Verknüpft außerdem die Aktionen zum Bearbeiten und Löschen.
+ * Verknüpft außerdem die Aktionen zum Bearbeiten und Deaktivieren.
  *
  * @async
  * @function ladeArtikel
@@ -210,7 +210,7 @@ async function ladeArtikel() {
         <td>${artikel.kategorie_name}</td>
         <td>
           <button class="btn btn-sm btn-outline-primary me-2 bearbeiten-button">Bearbeiten</button>
-          <button class="btn btn-sm btn-outline-danger loeschen-button">Löschen</button>
+          <button class="btn btn-sm btn-outline-danger loeschen-button">Deaktivieren</button>
         </td>
       `;
 
@@ -252,7 +252,7 @@ async function ladeArtikel() {
       });
 
       loeschenButton.addEventListener('click', async () => {
-        const bestaetigt = confirm(`Soll der Artikel "${artikel.bezeichnung}" wirklich gelöscht werden?`);
+        const bestaetigt = confirm(`Soll der Artikel "${artikel.bezeichnung}" wirklich deaktiviert werden?`);
 
         if (!bestaetigt) {
           return;
@@ -264,14 +264,14 @@ async function ladeArtikel() {
           });
 
           if (!response.ok) {
-            throw new Error('Fehler beim Löschen des Artikels.');
+            throw new Error('Fehler beim Deaktivieren des Artikels.');
           }
 
           await ladeArtikel();
-          alert('Artikel erfolgreich gelöscht.');
+          alert('Artikel erfolgreich deaktiviert.');
         } catch (fehler) {
-          console.error('Fehler beim Löschen des Artikels:', fehler);
-          alert('Der Artikel konnte nicht gelöscht werden.');
+          console.error('Fehler beim Deaktivieren des Artikels:', fehler);
+          alert('Der Artikel konnte nicht deaktiviert werden.');
         }
       });
     });

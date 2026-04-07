@@ -5,7 +5,7 @@
  * - GET    /artikel/:id      – einzelnen Artikel mit Kategorie und Lagerbestand laden
  * - POST   /artikel          – neuen Artikel anlegen
  * - PUT    /artikel/:id      – vorhandenen Artikel aktualisieren
- * - DELETE /artikel/:id      – Artikel löschen
+ * - DELETE /artikel/:id      – Artikel deaktivieren
  */
 
 'use strict';
@@ -37,7 +37,7 @@ const upload = multer({ storage });
 
 /*
   GET /artikel
-  Lädt alle Artikel.
+  Lädt alle aktiven Artikel.
   Optional kann gefiltert werden nach:
   - Kategorie: /artikel?kategorie_id=2
   - Suche: /artikel?suche=Harry
@@ -61,6 +61,7 @@ router.get('/', (req, res) => {
     Grundabfrage vorbereiten.
     Zusätzlich wird die Kategorie-Tabelle eingebunden,
     damit auch der Kategoriename geladen werden kann.
+    Es werden nur aktive Artikel geladen.
   */
   let query = `
     SELECT
@@ -70,7 +71,7 @@ router.get('/', (req, res) => {
     FROM artikel
     LEFT JOIN kategorie ON artikel.kategorie_id = kategorie.id
     LEFT JOIN lagerbestand ON artikel.id = lagerbestand.artikel_id
-    WHERE 1 = 1
+    WHERE artikel.ist_aktiv = 1
     `;
   const queryParams = [];
 
@@ -378,7 +379,7 @@ router.put('/:id', istAdmin, upload.single('bild'), (req, res) => {
 
 /*
   DELETE /artikel/:id
-  Löscht einen Artikel anhand seiner ID.
+  Deaktiviert einen Artikel anhand seiner ID.
   Dieser Endpunkt darf nur von Admins genutzt werden.
 */
 router.delete('/:id', istAdmin, (req, res) => {
@@ -394,68 +395,31 @@ router.delete('/:id', istAdmin, (req, res) => {
   }
 
   /*
-    Zuerst abhängige Datensätze löschen,
-    danach den Artikel selbst löschen.
+    Artikel nicht hart löschen,
+    sondern nur deaktivieren.
   */
   connection.query(
-    'DELETE FROM warenkorb_position WHERE artikel_id = ?',
+    `UPDATE artikel
+     SET ist_aktiv = 0
+     WHERE id = ?`,
     [artikelId],
-    (warenkorbError) => {
-      if (warenkorbError) {
-        console.error(warenkorbError);
+    (error, results) => {
+      if (error) {
+        console.error(error);
         return res.status(500).json({
-          message: 'Fehler beim Löschen der Warenkorb-Positionen'
+          message: 'Fehler beim Deaktivieren des Artikels'
         });
       }
 
-      connection.query(
-        'DELETE FROM lagerbestand WHERE artikel_id = ?',
-        [artikelId],
-        (lagerError) => {
-          if (lagerError) {
-            console.error(lagerError);
-            return res.status(500).json({
-              message: 'Fehler beim Löschen des Lagerbestands'
-            });
-          }
+      if (results.affectedRows === 0) {
+        return res.status(404).json({
+          message: 'Artikel nicht gefunden'
+        });
+      }
 
-          connection.query(
-            'DELETE FROM bestellposition WHERE artikel_id = ?',
-            [artikelId],
-            (bestellungError) => {
-              if (bestellungError) {
-                console.error(bestellungError);
-                return res.status(500).json({
-                  message: 'Fehler beim Löschen der Bestellpositionen'
-                });
-              }
-
-              connection.query(
-                'DELETE FROM artikel WHERE id = ?',
-                [artikelId],
-                (artikelError, results) => {
-                  if (artikelError) {
-                    console.error(artikelError);
-                    return res.status(500).json({
-                      message: 'Fehler beim Löschen des Artikels'
-                    });
-                  }
-
-                  if (results.affectedRows === 0) {
-                    return res.status(404).json({
-                      message: 'Artikel nicht gefunden'
-                    });
-                  }
-
-                  res.status(200).json({
-                    message: 'Artikel erfolgreich gelöscht'
-                  });
-                }
-              );
-            }
-          );
-        }
-      );
+      res.status(200).json({
+        message: 'Artikel erfolgreich deaktiviert'
+      });
     }
   );
 });

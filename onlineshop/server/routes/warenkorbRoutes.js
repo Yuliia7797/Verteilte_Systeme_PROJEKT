@@ -229,6 +229,7 @@ router.post('/positionen', requireLogin, (req, res) => {
        FROM artikel a
        LEFT JOIN lagerbestand lb ON a.id = lb.artikel_id
        WHERE a.id = ?
+         AND a.ist_aktiv = 1
        LIMIT 1`,
       [artikelId],
       (artikelError, artikelResults) => {
@@ -238,7 +239,7 @@ router.post('/positionen', requireLogin, (req, res) => {
         }
 
         if (artikelResults.length === 0) {
-          return res.status(404).json({ message: 'Artikel nicht gefunden' });
+          return res.status(404).json({ message: 'Artikel nicht gefunden oder nicht aktiv' });
         }
 
         const einzelpreis = Number(artikelResults[0].preis);
@@ -350,6 +351,7 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
        FROM artikel a
        LEFT JOIN lagerbestand lb ON a.id = lb.artikel_id
        WHERE a.id = ?
+         AND a.ist_aktiv = 1
        LIMIT 1`,
       [artikelId],
       (artikelError, artikelResults) => {
@@ -359,7 +361,7 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
         }
 
         if (artikelResults.length === 0) {
-          return res.status(404).json({ message: 'Artikel nicht gefunden' });
+          return res.status(404).json({ message: 'Artikel nicht gefunden oder nicht aktiv' });
         }
 
         const einzelpreis = Number(artikelResults[0].preis);

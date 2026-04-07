@@ -150,6 +150,7 @@ async function pruefeLieferadresse(conn, lieferadresseId, benutzerId) {
 
 /**
  * Lädt Artikelpreise und Lagerbestände für die übergebenen Artikel-IDs.
+ * Es werden nur aktive Artikel geladen.
  *
  * @async
  * @function ladeArtikelDaten
@@ -163,7 +164,8 @@ async function ladeArtikelDaten(conn, artikelIds) {
     `SELECT a.id, a.preis, l.anzahl AS lagerbestand
      FROM artikel a
      LEFT JOIN lagerbestand l ON a.id = l.artikel_id
-     WHERE a.id IN (?)`,
+     WHERE a.id IN (?)
+       AND a.ist_aktiv = 1`,
     [artikelIds]
   );
 }
