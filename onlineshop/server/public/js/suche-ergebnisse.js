@@ -26,27 +26,20 @@ function getSuchbegriffFromUrl() {
 }
 
 /**
- * Setzt den Suchbegriff in der Seite als sichtbare Ausgabe.
+ * Setzt den Suchbegriff sichtbar auf der Seite.
  *
  * @function setSuchbegriffAnzeige
  * @param {string} suchbegriff - Suchbegriff aus der URL
  * @returns {void}
  */
 function setSuchbegriffAnzeige(suchbegriff) {
-  const suchbegriffAnzeige = document.getElementById('suchbegriff-anzeige');
+  const el = document.getElementById('suchbegriff-anzeige');
 
-  if (!suchbegriffAnzeige) {
-    console.error('Das Element mit der ID "suchbegriff-anzeige" wurde nicht gefunden.');
-    return;
-  }
+  if (!el) return;
 
-  if (suchbegriff) {
-    suchbegriffAnzeige.textContent = `Ergebnisse für: "${suchbegriff}"`;
-    document.title = `Suche: ${suchbegriff} - MyShop`;
-  } else {
-    suchbegriffAnzeige.textContent = 'Kein Suchbegriff angegeben.';
-    document.title = 'Suchergebnisse - MyShop';
-  }
+  el.textContent = suchbegriff
+    ? `Ergebnisse für: "${suchbegriff}"`
+    : 'Kein Suchbegriff angegeben.';
 }
 
 /**
@@ -58,23 +51,13 @@ function setSuchbegriffAnzeige(suchbegriff) {
  */
 function renderSucheFehler(message) {
   const container = document.getElementById('suche-artikel-container');
+  if (!container) return;
 
-  if (!container) {
-    console.error('Der Container mit der ID "suche-artikel-container" wurde nicht gefunden.');
-    return;
-  }
-
-  container.innerHTML = `
-    <div class="col-12">
-      <div class="alert alert-danger">
-        ${message}
-      </div>
-    </div>
-  `;
+  container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
 }
 
 /**
- * Lädt die Suchergebnisse vom Server und rendert sie im Container.
+ * Lädt die Suchergebnisse vom Server und rendert sie.
  *
  * @async
  * @function ladeSuchergebnisse
@@ -82,53 +65,36 @@ function renderSucheFehler(message) {
  */
 async function ladeSuchergebnisse() {
   try {
-    const suchbegriff = getSuchbegriffFromUrl();
-    setSuchbegriffAnzeige(suchbegriff);
+    const q = getSuchbegriffFromUrl();
+    setSuchbegriffAnzeige(q);
 
-    if (!suchbegriff) {
-      renderSucheFehler('Bitte gib einen Suchbegriff ein.');
+    if (!q) {
+      renderSucheFehler('Bitte Suchbegriff eingeben.');
       return;
     }
 
-    const response = await fetch(`/artikel?suche=${encodeURIComponent(suchbegriff)}`);
-   
-    if (!response.ok) {
-      throw new Error('Suchergebnisse konnten nicht geladen werden');
-    }
+    const artikel = await window.apiGet(`/artikel/suche?q=${encodeURIComponent(q)}`);
 
-    const artikel = await response.json();
+    window.renderArtikelListe('suche-artikel-container', artikel, {
+      leerText: 'Keine Treffer gefunden.'
+    });
 
-    if (typeof window.renderArtikelListe === 'function') {
-      window.renderArtikelListe('suche-artikel-container', artikel, {
-        leerText: 'Keine passenden Artikel gefunden.',
-        zeigeBeschreibung: true,
-        spaltenKlasse: 'col-md-4'
-      });
-    } else {
-      console.error('artikel-list.js wurde nicht korrekt geladen.');
-    }
   } catch (error) {
-    console.error('Fehler beim Laden der Suchergebnisse:', error);
-    renderSucheFehler('Die Suchergebnisse konnten nicht geladen werden.');
+    console.error(error);
+    renderSucheFehler('Fehler bei der Suche.');
   }
 }
 
 /**
- * Initialisiert die Suchergebnisseite und registriert
- * die zentrale Warenkorb-Logik.
+ * Initialisiert die Suchergebnisseite und registriert die Warenkorb-Logik.
  *
  * @async
- * @function initSucheErgebnisseSeite
+ * @function initSuche
  * @returns {Promise<void>}
  */
-async function initSucheErgebnisseSeite() {
+async function initSuche() {
   await ladeSuchergebnisse();
-
-  if (typeof window.registriereAddToCartHandler === 'function') {
-    window.registriereAddToCartHandler(document);
-  } else {
-    console.error('warenkorb-actions.js wurde nicht korrekt geladen.');
-  }
+  window.registriereAddToCartHandler(document);
 }
 
-document.addEventListener('DOMContentLoaded', initSucheErgebnisseSeite);
+document.addEventListener('DOMContentLoaded', initSuche);

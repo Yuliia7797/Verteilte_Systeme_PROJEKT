@@ -17,17 +17,11 @@
  *
  * @async
  * @function ladeArtikel
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Kein Rückgabewert
  */
 async function ladeArtikel() {
   try {
-    const response = await fetch('/artikel');
-
-    if (!response.ok) {
-      throw new Error('Fehler beim Laden der Artikel vom Server');
-    }
-
-    const artikel = await response.json();
+    const artikel = await window.apiGet('/artikel');
 
     if (typeof window.renderArtikelListe === 'function') {
       window.renderArtikelListe('artikel-container', artikel, {
@@ -49,7 +43,7 @@ async function ladeArtikel() {
  *
  * @async
  * @function initArtikelSeite
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Kein Rückgabewert
  */
 async function initArtikelSeite() {
   await ladeArtikel();
