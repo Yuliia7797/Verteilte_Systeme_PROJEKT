@@ -105,17 +105,6 @@ CREATE TABLE `aufgabe` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
--- Daten für Tabelle `aufgabe`
---
-
-INSERT INTO `aufgabe` (`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`) VALUES
-(1, 1, 34, 'bestellstatus_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-07 16:40:41', '2026-04-07 16:41:15', '2026-04-07 16:41:15'),
-(2, 1, 35, 'lager_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-07 16:40:41', '2026-04-07 16:41:15', '2026-04-07 16:41:15'),
-(3, 1, 34, 'warenkorb_leeren', 'abgeschlossen', 0, NULL, '2026-04-07 16:40:41', '2026-04-07 16:41:25', '2026-04-07 16:41:25');
-
--- --------------------------------------------------------
-
---
 -- Tabellenstruktur für Tabelle `benutzer`
 --
 
@@ -318,17 +307,6 @@ CREATE TABLE `worker` (
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Daten für Tabelle `worker`
---
-
-INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(31, 'allgemein', 'inaktiv', '2026-04-05 22:39:58', '2026-04-05 22:22:28'),
-(32, 'allgemein', 'inaktiv', '2026-04-05 22:39:58', '2026-04-05 22:22:28'),
-(33, 'allgemein', 'inaktiv', '2026-04-05 22:39:58', '2026-04-05 22:22:28'),
-(34, 'allgemein', 'aktiv', '2026-04-07 17:44:55', '2026-04-07 16:41:10'),
-(35, 'allgemein', 'aktiv', '2026-04-07 17:44:55', '2026-04-07 16:41:10'),
-(36, 'allgemein', 'aktiv', '2026-04-07 17:44:55', '2026-04-07 16:41:10');
 
 --
 -- Indizes der exportierten Tabellen

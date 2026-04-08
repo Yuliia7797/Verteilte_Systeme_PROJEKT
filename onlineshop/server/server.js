@@ -218,6 +218,11 @@ function startHttpServer(app) {
 async function start() {
   await testDatabaseConnection();
 
+  // Health-Check vor aller Middleware – kein Session-Overhead
+  app.get('/health', function (req, res) {
+    res.status(200).json({ status: 'ok' });
+  });
+
   const sessionStore = createSessionStore();
 
   registerMiddleware(app, sessionStore);
