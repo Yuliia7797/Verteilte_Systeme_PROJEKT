@@ -467,3 +467,22 @@ function setzeText(elementId, text) {
     element.textContent = text;
   }
 }
+
+/**
+ * Maskiert Sonderzeichen in Texten,
+ * damit diese sicher im HTML ausgegeben werden können.
+ *
+ * @function escapeHtml
+ * @param {string} text - Zu maskierender Text
+ * @returns {string} Sicherer HTML-Text
+ */
+function escapeHtml(text) {
+  const wert = String(text ?? '');
+
+  return wert
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}

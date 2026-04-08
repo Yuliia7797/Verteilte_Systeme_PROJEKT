@@ -3,11 +3,11 @@
  * eingeloggten Benutzers.
  *
  * Verfügbare Endpunkte:
- * - GET    /warenkorb                      – aktuellen Warenkorb mit Positionen laden
- * - POST   /warenkorb/positionen           – Artikel zum Warenkorb hinzufügen
- * - PUT    /warenkorb/positionen/:artikel_id   – Artikelmenge ändern
- * - DELETE /warenkorb/positionen/:artikel_id   – Artikel aus Warenkorb entfernen
- * - DELETE /warenkorb/leeren               – gesamten Warenkorb leeren
+ * - GET    /warenkorb                           – aktuellen Warenkorb mit Positionen laden
+ * - POST   /warenkorb/positionen                – Artikel zum Warenkorb hinzufügen
+ * - PUT    /warenkorb/positionen/:artikel_id    – Artikelmenge ändern
+ * - DELETE /warenkorb/positionen/:artikel_id    – Artikel aus Warenkorb entfernen
+ * - DELETE /warenkorb/leeren                    – gesamten Warenkorb leeren
  */
 
 'use strict';
@@ -62,23 +62,36 @@ function calculateTotal(warenkorbId, callback) {
 }
 
 /*
-  Liefert den Warenkorb eines Benutzers oder erstellt ihn neu, falls noch keiner existiert.
+  Liefert den neuesten Warenkorb eines Benutzers.
+  Falls noch kein Warenkorb existiert, wird ein neuer erstellt.
+
+  Wichtig:
+  Es kann vorkommen, dass für einen Benutzer mehrere Warenkörbe
+  in der Datenbank existieren. Deshalb wird hier gezielt der
+  neueste Warenkorb über die höchste ID geladen.
 */
 function getOrCreateWarenkorb(benutzerId, callback) {
   connection.query(
-    'SELECT id, benutzer_id, gesamtpreis FROM warenkorb WHERE benutzer_id = ? LIMIT 1',
+    `SELECT id, benutzer_id, gesamtpreis
+     FROM warenkorb
+     WHERE benutzer_id = ?
+     ORDER BY id DESC
+     LIMIT 1`,
     [benutzerId],
     (selectError, results) => {
       if (selectError) {
         return callback(selectError);
       }
 
+      // Falls bereits ein Warenkorb existiert, den neuesten zurückgeben
       if (results.length > 0) {
         return callback(null, results[0]);
       }
 
+      // Falls noch kein Warenkorb existiert, neuen Warenkorb anlegen
       connection.query(
-        'INSERT INTO warenkorb (benutzer_id, gesamtpreis) VALUES (?, 0.00)',
+        `INSERT INTO warenkorb (benutzer_id, gesamtpreis)
+         VALUES (?, 0.00)`,
         [benutzerId],
         (insertError, insertResult) => {
           if (insertError) {
@@ -145,7 +158,8 @@ function getWarenkorbZusammenfassung(warenkorbId, callback) {
 
 /*
   GET /warenkorb
-  Lädt den Warenkorb des aktuell eingeloggten Benutzers inklusive Positionen.
+  Lädt den Warenkorb des aktuell eingeloggten Benutzers
+  inklusive aller Positionen und Zusammenfassung.
 */
 router.get('/', requireLogin, (req, res) => {
   const benutzerId = req.session.benutzer.id;
@@ -463,7 +477,8 @@ router.delete('/leeren', requireLogin, (req, res) => {
     }
 
     connection.query(
-      'DELETE FROM warenkorb_position WHERE warenkorb_id = ?',
+      `DELETE FROM warenkorb_position
+       WHERE warenkorb_id = ?`,
       [warenkorb.id],
       (deleteError) => {
         if (deleteError) {
