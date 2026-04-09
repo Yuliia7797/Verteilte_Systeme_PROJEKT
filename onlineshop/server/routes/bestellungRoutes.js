@@ -10,10 +10,14 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const router = express.Router();
 const connection = require('../db');
 const istAdmin = require('../istAdmin');
+
+const RECHNUNGEN_DIR = '/usr/src/rechnungen';
 
 /**
  * Prüft, ob ein Benutzer eingeloggt ist.
@@ -281,7 +285,30 @@ async function speichereBestellpositionen(conn, bestellungId, positionen, artike
 }
 
 /**
- * Legt die drei Standard-Aufgaben für eine neue Bestellung an.
+ * Reduziert den Lagerbestand aller Artikel einer Bestellung innerhalb
+ * der laufenden Transaktion, sodass kein anderer Vorgang dazwischenfunken kann.
+ *
+ * @async
+ * @function aktualisiereLagerbestand
+ * @param {Object} conn - Datenbankverbindung
+ * @param {Array<Object>} positionen - Bestellpositionen aus dem Request
+ * @returns {Promise<void>}
+ */
+async function aktualisiereLagerbestand(conn, positionen) {
+  for (const pos of positionen) {
+    const artikelId = Number.parseInt(pos.artikel_id, 10);
+    const anzahl = Number.parseInt(pos.anzahl, 10);
+
+    await queryWithConnection(
+      conn,
+      "UPDATE lagerbestand SET anzahl = anzahl - ? WHERE artikel_id = ?",
+      [anzahl, artikelId]
+    );
+  }
+}
+
+/**
+ * Legt die zwei Standard-Aufgaben für eine neue Bestellung an.
  * Die Aufgaben werden bewusst nur als "wartend" angelegt.
  * Der Controller übernimmt später die Verteilung an freie Worker.
  *
@@ -294,8 +321,9 @@ async function speichereBestellpositionen(conn, bestellungId, positionen, artike
 async function legeAufgabenAn(conn, bestellungId) {
   const aufgaben = [
     [bestellungId, null, 'bestellstatus_aktualisieren', 'wartend'],
-    [bestellungId, null, 'lager_aktualisieren', 'wartend'],
-    [bestellungId, null, 'warenkorb_leeren', 'wartend']
+    [bestellungId, null, 'warenkorb_leeren', 'wartend'],
+    [bestellungId, null, 'bestellBestaetigung_senden', 'wartend'],
+    [bestellungId, null, 'rechnung_erstellen', 'wartend']
   ];
 
   await queryWithConnection(
@@ -334,13 +362,19 @@ router.get('/', istAdmin, (req, res) => {
  * GET /bestellung/:id
  * Lädt eine einzelne Bestellung mit Benutzerdaten,
  * Lieferadresse und Bestellpositionen.
- * Dieser Endpunkt darf nur von Admins genutzt werden.
+ * Admins sehen alle Bestellungen, Kunden nur ihre eigenen.
  */
-router.get('/:id', istAdmin, (req, res) => {
+router.get('/:id', (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(id)) {
     return res.status(400).json({ message: 'Ungültige ID' });
+  }
+
+  const benutzer = req.session && req.session.benutzer;
+
+  if (!benutzer) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
   }
 
   connection.query(
@@ -359,6 +393,13 @@ router.get('/:id', istAdmin, (req, res) => {
 
       if (bestellungResult.length === 0) {
         return res.status(404).json({ message: 'Bestellung nicht gefunden' });
+      }
+
+      const istEigeneBestellung = bestellungResult[0].benutzer_id === benutzer.id;
+      const istAdminBenutzer = benutzer.rolle === 'admin';
+
+      if (!istEigeneBestellung && !istAdminBenutzer) {
+        return res.status(403).json({ message: 'Kein Zugriff auf diese Bestellung' });
       }
 
       connection.query(
@@ -445,6 +486,7 @@ router.post('/', requireLogin, async (req, res) => {
     );
 
     await speichereBestellpositionen(conn, bestellungId, positionen, artikelMap);
+    await aktualisiereLagerbestand(conn, positionen);
     await legeAufgabenAn(conn, bestellungId);
 
     await commitTransaction(conn);
@@ -501,6 +543,55 @@ router.patch('/:id/status', istAdmin, (req, res) => {
       }
 
       res.status(200).json({ message: 'Status aktualisiert auf: ' + bestellstatus });
+    }
+  );
+});
+
+/**
+ * GET /bestellung/:id/rechnung
+ * Lädt die PDF-Rechnung einer Bestellung herunter.
+ * Eigene Bestellungen: eingeloggter Benutzer. Alle: nur Admin.
+ */
+router.get('/:id/rechnung', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ message: 'Ungültige ID' });
+  }
+
+  const benutzer = req.session && req.session.benutzer;
+
+  if (!benutzer) {
+    return res.status(401).json({ message: 'Nicht eingeloggt' });
+  }
+
+  connection.query(
+    'SELECT benutzer_id FROM bestellung WHERE id = ? LIMIT 1',
+    [id],
+    (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Datenbankfehler' });
+      }
+
+      if (!results.length) {
+        return res.status(404).json({ message: 'Bestellung nicht gefunden' });
+      }
+
+      const istEigeneBestellung = results[0].benutzer_id === benutzer.id;
+      const istAdminBenutzer = benutzer.rolle === 'admin';
+
+      if (!istEigeneBestellung && !istAdminBenutzer) {
+        return res.status(403).json({ message: 'Kein Zugriff auf diese Rechnung' });
+      }
+
+      const dateiPfad = path.join(RECHNUNGEN_DIR, `rechnung_${id}.pdf`);
+
+      if (!fs.existsSync(dateiPfad)) {
+        return res.status(404).json({ message: 'Rechnung noch nicht verfügbar' });
+      }
+
+      res.download(dateiPfad, `rechnung_${id}.pdf`);
     }
   );
 });

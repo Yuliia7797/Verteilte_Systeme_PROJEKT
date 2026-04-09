@@ -25,17 +25,14 @@ services:
       MYSQL_HOSTNAME: onlinebestellsystem
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 10000
-
-      # Redis-Verbindung für Socket.IO-Adapter
       REDIS_URL: redis://redis:6379
     volumes:
       - ./server:/usr/src/app
       - /usr/src/app/node_modules
+      - rechnungen:/usr/src/rechnungen
     depends_on:
       onlinebestellsystem:
         condition: service_healthy
-
-      # Redis muss gestartet sein, bevor der Server die Socket-Kommunikation initialisiert
       redis:
         condition: service_started
     healthcheck:
@@ -66,9 +63,11 @@ services:
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_HOSTNAME: onlinebestellsystem
-    # volumes:
-    #   - ./worker:/usr/src/app
-    #   - /usr/src/app/node_modules
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+    volumes:
+      - rechnungen:/usr/src/rechnungen
+      - ./server/public/images:/usr/src/images:ro
     depends_on:
       - onlinebestellsystem
     deploy:
@@ -109,6 +108,14 @@ services:
       retries: 5
       start_period: 30s
 
+  # ── Mailhog (Test-Mailserver) ──────────────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    restart: always
+    ports:
+      - "8025:8025"
+
   # ── phpMyAdmin ─────────────────────────────────────────────────────────────
   phpmyadmin:
     container_name: phpmyadmin
@@ -120,3 +127,6 @@ services:
       PMA_HOST: onlinebestellsystem
     depends_on:
       - onlinebestellsystem
+
+volumes:
+  rechnungen:
