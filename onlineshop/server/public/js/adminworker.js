@@ -1,15 +1,27 @@
 /*
   Datei: adminworker.js
-  Beschreibung: Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
+  Beschreibung:
+    Diese Datei steuert die Admin-Seite für die Worker-Übersicht.
+
     Sie prüft beim Laden der Seite den Admin-Zugriff, lädt die Worker- und
     Aufgabendaten vom Backend und zeigt sie in Tabellen an.
-  Hinweise: Verwendet die zentrale Auth-Logik aus auth.js sowie die
+
+    Zusätzlich wird eine Socket.IO-Verbindung aufgebaut, damit Änderungen
+    an Workern und Aufgaben in Echtzeit angezeigt werden können.
+    Dadurch ist kein regelmäßiges Polling per setInterval mehr notwendig.
+
+  Hinweise:
+    Verwendet die zentrale Auth-Logik aus auth.js sowie die
     zentrale Formatierungslogik aus format.js
+
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 06.04.2026
 */
 
 'use strict';
+
+// Zentrale Socket-Referenz für die Echtzeit-Kommunikation
+let socket = null;
 
 // Lädt die Worker-Übersicht nach dem Aufbau des DOM
 document.addEventListener('DOMContentLoaded', async () => {
@@ -18,19 +30,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     await ladeWorker();
     await ladeAufgaben();
 
-    // automatische Aktualisierung der Übersicht
-    setInterval(async () => {
-      try {
-        await ladeWorker();
-        await ladeAufgaben();
-      } catch (fehler) {
-        console.error('Fehler beim automatischen Aktualisieren:', fehler);
-      }
-    }, 10000);
+    // Socket.IO-Verbindung initialisieren
+    initialisiereSocketVerbindung();
   } catch (fehler) {
     console.error('Fehler bei der Initialisierung der Worker-Übersicht:', fehler);
   }
 });
+
+/**
+ * Initialisiert die Socket.IO-Verbindung für Echtzeit-Updates.
+ *
+ * @function initialisiereSocketVerbindung
+ * @returns {void}
+ */
+function initialisiereSocketVerbindung() {
+  // Ausschließlich echten WebSocket-Transport verwenden,
+  // damit die Verbindung in der Multi-Server-Architektur stabil bleibt.
+  socket = io({
+    transports: ['websocket']
+  });
+
+  socket.on('connect', function () {
+    console.log('Socket-Verbindung für Admin-Worker-Seite hergestellt:', socket.id);
+  });
+
+  socket.on('disconnect', function () {
+    console.log('Socket-Verbindung für Admin-Worker-Seite getrennt');
+  });
+
+  socket.on('connect_error', function (fehler) {
+    console.error('Socket-Verbindungsfehler auf der Admin-Worker-Seite:', fehler.message);
+  });
+
+  // Worker-Tabelle aktualisieren, wenn sich ein Worker-Status geändert hat
+  socket.on('worker_aktualisiert', async function () {
+    try {
+      await ladeWorker();
+    } catch (fehler) {
+      console.error('Fehler bei Echtzeit-Aktualisierung der Worker:', fehler);
+    }
+  });
+
+  // Aufgaben-Tabelle aktualisieren, wenn sich eine Aufgabe geändert hat
+  socket.on('aufgabe_aktualisiert', async function () {
+    try {
+      await ladeAufgaben();
+    } catch (fehler) {
+      console.error('Fehler bei Echtzeit-Aktualisierung der Aufgaben:', fehler);
+    }
+  });
+}
 
 /**
  * Ermittelt die passende Badge-Klasse für einen Worker-Status.
@@ -215,8 +264,10 @@ async function ladeAufgaben() {
 }
 
 /**
- * Ändert den Status eines Workers über das Backend und lädt danach
- * die Worker- und Aufgaben-Tabelle neu.
+ * Ändert den Status eines Workers über das Backend.
+ *
+ * Die anschließende Aktualisierung der Tabellen erfolgt automatisch
+ * über Socket.IO-Ereignisse in Echtzeit.
  *
  * @async
  * @function aendereWorkerStatus
@@ -242,9 +293,6 @@ async function aendereWorkerStatus(workerId, neuerStatus) {
     if (!antwort.ok) {
       throw new Error(daten.message || 'Fehler beim Aktualisieren des Worker-Status.');
     }
-
-    await ladeWorker();
-    await ladeAufgaben();
   } catch (fehler) {
     console.error('Fehler beim Ändern des Worker-Status:', fehler);
     alert('Der Worker-Status konnte nicht geändert werden.');

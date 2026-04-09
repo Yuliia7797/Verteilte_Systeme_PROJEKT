@@ -10,10 +10,12 @@
     - Schutz vor zu vielen Anfragen (Rate Limiting / DoS-Schutz)
     - Bereitstellung statischer Dateien (Frontend)
     - Einbindung aller API-Routen (Artikel, Warenkorb, Bestellung, etc.)
+    - Initialisierung von Socket.IO für Echtzeit-Kommunikation
+    - Verbindung zu Redis für serverübergreifende WebSocket-Synchronisation
     - Starten des HTTP-Servers
 
     Der Server dient als zentrale Schnittstelle zwischen
-    Frontend, Datenbank und Worker-System.
+    Frontend, Datenbank, Worker-System und Echtzeit-Kommunikation.
 
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
@@ -21,18 +23,22 @@
 
 'use strict';
 
-
 // =========================
 // Imports
 // =========================
 
+const http = require('http');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const { createClient } = require('redis');
 
 // Eigene Module
 const connection = require('./db');
+const { setIo } = require('./socket');
 
 // Routen
 const artikelRoutes = require('./routes/artikelRoutes');
@@ -43,7 +49,6 @@ const lagerbestandRoutes = require('./routes/lagerbestandRoutes');
 const workerRoutes = require('./routes/workerRoutes');
 const benutzerRoutes = require('./routes/benutzerRoutes');
 const adresseRoutes = require('./routes/adresseRoutes');
-
 
 // =========================
 // Konfiguration
@@ -65,6 +70,8 @@ const RATE_LIMIT_MAX = Number.parseInt(
   10
 );
 
+// Redis-Verbindung für den Socket.IO-Adapter
+const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
 
 // =========================
 // Express App Setup
@@ -72,6 +79,23 @@ const RATE_LIMIT_MAX = Number.parseInt(
 
 const app = express();
 
+// HTTP-Server wird benötigt, damit Express und Socket.IO
+// denselben Server gemeinsam nutzen können.
+const httpServer = http.createServer(app);
+
+// Socket.IO-Server für Echtzeit-Kommunikation.
+// Es wird ausschließlich der echte WebSocket-Transport verwendet,
+// damit die Architektur mit mehreren Serverinstanzen stabil bleibt.
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*'
+  },
+  transports: ['websocket']
+});
+
+// Socket.IO-Instanz global verfügbar machen,
+// damit andere Module Ereignisse senden können.
+setIo(io);
 
 // =========================
 // Hilfsfunktionen
@@ -128,7 +152,7 @@ function createSessionStore() {
  * @returns {void}
  */
 function registerMiddleware(app, sessionStore) {
-  // Middleware zum Parsen von Formulardaten (application/x-www-form-urlencoded)
+  // Middleware zum Parsen von Formulardaten
   app.use(express.urlencoded({ extended: true }));
 
   // Middleware zum Parsen von JSON-Requests
@@ -143,7 +167,7 @@ function registerMiddleware(app, sessionStore) {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // auf true setzen, wenn HTTPS verwendet wird
+      secure: false, // Auf true setzen, wenn HTTPS verwendet wird
       maxAge: 1000 * 60 * 60 // 1 Stunde
     }
   }));
@@ -168,12 +192,12 @@ function registerMiddleware(app, sessionStore) {
  * @returns {void}
  */
 function registerStaticAndBaseRoutes(app) {
-  // Startseite → Weiterleitung auf statische Seite (Frontend)
+  // Startseite → Weiterleitung auf statische Seite
   app.get('/', function (req, res) {
     res.redirect('/static');
   });
 
-  // Statische Dateien (z. B. HTML, CSS, JS) aus dem "public"-Ordner
+  // Statische Dateien aus dem "public"-Ordner bereitstellen
   app.use('/static', express.static('public'));
 }
 
@@ -196,14 +220,88 @@ function registerApiRoutes(app) {
 }
 
 /**
+ * Initialisiert die Redis-Verbindung für Socket.IO.
+ *
+ * Hintergrund:
+ * Bei mehreren Serverinstanzen müssen Socket-Ereignisse
+ * serverübergreifend synchronisiert werden. Dafür wird Redis
+ * als Pub/Sub-Kanal verwendet.
+ *
+ * @async
+ * @function initializeSocketAdapter
+ * @returns {Promise<void>}
+ */
+async function initializeSocketAdapter() {
+  // Ein Redis-Client für das Veröffentlichen von Nachrichten
+  const pubClient = createClient({
+    url: REDIS_URL
+  });
+
+  // Zweiter Redis-Client für das Empfangen von Nachrichten
+  const subClient = pubClient.duplicate();
+
+  pubClient.on('error', function (error) {
+    console.error('Redis Pub-Client Fehler:', error.message);
+  });
+
+  subClient.on('error', function (error) {
+    console.error('Redis Sub-Client Fehler:', error.message);
+  });
+
+  await pubClient.connect();
+  await subClient.connect();
+
+  // Socket.IO mit Redis-Adapter verbinden,
+  // damit alle Serverinstanzen dieselben Echtzeit-Ereignisse kennen.
+  io.adapter(createAdapter(pubClient, subClient));
+
+  console.log('Redis-Adapter für Socket.IO erfolgreich initialisiert');
+}
+
+/**
+ * Registriert alle Socket.IO-Ereignisse.
+ *
+ * @function registerSocketEvents
+ * @returns {void}
+ */
+function registerSocketEvents() {
+  io.on('connection', function (socket) {
+    console.log(`Neuer Socket verbunden: ${socket.id}`);
+
+    // Wird aufgerufen, wenn ein Worker eine Änderung am Worker-Status meldet
+    socket.on('worker_event', function (daten) {
+      io.emit('worker_aktualisiert', daten);
+    });
+
+    // Wird aufgerufen, wenn ein Worker oder Server eine Aufgabenänderung meldet
+    socket.on('aufgabe_event', function (daten) {
+      io.emit('aufgabe_aktualisiert', daten);
+    });
+
+    // Wird aufgerufen, wenn sich ein Bestellstatus geändert hat
+    socket.on('bestellung_event', function (daten) {
+      io.emit('bestellung_aktualisiert', daten);
+    });
+
+    // Wird aufgerufen, wenn sich der Lagerbestand geändert hat
+    socket.on('lager_event', function (daten) {
+      io.emit('lager_aktualisiert', daten);
+    });
+
+    socket.on('disconnect', function () {
+      console.log(`Socket getrennt: ${socket.id}`);
+    });
+  });
+}
+
+/**
  * Startet den HTTP-Server.
  *
  * @function startHttpServer
- * @param {import('express').Express} app - Express-Anwendung
  * @returns {void}
  */
-function startHttpServer(app) {
-  app.listen(PORT, HOST, function () {
+function startHttpServer() {
+  httpServer.listen(PORT, HOST, function () {
     console.log(`Server läuft auf http://${HOST}:${PORT}`);
   });
 }
@@ -217,6 +315,7 @@ function startHttpServer(app) {
  */
 async function start() {
   await testDatabaseConnection();
+  await initializeSocketAdapter();
 
   // Health-Check vor aller Middleware – kein Session-Overhead
   app.get('/health', function (req, res) {
@@ -228,9 +327,9 @@ async function start() {
   registerMiddleware(app, sessionStore);
   registerStaticAndBaseRoutes(app);
   registerApiRoutes(app);
-  startHttpServer(app);
+  registerSocketEvents();
+  startHttpServer();
 }
-
 
 // =========================
 // Start

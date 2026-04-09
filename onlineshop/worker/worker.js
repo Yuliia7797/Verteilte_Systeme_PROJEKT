@@ -1,6 +1,8 @@
 /*
   Datei: worker.js
-  Beschreibung: Diese Datei steuert die Hintergrundverarbeitung von Aufgaben (Worker-System).
+  Beschreibung:
+    Diese Datei steuert die Hintergrundverarbeitung von Aufgaben (Worker-System).
+
     Der Worker verbindet sich mit der Datenbank, registriert sich als aktiver Worker
     und prüft in regelmäßigen Abständen auf neue Aufgaben.
 
@@ -9,15 +11,18 @@
     - Warenkorb eines Benutzers nach erfolgreicher Bestellung leeren
     - Bestellstatus nach erfolgreicher Bestellung aktualisieren
 
+    Zusätzlich meldet der Worker Statusänderungen in Echtzeit an den
+    Socket.IO-Server, damit Admin-Bereich, Benutzerkonto und Lageranzeige
+    sofort aktualisiert werden können.
+
     Der Worker verwendet ein Transaktionssystem, um sicherzustellen,
     dass jede Aufgabe nur von einem Worker gleichzeitig verarbeitet wird.
-    Zusätzlich überwacht er andere Worker über Heartbeats und setzt
-    hängengebliebene Aufgaben automatisch zurück.
+    Zusätzlich überwacht er andere Worker über Heartbeats.
 
-  Hinweise: Siehe Funktionskommentare unten
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
 */
+
 'use strict';
 
 // =========================
@@ -25,6 +30,7 @@
 // =========================
 
 const mysql = require('mysql');
+const { io } = require('socket.io-client');
 
 const dbInfo = {
   connectionLimit: 10,
@@ -37,8 +43,48 @@ const dbInfo = {
 const pool = mysql.createPool(dbInfo);
 let workerId = null;
 
+// Verbindung direkt mit dem Server-Service innerhalb des Docker-Netzwerks.
+// Der Worker benötigt keinen Zugriff über nginx, da er ein interner Dienst ist.
+// Es wird ausschließlich echter WebSocket-Transport verwendet.
+const socket = io('http://server:8080', {
+  transports: ['websocket']
+});
+
 console.log('Worker startet und verbindet sich mit der Datenbank...');
 
+// =========================
+// Socket-Helfer
+// =========================
+
+/**
+ * Sendet ein Echtzeit-Ereignis an den Socket.IO-Server.
+ *
+ * @function sendeSocketEvent
+ * @param {string} eventName - Name des Eingangsereignisses auf dem Server
+ * @param {Object} payload - Zu sendende Daten
+ * @returns {void}
+ */
+function sendeSocketEvent(eventName, payload) {
+  if (!socket || !socket.connected) {
+    console.warn(`Socket nicht verbunden. Ereignis "${eventName}" konnte nicht gesendet werden.`);
+    return;
+  }
+
+  socket.emit(eventName, payload);
+}
+
+// Log-Ausgaben für die Socket-Verbindung
+socket.on('connect', function () {
+  console.log('Socket-Verbindung hergestellt:', socket.id);
+});
+
+socket.on('disconnect', function () {
+  console.log('Socket-Verbindung getrennt');
+});
+
+socket.on('connect_error', function (error) {
+  console.error('Socket-Verbindungsfehler:', error.message);
+});
 
 // =========================
 // Datenbank-Helfer
@@ -82,7 +128,6 @@ function getConnection() {
   });
 }
 
-
 // =========================
 // Worker-Registrierung & Überwachung
 // =========================
@@ -102,6 +147,12 @@ async function registerWorker() {
 
   workerId = result.insertId;
   console.log('Worker registriert mit ID:', workerId);
+
+  // Nach der Registrierung den aktuellen Worker-Status in Echtzeit melden
+  sendeSocketEvent('worker_event', {
+    workerId: workerId,
+    status: 'aktiv'
+  });
 }
 
 /**
@@ -120,6 +171,13 @@ async function sendHeartbeat() {
     "UPDATE worker SET letzter_heartbeat = NOW() WHERE id = ?",
     [workerId]
   );
+
+  // Optionaler Echtzeit-Hinweis, dass der Worker noch lebt
+  sendeSocketEvent('worker_event', {
+    workerId: workerId,
+    status: 'aktiv',
+    heartbeat: true
+  });
 }
 
 /**
@@ -163,11 +221,15 @@ async function workerAbmelden() {
       "UPDATE worker SET status = 'inaktiv' WHERE id = ?",
       [workerId]
     );
+
+    sendeSocketEvent('worker_event', {
+      workerId: workerId,
+      status: 'inaktiv'
+    });
   } catch (error) {
     console.error('Fehler beim Abmelden des Workers:', error.message);
   }
 }
-
 
 // =========================
 // Task-Queue / Task-Status
@@ -176,10 +238,6 @@ async function workerAbmelden() {
 /**
  * Holt die nächste Aufgabe, die bereits diesem Worker vom Controller
  * zugewiesen wurde, und setzt sie atomar auf "in_bearbeitung".
- *
- * Wichtig:
- * Der Worker sucht NICHT nach globalen "wartend"-Aufgaben.
- * Nur der Controller verteilt Aufgaben.
  *
  * @async
  * @function getAssignedTask
@@ -260,6 +318,15 @@ async function getAssignedTask() {
                 task.status = 'in_bearbeitung';
                 task.startzeitpunkt = new Date();
 
+                // Echtzeit-Meldung: Aufgabe wurde übernommen
+                sendeSocketEvent('aufgabe_event', {
+                  taskId: task.id,
+                  bestellungId: task.bestellung_id,
+                  typ: task.typ,
+                  status: 'in_bearbeitung',
+                  workerId: workerId
+                });
+
                 resolve(task);
               });
             }
@@ -276,9 +343,11 @@ async function getAssignedTask() {
  * @async
  * @function markAsDone
  * @param {number} taskId - ID der Aufgabe
+ * @param {number} bestellungId - Zugehörige Bestell-ID
+ * @param {string} taskTyp - Typ der Aufgabe
  * @returns {Promise<void>}
  */
-async function markAsDone(taskId) {
+async function markAsDone(taskId, bestellungId, taskTyp) {
   await query(
     `UPDATE aufgabe
      SET status = 'abgeschlossen',
@@ -288,6 +357,15 @@ async function markAsDone(taskId) {
        AND status = 'in_bearbeitung'`,
     [taskId, workerId]
   );
+
+  // Echtzeit-Meldung: Aufgabe erfolgreich abgeschlossen
+  sendeSocketEvent('aufgabe_event', {
+    taskId: taskId,
+    bestellungId: bestellungId,
+    typ: taskTyp,
+    status: 'abgeschlossen',
+    workerId: workerId
+  });
 }
 
 /**
@@ -296,10 +374,12 @@ async function markAsDone(taskId) {
  * @async
  * @function markAsFailed
  * @param {number} taskId - ID der Aufgabe
+ * @param {number} bestellungId - Zugehörige Bestell-ID
+ * @param {string} taskTyp - Typ der Aufgabe
  * @param {string} fehlermeldung - Fehlermeldung zur Aufgabe
  * @returns {Promise<void>}
  */
-async function markAsFailed(taskId, fehlermeldung) {
+async function markAsFailed(taskId, bestellungId, taskTyp, fehlermeldung) {
   await query(
     `UPDATE aufgabe
      SET status = 'fehlgeschlagen',
@@ -311,8 +391,17 @@ async function markAsFailed(taskId, fehlermeldung) {
        AND status = 'in_bearbeitung'`,
     [fehlermeldung, taskId, workerId]
   );
-}
 
+  // Echtzeit-Meldung: Aufgabe ist fehlgeschlagen
+  sendeSocketEvent('aufgabe_event', {
+    taskId: taskId,
+    bestellungId: bestellungId,
+    typ: taskTyp,
+    status: 'fehlgeschlagen',
+    workerId: workerId,
+    fehlermeldung: fehlermeldung
+  });
+}
 
 // =========================
 // Shop-Aufgaben / Business-Logik
@@ -340,7 +429,23 @@ async function lagerAktualisieren(bestellungId) {
       [pos.anzahl, pos.artikel_id]
     );
 
+    // Aktuellen Lagerbestand nach der Änderung erneut lesen,
+    // damit das Frontend den exakten neuen Wert kennt.
+    const lagerResult = await query(
+      "SELECT anzahl FROM lagerbestand WHERE artikel_id = ? LIMIT 1",
+      [pos.artikel_id]
+    );
+
+    const neuerBestand = lagerResult.length ? lagerResult[0].anzahl : 0;
+
     console.log('  ✓ Lager reduziert:', pos.artikel_id, pos.anzahl);
+
+    // Echtzeit-Meldung: Lagerbestand eines Artikels wurde geändert
+    sendeSocketEvent('lager_event', {
+      artikelId: pos.artikel_id,
+      lagerbestand: neuerBestand,
+      bestellungId: bestellungId
+    });
   }
 }
 
@@ -403,8 +508,13 @@ async function bestellstatusAktualisieren(bestellungId) {
     "UPDATE bestellung SET bestellstatus = 'bestaetigt' WHERE id = ?",
     [bestellungId]
   );
-}
 
+  // Echtzeit-Meldung: Bestellstatus wurde aktualisiert
+  sendeSocketEvent('bestellung_event', {
+    bestellungId: bestellungId,
+    bestellstatus: 'bestaetigt'
+  });
+}
 
 // =========================
 // Aufgabenverarbeitung
@@ -442,12 +552,11 @@ async function processTask(task) {
         throw new Error(`Unbekannter Typ: ${task.typ}`);
     }
 
-    await markAsDone(task.id);
+    await markAsDone(task.id, task.bestellung_id, task.typ);
   } catch (error) {
-    await markAsFailed(task.id, error.message);
+    await markAsFailed(task.id, task.bestellung_id, task.typ, error.message);
   }
 }
-
 
 // =========================
 // Worker-Laufzeit
@@ -516,7 +625,6 @@ async function start() {
   }
 }
 
-
 // =========================
 // Graceful Shutdown
 // =========================
@@ -535,6 +643,8 @@ async function handleShutdown(signal) {
   try {
     await workerAbmelden();
   } finally {
+    socket.close();
+
     pool.end(function () {
       process.exit(0);
     });

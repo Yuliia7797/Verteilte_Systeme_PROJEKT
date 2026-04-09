@@ -4,6 +4,9 @@
  * - GET   /worker            – alle Worker aus der Datenbank laden
  * - GET   /worker/aufgaben   – alle Aufgaben laden, mit zugehörigem Bestellstatus und Worker-ID
  * - PATCH /worker/:id/status – Status eines Workers ändern
+ *
+ * Zusätzlich werden bei Statusänderungen Socket.IO-Ereignisse ausgelöst,
+ * damit die Admin-Oberfläche in Echtzeit aktualisiert werden kann.
  */
 
 'use strict';
@@ -12,6 +15,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../db');
 const istAdmin = require('../istAdmin');
+const { getIo } = require('../socket');
 
 /**
  * Führt eine SQL-Abfrage aus.
@@ -89,6 +93,9 @@ router.get('/aufgaben', istAdmin, async (req, res) => {
  * Ändert den Status eines Workers.
  * Erlaubte Werte sind "aktiv" und "inaktiv".
  * Dieser Endpunkt darf nur von Admins genutzt werden.
+ *
+ * Nach erfolgreicher Änderung wird ein Echtzeit-Ereignis ausgelöst,
+ * damit alle geöffneten Admin-Seiten sofort aktualisiert werden.
  */
 router.patch('/:id/status', istAdmin, async (req, res) => {
   const workerId = Number.parseInt(req.params.id, 10);
@@ -113,6 +120,21 @@ router.patch('/:id/status', istAdmin, async (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(404).json({ message: 'Worker nicht gefunden' });
     }
+
+    // Zentrale Socket.IO-Instanz laden
+    const io = getIo();
+
+    // Echtzeit-Ereignis für die Worker-Tabelle senden
+    io.emit('worker_aktualisiert', {
+      workerId: workerId,
+      status: status
+    });
+
+    // Optional auch die Aufgabenübersicht aktualisieren,
+    // damit die Admin-Seite sicher vollständig neu lädt.
+    io.emit('aufgabe_aktualisiert', {
+      workerId: workerId
+    });
 
     res.status(200).json({
       message: 'Worker-Status erfolgreich aktualisiert',

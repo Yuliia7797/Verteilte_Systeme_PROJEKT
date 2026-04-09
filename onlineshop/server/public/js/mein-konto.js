@@ -1,12 +1,20 @@
 /*
   Datei: mein-konto.js
-  Beschreibung: Diese Datei steuert die "Mein Konto"-Seite.
+  Beschreibung:
+    Diese Datei steuert die "Mein Konto"-Seite.
+
     Beim Laden werden die Kontodaten und Bestellungen des eingeloggten Benutzers
     vom Server geholt und dargestellt. Über den Bearbeiten-Button wechselt die Seite
     in ein Formular, in dem Name, E-Mail, Adresse und optional das Passwort geändert
     werden können. Jede Bestellung kann aufgeklappt werden, um die bestellten Artikel
     mit Bild, Name, Anzahl und Preisen anzuzeigen.
-  Hinweise: Verwendet die zentrale Formatierungslogik aus format.js
+
+    Zusätzlich wird eine Socket.IO-Verbindung aufgebaut, damit Änderungen
+    am Bestellstatus in Echtzeit angezeigt werden können.
+
+  Hinweise:
+    Verwendet die zentrale Formatierungslogik aus format.js
+
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
 */
@@ -14,6 +22,9 @@
 'use strict';
 
 let urspruenglicheDaten = null;
+
+// Zentrale Socket-Referenz für Echtzeit-Kommunikation
+let socket = null;
 
 /**
  * Initialisiert die "Mein Konto"-Seite nach dem Laden des DOM.
@@ -27,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const meldung = document.getElementById('meldung');
 
   ladeKontodaten();
+  initialisiereSocketVerbindung();
 
   bearbeitenButton.addEventListener('click', () => {
     kontoForm.style.display = 'block';
@@ -112,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await ladeKontodaten();
       wechsleInAnzeigemodus();
-
     } catch (error) {
       console.error('Fehler beim Speichern:', error);
       meldung.textContent = 'Serverfehler beim Speichern.';
@@ -120,6 +131,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/**
+ * Initialisiert die Socket.IO-Verbindung für Echtzeit-Updates.
+ *
+ * @function initialisiereSocketVerbindung
+ * @returns {void}
+ */
+function initialisiereSocketVerbindung() {
+  // Ausschließlich echten WebSocket-Transport verwenden,
+  // damit die Verbindung in der Multi-Server-Architektur stabil bleibt.
+  socket = io({
+    transports: ['websocket']
+  });
+
+  socket.on('connect', function () {
+    console.log('Socket-Verbindung für Mein Konto hergestellt:', socket.id);
+  });
+
+  socket.on('disconnect', function () {
+    console.log('Socket-Verbindung für Mein Konto getrennt');
+  });
+
+  socket.on('connect_error', function (fehler) {
+    console.error('Socket-Verbindungsfehler auf Mein Konto:', fehler.message);
+  });
+
+  // Bestellungen neu laden, wenn sich ein Bestellstatus geändert hat
+  socket.on('bestellung_aktualisiert', async function () {
+    try {
+      await ladeBestellungen();
+    } catch (fehler) {
+      console.error('Fehler bei Echtzeit-Aktualisierung der Bestellungen:', fehler);
+    }
+  });
+}
 
 /**
  * Lädt die Kontodaten des eingeloggten Benutzers vom Server
@@ -338,7 +384,6 @@ function zeigeBestellungen(bestellungen) {
     `;
   }).join('');
 }
-
 
 /**
  * Öffnet oder schließt die Artikeldetails einer Bestellung.

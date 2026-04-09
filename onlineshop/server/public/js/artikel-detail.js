@@ -1,16 +1,25 @@
 /*
   Datei: artikel-detail.js
-  Beschreibung: Diese Datei steuert die Detailansicht eines einzelnen Artikels.
+  Beschreibung:
+    Diese Datei steuert die Detailansicht eines einzelnen Artikels.
+
     Die geladenen Daten (Bild, Name, Beschreibung, Preis, Lagerbestand, Kategorie)
     werden dynamisch als HTML in den Detailcontainer der Seite eingefügt.
     Zusätzlich kann der Artikel über einen Button in den Warenkorb gelegt werden.
-    Bei fehlender ID oder einem Serverfehler wird eine Fehlermeldung angezeigt.
+
+    Darüber hinaus wird eine Socket.IO-Verbindung aufgebaut, damit sich
+    der Lagerbestand in Echtzeit aktualisiert, wenn sich der Bestand
+    dieses Artikels durch eine Bestellung ändert.
+
   Hinweise: Siehe Funktionskommentare unten
   Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
   Erstellt: 05.04.2026
 */
 
 'use strict';
+
+// Zentrale Socket-Referenz für Echtzeit-Kommunikation
+let socket = null;
 
 /**
  * Liest die Artikel-ID aus der URL (z. B. artikel.html?id=3).
@@ -20,6 +29,56 @@
  */
 function getArtikelIdFromUrl() {
   return getQueryParam('id');
+}
+
+/**
+ * Initialisiert die Socket.IO-Verbindung für Echtzeit-Updates
+ * des Lagerbestands.
+ *
+ * @function initialisiereSocketVerbindung
+ * @returns {void}
+ */
+function initialisiereSocketVerbindung() {
+  // Ausschließlich echten WebSocket-Transport verwenden,
+  // damit die Verbindung in der Multi-Server-Architektur stabil bleibt.
+  socket = io({
+    transports: ['websocket']
+  });
+
+  socket.on('connect', function () {
+    console.log('Socket-Verbindung für Artikeldetails hergestellt:', socket.id);
+  });
+
+  socket.on('disconnect', function () {
+    console.log('Socket-Verbindung für Artikeldetails getrennt');
+  });
+
+  socket.on('connect_error', function (fehler) {
+    console.error('Socket-Verbindungsfehler auf der Artikeldetailseite:', fehler.message);
+  });
+
+  // Artikeldaten neu laden, wenn sich genau dieser Lagerbestand geändert hat
+  socket.on('lager_aktualisiert', async function (daten) {
+    try {
+      const aktuelleArtikelId = Number.parseInt(getArtikelIdFromUrl(), 10);
+
+      if (!Number.isInteger(aktuelleArtikelId)) {
+        return;
+      }
+
+      if (Number(daten.artikelId) === aktuelleArtikelId) {
+        await loadArtikelDetail();
+
+        // Nach dem Neurendern die Warenkorb-Logik erneut registrieren,
+        // weil der Button im DOM neu erzeugt wurde.
+        if (typeof window.registriereAddToCartHandler === 'function') {
+          window.registriereAddToCartHandler(document);
+        }
+      }
+    } catch (fehler) {
+      console.error('Fehler bei Echtzeit-Aktualisierung des Lagerbestands:', fehler);
+    }
+  });
 }
 
 /**
@@ -147,6 +206,7 @@ async function loadArtikelDetail() {
  */
 async function initArtikelDetailSeite() {
   await loadArtikelDetail();
+  initialisiereSocketVerbindung();
 
   if (typeof window.registriereAddToCartHandler === 'function') {
     window.registriereAddToCartHandler(document);
