@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 07. Apr 2026 um 17:45
--- Server-Version: 12.0.2-MariaDB-ubu2404
+-- Erstellungszeit: 09. Apr 2026 um 19:04
+-- Server-Version: 12.2.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -105,6 +105,18 @@ CREATE TABLE `aufgabe` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 --
+-- Daten für Tabelle `aufgabe`
+--
+
+INSERT INTO `aufgabe` (`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`) VALUES
+(4, 2, 37, 'bestellstatus_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:39', '2026-04-09 19:03:39'),
+(5, 2, 38, 'warenkorb_leeren', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:40', '2026-04-09 19:03:40'),
+(6, 2, 39, 'bestellBestaetigung_senden', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:40', '2026-04-09 19:03:40'),
+(7, 2, 37, 'rechnung_erstellen', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:44', '2026-04-09 19:03:45');
+
+-- --------------------------------------------------------
+
+--
 -- Tabellenstruktur für Tabelle `benutzer`
 --
 
@@ -150,7 +162,8 @@ CREATE TABLE `bestellposition` (
 --
 
 INSERT INTO `bestellposition` (`id`, `bestellung_id`, `artikel_id`, `anzahl`, `einzelpreis`, `gesamtpreis`, `erstellungszeitpunkt`) VALUES
-(1, 1, 2, 8, 99.99, 799.92, '2026-04-05 20:42:30');
+(1, 1, 2, 8, 99.99, 799.92, '2026-04-05 20:42:30'),
+(2, 2, 3, 2, 34.99, 69.98, '2026-04-09 19:03:38');
 
 -- --------------------------------------------------------
 
@@ -175,7 +188,8 @@ CREATE TABLE `bestellung` (
 --
 
 INSERT INTO `bestellung` (`id`, `benutzer_id`, `lieferadresse_id`, `gesamtpreis`, `zahlungsmethode`, `zahlungsstatus`, `bestellstatus`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 6, 2, 799.92, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-05 20:42:30', '2026-04-07 16:41:15');
+(1, 6, 2, 799.92, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-05 20:42:30', '2026-04-07 16:41:15'),
+(2, 6, 2, 69.98, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-09 19:03:38', '2026-04-09 19:03:39');
 
 -- --------------------------------------------------------
 
@@ -224,7 +238,7 @@ CREATE TABLE `lagerbestand` (
 INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`) VALUES
 (1, 1, 10, '2026-03-17 19:39:02'),
 (2, 2, 500, '2026-04-07 16:51:19'),
-(3, 3, 25, '2026-03-17 19:39:02'),
+(3, 3, 23, '2026-04-09 19:03:38'),
 (4, 4, 15, '2026-03-17 19:39:02'),
 (5, 5, 12, '2026-03-17 19:39:02'),
 (6, 6, 9, '2026-03-17 19:39:02'),
@@ -244,6 +258,13 @@ CREATE TABLE `sessions` (
   `expires` int(11) UNSIGNED NOT NULL,
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Daten für Tabelle `sessions`
+--
+
+INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
+('R5wMK1HvmcDfcQMGaLhxjfWFVcUyWwQ3', 1775765034, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-04-09T20:01:16.637Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":6,\"vorname\":\"Lea\",\"nachname\":\"Seiler\",\"email\":\"leas2000@gmx.de\",\"rolle\":\"kunde\"}}');
 
 -- --------------------------------------------------------
 
@@ -265,7 +286,7 @@ CREATE TABLE `warenkorb` (
 
 INSERT INTO `warenkorb` (`id`, `benutzer_id`, `gesamtpreis`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
 (1, 1, 0.00, '2026-03-30 16:47:38', '2026-03-30 17:02:22'),
-(2, 6, 0.00, '2026-04-05 20:41:51', '2026-04-07 16:41:25'),
+(2, 6, 0.00, '2026-04-05 20:41:51', '2026-04-09 19:03:40'),
 (3, 4, 179.89, '2026-04-07 16:51:40', '2026-04-07 17:05:31');
 
 -- --------------------------------------------------------
@@ -307,6 +328,14 @@ CREATE TABLE `worker` (
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Daten für Tabelle `worker`
+--
+
+INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
+(37, 'allgemein', 'aktiv', '2026-04-09 19:04:23', '2026-04-09 19:00:23'),
+(38, 'allgemein', 'aktiv', '2026-04-09 19:04:24', '2026-04-09 19:00:24'),
+(39, 'allgemein', 'aktiv', '2026-04-09 19:04:25', '2026-04-09 19:00:25');
 
 --
 -- Indizes der exportierten Tabellen
@@ -417,7 +446,7 @@ ALTER TABLE `artikel`
 -- AUTO_INCREMENT für Tabelle `aufgabe`
 --
 ALTER TABLE `aufgabe`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT für Tabelle `benutzer`
@@ -429,13 +458,13 @@ ALTER TABLE `benutzer`
 -- AUTO_INCREMENT für Tabelle `bestellposition`
 --
 ALTER TABLE `bestellposition`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellung`
 --
 ALTER TABLE `bestellung`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT für Tabelle `kategorie`
@@ -459,13 +488,13 @@ ALTER TABLE `warenkorb`
 -- AUTO_INCREMENT für Tabelle `warenkorb_position`
 --
 ALTER TABLE `warenkorb_position`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- Constraints der exportierten Tabellen

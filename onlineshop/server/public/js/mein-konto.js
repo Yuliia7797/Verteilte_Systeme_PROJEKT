@@ -326,6 +326,13 @@ function zeigeBestellungen(bestellungen) {
               <strong>Gesamtpreis:</strong>
               <p class="mb-0">${preis}</p>
             </div>
+
+            <div class="col-12">
+              <button class="btn btn-outline-dark btn-sm"
+                      onclick="event.stopPropagation(); window.open('/bestellung/${bestellung.id}/rechnung', '_blank')">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Rechnung herunterladen
+              </button>
+            </div>
           </div>
         </div>
 

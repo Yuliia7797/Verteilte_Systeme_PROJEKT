@@ -5,9 +5,10 @@
     und prüft in regelmäßigen Abständen auf neue Aufgaben.
 
     Folgende Aufgaben werden verarbeitet:
-    - Lagerbestand aktualisieren nach einer Bestellung
     - Warenkorb eines Benutzers nach erfolgreicher Bestellung leeren
     - Bestellstatus nach erfolgreicher Bestellung aktualisieren
+    - Bestellbestätigung per E-Mail an den Kunden senden
+    - PDF-Rechnung generieren und im gemeinsamen Volume ablegen
 
     Der Worker verwendet ein Transaktionssystem, um sicherzustellen,
     dass jede Aufgabe nur von einem Worker gleichzeitig verarbeitet wird.
@@ -24,7 +25,19 @@
 // Imports & Konfiguration
 // =========================
 
+const fs = require('fs');
+const path = require('path');
 const mysql = require('mysql');
+const nodemailer = require('nodemailer');
+const PDFDocument = require('pdfkit');
+
+const RECHNUNGEN_DIR = '/usr/src/rechnungen';
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'mailhog',
+  port: Number(process.env.SMTP_PORT) || 1025,
+  secure: false
+});
 
 const dbInfo = {
   connectionLimit: 10,
@@ -319,32 +332,6 @@ async function markAsFailed(taskId, fehlermeldung) {
 // =========================
 
 /**
- * Reduziert den Lagerbestand aller Artikel einer Bestellung.
- *
- * @async
- * @function lagerAktualisieren
- * @param {number} bestellungId - ID der Bestellung
- * @returns {Promise<void>}
- */
-async function lagerAktualisieren(bestellungId) {
-  console.log('  -> Lagerbestand aktualisieren für Bestellung:', bestellungId);
-
-  const positionen = await query(
-    "SELECT artikel_id, anzahl FROM bestellposition WHERE bestellung_id = ?",
-    [bestellungId]
-  );
-
-  for (const pos of positionen) {
-    await query(
-      "UPDATE lagerbestand SET anzahl = anzahl - ? WHERE artikel_id = ?",
-      [pos.anzahl, pos.artikel_id]
-    );
-
-    console.log('  ✓ Lager reduziert:', pos.artikel_id, pos.anzahl);
-  }
-}
-
-/**
  * Leert den Warenkorb des Benutzers, der die Bestellung aufgegeben hat.
  *
  * @async
@@ -389,6 +376,176 @@ async function warenkorbLeeren(bestellungId) {
 }
 
 /**
+ * Generiert eine PDF-Rechnung für eine Bestellung und speichert sie
+ * im gemeinsamen Volume unter /usr/src/rechnungen/rechnung_<id>.pdf.
+ *
+ * @async
+ * @function rechnungErstellen
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
+async function rechnungErstellen(bestellungId) {
+  console.log('  -> Rechnung erstellen für Bestellung:', bestellungId);
+
+  const bestellungResult = await query(
+    `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.erstellungszeitpunkt,
+            bn.vorname, bn.nachname, bn.email,
+            a.strasse, a.hausnummer, a.postleitzahl, a.ort, a.land
+     FROM bestellung b
+     JOIN benutzer bn ON b.benutzer_id = bn.id
+     JOIN adresse a ON b.lieferadresse_id = a.id
+     WHERE b.id = ?
+     LIMIT 1`,
+    [bestellungId]
+  );
+
+  if (!bestellungResult.length) {
+    throw new Error('Bestellung nicht gefunden');
+  }
+
+  const b = bestellungResult[0];
+
+  const positionen = await query(
+    `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis, a.bezeichnung
+     FROM bestellposition bp
+     JOIN artikel a ON bp.artikel_id = a.id
+     WHERE bp.bestellung_id = ?`,
+    [bestellungId]
+  );
+
+  await fs.promises.mkdir(RECHNUNGEN_DIR, { recursive: true });
+
+  const dateiPfad = path.join(RECHNUNGEN_DIR, `rechnung_${bestellungId}.pdf`);
+
+  await new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 50 });
+    const stream = fs.createWriteStream(dateiPfad);
+
+    doc.pipe(stream);
+    stream.on('finish', resolve);
+    stream.on('error', reject);
+
+    // Logo oben links
+    const logoPath = '/usr/src/images/myshop-logo.png';
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 45, { height: 50 });
+    }
+
+    // Kopfzeile rechts
+    doc.fontSize(22).font('Helvetica-Bold').text('RECHNUNG', { align: 'right' });
+    doc.fontSize(10).font('Helvetica').text(`Rechnungsnummer: R-${bestellungId}`, { align: 'right' });
+    doc.text(`Datum: ${new Date(b.erstellungszeitpunkt).toLocaleDateString('de-DE')}`, { align: 'right' });
+    doc.moveDown(2);
+
+    // Kundenadresse
+    doc.font('Helvetica-Bold').text('Rechnungsempfänger:');
+    doc.font('Helvetica').text(`${b.vorname} ${b.nachname}`);
+    doc.text(`${b.strasse} ${b.hausnummer}`);
+    doc.text(`${b.postleitzahl} ${b.ort}`);
+    doc.text(b.land);
+    doc.moveDown(2);
+
+    // Tabellenkopf
+    const colX = [50, 280, 360, 440];
+    doc.font('Helvetica-Bold').fontSize(10);
+    doc.text('Artikel',      colX[0], doc.y, { width: 220, continued: true });
+    doc.text('Anzahl',       colX[1], doc.y, { width: 70,  continued: true });
+    doc.text('Einzelpreis',  colX[2], doc.y, { width: 80,  continued: true });
+    doc.text('Gesamt',       colX[3], doc.y);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(0.3);
+
+    // Positionen
+    doc.font('Helvetica').fontSize(10);
+    for (const pos of positionen) {
+      const y = doc.y;
+      doc.text(pos.bezeichnung,                        colX[0], y, { width: 220, continued: true });
+      doc.text(String(pos.anzahl),                     colX[1], y, { width: 70,  continued: true });
+      doc.text(`${Number(pos.einzelpreis).toFixed(2)} EUR`, colX[2], y, { width: 80,  continued: true });
+      doc.text(`${Number(pos.gesamtpreis).toFixed(2)} EUR`, colX[3], y);
+    }
+
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    // Gesamtbetrag
+    doc.font('Helvetica-Bold').fontSize(11)
+       .text(`Gesamtbetrag: ${Number(b.gesamtpreis).toFixed(2)} EUR`, { align: 'right' });
+    doc.font('Helvetica').fontSize(10)
+       .text(`Zahlungsmethode: ${b.zahlungsmethode}`, { align: 'right' });
+
+    doc.end();
+  });
+
+  console.log('  ✓ Rechnung gespeichert:', dateiPfad);
+}
+
+/**
+ * Lädt Bestelldaten und sendet eine Bestätigungs-E-Mail an den Kunden.
+ *
+ * @async
+ * @function bestellBestaetigungSenden
+ * @param {number} bestellungId - ID der Bestellung
+ * @returns {Promise<void>}
+ */
+async function bestellBestaetigungSenden(bestellungId) {
+  console.log('  -> Bestellbestätigung senden für Bestellung:', bestellungId);
+
+  const bestellungResult = await query(
+    `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.erstellungszeitpunkt,
+            bn.vorname, bn.nachname, bn.email
+     FROM bestellung b
+     JOIN benutzer bn ON b.benutzer_id = bn.id
+     WHERE b.id = ?
+     LIMIT 1`,
+    [bestellungId]
+  );
+
+  if (!bestellungResult.length) {
+    throw new Error('Bestellung nicht gefunden');
+  }
+
+  const bestellung = bestellungResult[0];
+
+  const positionen = await query(
+    `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis, a.bezeichnung
+     FROM bestellposition bp
+     JOIN artikel a ON bp.artikel_id = a.id
+     WHERE bp.bestellung_id = ?`,
+    [bestellungId]
+  );
+
+  const positionenHtml = positionen.map(pos =>
+    `<tr>
+       <td>${pos.bezeichnung}</td>
+       <td>${pos.anzahl}</td>
+       <td>${Number(pos.einzelpreis).toFixed(2)} €</td>
+       <td>${Number(pos.gesamtpreis).toFixed(2)} €</td>
+     </tr>`
+  ).join('');
+
+  await transporter.sendMail({
+    from: '"Onlineshop" <noreply@onlineshop.de>',
+    to: bestellung.email,
+    subject: `Bestellbestätigung #${bestellungId}`,
+    html: `
+      <h2>Vielen Dank für deine Bestellung, ${bestellung.vorname}!</h2>
+      <p>Deine Bestellung <strong>#${bestellungId}</strong> ist eingegangen.</p>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr><th>Artikel</th><th>Anzahl</th><th>Einzelpreis</th><th>Gesamtpreis</th></tr>
+        </thead>
+        <tbody>${positionenHtml}</tbody>
+      </table>
+      <p><strong>Gesamtbetrag: ${Number(bestellung.gesamtpreis).toFixed(2)} €</strong></p>
+      <p>Zahlungsmethode: ${bestellung.zahlungsmethode}</p>
+    `
+  });
+
+  console.log('  ✓ Bestätigungs-E-Mail gesendet an:', bestellung.email);
+}
+
+/**
  * Aktualisiert den Status einer Bestellung auf "bestaetigt".
  *
  * @async
@@ -426,8 +583,12 @@ async function processTask(task) {
 
   try {
     switch (task.typ) {
-      case 'lager_aktualisieren':
-        await lagerAktualisieren(task.bestellung_id);
+      case 'rechnung_erstellen':
+        await rechnungErstellen(task.bestellung_id);
+        break;
+
+      case 'bestellBestaetigung_senden':
+        await bestellBestaetigungSenden(task.bestellung_id);
         break;
 
       case 'warenkorb_leeren':
