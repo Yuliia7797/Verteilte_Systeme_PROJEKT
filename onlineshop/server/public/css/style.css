@@ -425,6 +425,21 @@ body {
 
 /* 
   ================================
+  Artikeldetailseite
+  ================================
+*/
+
+/* 
+  Zeigt Zeilenumbrüche aus der Langbeschreibung korrekt an.
+  Dadurch werden Eingaben aus dem Textfeld auf der Artikeldetailseite
+  so dargestellt, wie sie im Admin-Bereich eingegeben wurden.
+*/
+.artikel-langbeschreibung {
+  white-space: pre-line;
+}
+
+/* 
+  ================================
   Karten für Kategorien
   ================================
 */

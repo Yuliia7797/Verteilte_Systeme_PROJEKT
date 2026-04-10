@@ -159,7 +159,7 @@ function renderArtikelDetail(artikel) {
         <hr>
 
         <h4 class="mb-3">Artikelbeschreibung</h4>
-        <p>${artikel.langbeschreibung || 'Keine ausführliche Beschreibung vorhanden.'}</p>
+        <p class="artikel-langbeschreibung">${artikel.langbeschreibung || 'Keine ausführliche Beschreibung vorhanden.'}</p>
       </div>
     </div>
   `;

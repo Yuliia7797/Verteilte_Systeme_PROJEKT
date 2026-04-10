@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: onlinebestellsystem
--- Erstellungszeit: 09. Apr 2026 um 19:04
--- Server-Version: 12.2.2-MariaDB-ubu2404
+-- Erstellungszeit: 10. Apr 2026 um 10:48
+-- Server-Version: 12.0.2-MariaDB-ubu2404
 -- PHP-Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -83,7 +83,13 @@ INSERT INTO `artikel` (`id`, `kategorie_id`, `bezeichnung`, `beschreibung`, `pre
 (7, 3, 'One Fire Tischlampe Kabellos LED Tischlampe Akku', 'Faltbare und tragbare LED-Tischlampe mit Akku, Dimmfunktion und augenschonendem Licht.', 24.99, 'images/produkte/one-fire-tischlampe-kabellos.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die One Fire LED Tischlampe kabellos ist eine faltbare und tragbare Akku-Lampe mit augenschonendem, flimmerfreiem und blendfreiem Licht. Dank der Dimmfunktion können durch langes Berühren des Ein-/Aus-Schalters mehr als 9 Helligkeitsstufen ausgewählt werden. Die Lampe eignet sich ideal für Zuhause, Büro oder Wohnheim und ist besonders praktisch für Studenten und Berufstätige. Die integrierte 3600-mAh-Batterie ermöglicht nach dem Aufladen eine lange Nutzungsdauer, sodass die Lampe flexibel auch ohne Kabel verwendet werden kann. Durch das faltbare Design lässt sich die Tischlampe zu einem runden, kompakten Format zusammenklappen und einfach in einer Tasche oder Schublade verstauen. Zusätzlich verfügt sie über eine Memory-Funktion, die den zuletzt verwendeten Beleuchtungsmodus speichert. Damit ist sie eine vielseitige, platzsparende und benutzerfreundliche Leselampe und Schreibtischlampe für den Alltag.', 1),
 (8, 4, 'Vileda Mikrofaser Allzwecktücher Colors, 14er-Pack', 'Mikrofasertücher im Maxi-Pack für die trockene und feuchte Reinigung vieler Oberflächen im Haushalt.', 12.99, 'images/produkte/vileda-mikrofaser-allzwecktuecher-colors.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Mit den Vileda Mikrofaser Allzwecktüchern Colors im 14er-Megapack haben Sie immer ein passendes Tuch zur Hand, um Schmutz und Fett von verschiedensten Oberflächen im Haushalt zu entfernen. Die Tücher bestehen aus 100 % Mikrofaser und sind besonders reinigungsstark sowie saugfähig. Sie reinigen Oberflächen aus Kunststoff, Holz, Edelstahl, Keramik und Glas streifen- und fusselfrei. Die Mikrofasertücher können je nach Bedarf sowohl trocken als auch nass verwendet werden und eignen sich beispielsweise zum Staubwischen oder Fensterputzen. Das Megapack enthält 14 bunte Tücher im Format 30 x 30 cm, sodass für verschiedene Einsatzbereiche leicht unterschiedliche Farben genutzt werden können. Die langlebigen Tücher sind bei bis zu 60 °C in der Waschmaschine waschbar und dadurch immer wiederverwendbar.', 1),
 (9, 7, 'Tangle Teezer Ultimate Detangler Haarbürste', 'Entwirrungsbürste für nasses und trockenes Haar mit zweistufigen Borsten für alle Haartypen.', 16.99, 'images/produkte/tangle-teezer-ultimate-detangler.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Der Tangle Teezer Ultimate Detangler eignet sich für glattes, welliges und lockiges Haar und unterstützt eine gesunde Haarpflege. Die Bürste kann auf nassem Haar, trockenen Locken sowie bei Haarverlängerungen und Perücken verwendet werden. Mit 325 zweistufigen, flexiblen Borsten gleitet sie mühelos durch das Haar, reduziert Haarbruch und hilft dabei, Knoten sanft zu entwirren. Gleichzeitig ist sie schonend zur Kopfhaut, kann die Durchblutung anregen und Irritationen minimieren. Dadurch eignet sie sich auch gut für empfindliche Kopfhaut. Die Bürste ist ein praktischer Bestandteil der täglichen Haarpflege-Routine und sorgt für glatteres und glänzenderes Haar.', 1),
-(10, 8, 'HMIYA Weite Hosen Damen', 'Leichte Damen-Stoffhose mit hoher Taille, weitem Bein und Taschen für Alltag und Freizeit.', 29.99, 'images/produkte/hmiya-weite-hosen-damen.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die HMIYA weite Damenhose ist eine lässige und leichte Stoffhose mit hoher Taille und praktischen Taschen. Sie eignet sich ideal für Freizeit, Alltag sowie für die Übergangszeiten im Frühling und Herbst. Das Material aus Polyester ist pflegeleicht, knitterarm und angenehm zu tragen. Die Hose ist sauber verarbeitet, bleibt auch nach mehreren Wäschen gut in Form und überzeugt durch Strapazierfähigkeit sowie Atmungsaktivität. Durch den lockeren Schnitt und den schönen Fall bietet sie ein modisches und zugleich komfortables Tragegefühl.', 1);
+(10, 8, 'HMIYA Weite Hosen Damen', 'Leichte Damen-Stoffhose mit hoher Taille, weitem Bein und Taschen für Alltag und Freizeit.', 29.99, 'images/produkte/hmiya-weite-hosen-damen.jpg', '2026-03-17 19:39:02', '2026-03-18 20:11:04', 'Die HMIYA weite Damenhose ist eine lässige und leichte Stoffhose mit hoher Taille und praktischen Taschen. Sie eignet sich ideal für Freizeit, Alltag sowie für die Übergangszeiten im Frühling und Herbst. Das Material aus Polyester ist pflegeleicht, knitterarm und angenehm zu tragen. Die Hose ist sauber verarbeitet, bleibt auch nach mehreren Wäschen gut in Form und überzeugt durch Strapazierfähigkeit sowie Atmungsaktivität. Durch den lockeren Schnitt und den schönen Fall bietet sie ein modisches und zugleich komfortables Tragegefühl.', 1),
+(11, 1, 'The Holy Bible - King James Version (KJV)', 'An Award or Presentation Bible in the King James Version: ideal as a gift or to keep. The full text of the Popular size King James or Authorized Version Bible, in a straightforward black imitation leather hardback binding.', 24.99, 'images/produkte/1775814421792-the-holy-bible-king-james-version-kjv-taschenbuch-collins-uk-englisch.jpeg', '2026-04-10 09:47:01', '2026-04-10 10:31:55', 'Verkaufsrang 1542\r\n\r\nEinband Taschenbuch\r\n\r\nErscheinungsdatum 02.07.2001\r\n\r\nVerlag HarperCollins\r\n\r\nSeitenzahl 1146\r\n\r\nMaße (L/B/H) 19,1/12,5/4,5 cm\r\n\r\nGewicht 750 g\r\n\r\nSprache Englisch\r\n\r\nISBN 978-0-00-710307-2\r\n\r\nHerstelleradresse\r\n\r\nLibri GmbH\r\n\r\nEuropaallee 1\r\n\r\n36244 Bad Hersfeld\r\n\r\nDE', 1),
+(12, 8, 'A-Linie Midi Kleid', 'Belle Poque Damen Floraler Spitze am Saum Kleid Vintage Eckiger Ausschnitt Geraffter Rücken Träger A-Linie Midi', 49.00, 'images/produkte/1775815044546-71pSHJ-AOcL._AC_SX569_.jpg', '2026-04-10 09:57:24', '2026-04-10 10:01:40', 'Stoff: 95%Polyester, 5%Elasthan, Futter:98%Polyester, 2%Viskose\r\nPflegehinweise: Maschinenwäsche\r\nHerkunftsland: China\r\nKragenform: Eckiger Ausschnitt\r\nÄrmellos\r\nMittlere Taille\r\nA-Linie', 1),
+(13, 6, 'Spiel UNO', 'Mattel UNO Show \'em No Mercy - 56 zusätzliche Karten, harte Aktionskarten und brutale Spielregeln für die gnadenloseste Version, Stapelregel und Handkartentausch, ab 7 Jahren, HWV18', 7.79, 'images/produkte/1775817261370-81K3zHqUQLL._AC_SX679_.jpg', '2026-04-10 10:34:21', '2026-04-10 10:34:53', 'UNO Show \'em No Mercy bietet 56 weitere Karten, Spezialregeln und extrem harte Aktionskarten für die brutalste Version von UNO, die es je gab\r\nHärtere Aktionskarten wie Alle überspringen, 6 ziehen und sogar 10 ziehen machen das Spiel absolut erbarmungslos.\r\n\r\nDank der Stapelregel können Spieler die Strafe (2, 4, 6, 10 ziehen) an den nächsten Spieler weitergeben so lange, bis einer nicht mehr reagieren kann und dann alle Karten nehmen muss.\r\n\r\nJedes Mal, wenn eine 7 oder eine 0 gelegt wird, müssen die Spieler ihre Handkarten mit einem anderen Spieler tauschen.\r\n\r\nDie Gnadenregel bedeutet, dass aus dem Spiel ausscheidet, wer mehr als 25 Karten auf der Hand hat.\r\n\r\nMehr Karten bergen auch mehr Möglichkeiten, Gegnern absolut keine Gnade zu zeigen.\r\n\r\nEin nettes Geschenk für actionreiche Spieleabende mit Freunden oder Familie, auf Reisen und auf Partys.', 1),
+(14, 4, 'Küchentücher im japanischen Stil', 'Küchentücher im japanischen Stil, weiche, saugfähige Mikrofaser, Badezimmer-Handtücher, Ramen-Geschirrtücher, Handtuch für Küche, Badezimmer, Bauernhaus, Zuhause, Katzenliebhaber, Geschenke für Frauen', 6.49, 'images/produkte/1775817448149-71sjAVigjOL._AC_SL1200_.jpg', '2026-04-10 10:37:28', '2026-04-10 10:37:28', 'Farbe: Lcs Multicolor 26883\r\n\r\nHandtuch-Formtyp: Waschlappen\r\n\r\nMaterial: Polyester\r\n\r\nProduktabmessungen: 61L x 38,1B cm', 1),
+(15, 4, 'Vorratsglas „Classic“', 'Vorratsglas „Classic“ – Hochwertiger Glasbehälter zur Aufbewahrung mit 2,0 Liter Fassungsvermögen – Ihre Ware bleibt frisch durch den Glasdeckel mit Dichtung', 13.99, 'images/produkte/1775817597810-71LitAd3jKL._SL1500_.jpg', '2026-04-10 10:39:57', '2026-04-10 10:39:57', 'Marke	APS\r\nFarbe	Transparent\r\nMaterial	Glas, Polyethylen\r\nMaterialeigenschaft	Spülmaschinenfest\r\nKapazität	2 Liter\r\n\r\nDer 2 Liter Behälter hat die Maße (Ø x H): 14 x 21,5 cm und wiegt 1,28 kg. Der Glasbehälter ist spülmaschinenfest und lässt sich somit ganz leicht reinigen.\r\n\r\nDas Vorratsglas ist vielseitig einsetzbar, z.B. für die Candy-Bar, Süßigkeiten, Kekse, Lakritz, Bonbons und Weingummi oder auch für diverse andere Lebensmittel, die ihre Frische behalten sollen.', 1),
+(16, 1, 'Der große Gatsby', 'F. Scott Fitzgerald Der große Gatsby Hardcover', 6.69, 'images/produkte/1775817831019-der-grosse-gatsby-gebundene-ausgabe-f-scott-fitzgerald.jpeg', '2026-04-10 10:43:51', '2026-04-10 10:43:51', 'Als F. Scott Fitzgeralds famoser Roman \"The Great Gatsby\" 1925 erschien, erntete sein Autor von zahlreichen Schriftstellerkollegen hymnische Kritiken, doch erst die Nachkriegsjahrzehnte bescherten seinem Meisterwerk die weltweite Anerkennung, die es verdient. Ergreifend und mit subtiler Finesse erzählt Fitzgerald die Geschichte des schillernden Emporkömmlings Jay Gatsby, der auf seinem Anwesen rauschende Feste feiert, um seine einst verlorene Liebe zurückzugewinnen - eine Geschichte über die Macht großer Gefühle und das schmerzhafte Scheitern eines romantischen Traums. Diese Ausgabe präsentiert den grandiosen Klassiker der amerikanischen Literatur in neuer Übersetzung.\r\n\r\nProduktdetails\r\n\r\nVerkaufsrang 10687\r\n\r\nEinband Gebundene Ausgabe\r\n\r\nErscheinungsdatum 28.02.2011\r\n\r\nVerlag Anaconda\r\n\r\nSeitenzahl 220\r\n\r\nMaße (L/B/H) 19,3/12,6/2,5 cm\r\n\r\nGewicht 292 g\r\n\r\nFarbe Mauve / Schwarz\r\n\r\nAuflage 1. Auflage\r\n\r\nOriginaltitel The Great Gatsby\r\n\r\nÜbersetzt von Kai Kilian\r\n\r\nSprache Deutsch\r\n\r\nISBN 978-3-86647-613-4\r\n\r\nHerstelleradresse\r\nAnaconda Verlag\r\nUnter Kirschen 1A\r\n50827 Köln\r\nDE', 1);
 
 -- --------------------------------------------------------
 
@@ -103,16 +109,6 @@ CREATE TABLE `aufgabe` (
   `startzeitpunkt` timestamp NULL DEFAULT NULL,
   `endzeitpunkt` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Daten für Tabelle `aufgabe`
---
-
-INSERT INTO `aufgabe` (`id`, `bestellung_id`, `worker_id`, `typ`, `status`, `versuch_anzahl`, `fehlermeldung`, `erstellungszeitpunkt`, `startzeitpunkt`, `endzeitpunkt`) VALUES
-(4, 2, 37, 'bestellstatus_aktualisieren', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:39', '2026-04-09 19:03:39'),
-(5, 2, 38, 'warenkorb_leeren', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:40', '2026-04-09 19:03:40'),
-(6, 2, 39, 'bestellBestaetigung_senden', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:40', '2026-04-09 19:03:40'),
-(7, 2, 37, 'rechnung_erstellen', 'abgeschlossen', 0, NULL, '2026-04-09 19:03:38', '2026-04-09 19:03:44', '2026-04-09 19:03:45');
 
 -- --------------------------------------------------------
 
@@ -163,7 +159,10 @@ CREATE TABLE `bestellposition` (
 
 INSERT INTO `bestellposition` (`id`, `bestellung_id`, `artikel_id`, `anzahl`, `einzelpreis`, `gesamtpreis`, `erstellungszeitpunkt`) VALUES
 (1, 1, 2, 8, 99.99, 799.92, '2026-04-05 20:42:30'),
-(2, 2, 3, 2, 34.99, 69.98, '2026-04-09 19:03:38');
+(2, 2, 3, 2, 34.99, 69.98, '2026-04-09 19:03:38'),
+(3, 3, 10, 1, 29.99, 29.99, '2026-04-10 09:49:51'),
+(4, 3, 1, 10, 14.99, 149.90, '2026-04-10 09:49:51'),
+(5, 3, 11, 3, 24.99, 74.97, '2026-04-10 09:49:51');
 
 -- --------------------------------------------------------
 
@@ -189,7 +188,8 @@ CREATE TABLE `bestellung` (
 
 INSERT INTO `bestellung` (`id`, `benutzer_id`, `lieferadresse_id`, `gesamtpreis`, `zahlungsmethode`, `zahlungsstatus`, `bestellstatus`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
 (1, 6, 2, 799.92, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-05 20:42:30', '2026-04-07 16:41:15'),
-(2, 6, 2, 69.98, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-09 19:03:38', '2026-04-09 19:03:39');
+(2, 6, 2, 69.98, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-09 19:03:38', '2026-04-09 19:03:39'),
+(3, 4, 3, 254.86, 'paypal', 'bezahlt', 'bestaetigt', '2026-04-10 09:49:51', '2026-04-10 09:49:58');
 
 -- --------------------------------------------------------
 
@@ -236,7 +236,7 @@ CREATE TABLE `lagerbestand` (
 --
 
 INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`) VALUES
-(1, 1, 10, '2026-03-17 19:39:02'),
+(1, 1, 10, '2026-04-10 10:19:42'),
 (2, 2, 500, '2026-04-07 16:51:19'),
 (3, 3, 23, '2026-04-09 19:03:38'),
 (4, 4, 15, '2026-03-17 19:39:02'),
@@ -245,7 +245,13 @@ INSERT INTO `lagerbestand` (`id`, `artikel_id`, `anzahl`, `aenderungszeitpunkt`)
 (7, 7, 30, '2026-03-17 19:39:02'),
 (8, 8, 7, '2026-03-17 19:39:02'),
 (9, 9, 20, '2026-03-17 19:39:02'),
-(10, 10, 18, '2026-03-17 19:39:02');
+(10, 10, 17, '2026-04-10 09:49:51'),
+(12, 11, 475, '2026-04-10 09:49:51'),
+(14, 12, 12, '2026-04-10 09:57:38'),
+(16, 13, 42, '2026-04-10 10:35:05'),
+(18, 14, 80, '2026-04-10 10:37:40'),
+(20, 15, 2, '2026-04-10 10:40:08'),
+(23, 16, 14, '2026-04-10 10:44:03');
 
 -- --------------------------------------------------------
 
@@ -258,13 +264,6 @@ CREATE TABLE `sessions` (
   `expires` int(11) UNSIGNED NOT NULL,
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Daten für Tabelle `sessions`
---
-
-INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
-('R5wMK1HvmcDfcQMGaLhxjfWFVcUyWwQ3', 1775765034, '{\"cookie\":{\"originalMaxAge\":3600000,\"expires\":\"2026-04-09T20:01:16.637Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"benutzer\":{\"id\":6,\"vorname\":\"Lea\",\"nachname\":\"Seiler\",\"email\":\"leas2000@gmx.de\",\"rolle\":\"kunde\"}}');
 
 -- --------------------------------------------------------
 
@@ -279,15 +278,6 @@ CREATE TABLE `warenkorb` (
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Daten für Tabelle `warenkorb`
---
-
-INSERT INTO `warenkorb` (`id`, `benutzer_id`, `gesamtpreis`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(1, 1, 0.00, '2026-03-30 16:47:38', '2026-03-30 17:02:22'),
-(2, 6, 0.00, '2026-04-05 20:41:51', '2026-04-09 19:03:40'),
-(3, 4, 179.89, '2026-04-07 16:51:40', '2026-04-07 17:05:31');
 
 -- --------------------------------------------------------
 
@@ -306,14 +296,6 @@ CREATE TABLE `warenkorb_position` (
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
---
--- Daten für Tabelle `warenkorb_position`
---
-
-INSERT INTO `warenkorb_position` (`id`, `warenkorb_id`, `artikel_id`, `anzahl`, `einzelpreis`, `gesamtpreis`, `erstellungszeitpunkt`, `aenderungszeitpunkt`) VALUES
-(2, 3, 10, 1, 29.99, 29.99, '2026-04-07 16:51:40', '2026-04-07 16:51:40'),
-(3, 3, 1, 10, 14.99, 149.90, '2026-04-07 16:51:47', '2026-04-07 16:52:12');
-
 -- --------------------------------------------------------
 
 --
@@ -327,15 +309,6 @@ CREATE TABLE `worker` (
   `letzter_heartbeat` timestamp NULL DEFAULT NULL,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-
---
--- Daten für Tabelle `worker`
---
-
-INSERT INTO `worker` (`id`, `typ`, `status`, `letzter_heartbeat`, `erstellungszeitpunkt`) VALUES
-(37, 'allgemein', 'aktiv', '2026-04-09 19:04:23', '2026-04-09 19:00:23'),
-(38, 'allgemein', 'aktiv', '2026-04-09 19:04:24', '2026-04-09 19:00:24'),
-(39, 'allgemein', 'aktiv', '2026-04-09 19:04:25', '2026-04-09 19:00:25');
 
 --
 -- Indizes der exportierten Tabellen
@@ -440,13 +413,13 @@ ALTER TABLE `adresse`
 -- AUTO_INCREMENT für Tabelle `artikel`
 --
 ALTER TABLE `artikel`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT für Tabelle `aufgabe`
 --
 ALTER TABLE `aufgabe`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT für Tabelle `benutzer`
@@ -458,13 +431,13 @@ ALTER TABLE `benutzer`
 -- AUTO_INCREMENT für Tabelle `bestellposition`
 --
 ALTER TABLE `bestellposition`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT für Tabelle `bestellung`
 --
 ALTER TABLE `bestellung`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT für Tabelle `kategorie`
@@ -476,25 +449,25 @@ ALTER TABLE `kategorie`
 -- AUTO_INCREMENT für Tabelle `lagerbestand`
 --
 ALTER TABLE `lagerbestand`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT für Tabelle `warenkorb`
 --
 ALTER TABLE `warenkorb`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT für Tabelle `warenkorb_position`
 --
 ALTER TABLE `warenkorb_position`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT für Tabelle `worker`
 --
 ALTER TABLE `worker`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- Constraints der exportierten Tabellen
@@ -544,13 +517,6 @@ ALTER TABLE `lagerbestand`
 --
 ALTER TABLE `warenkorb`
   ADD CONSTRAINT `warenkorb_ibfk_1` FOREIGN KEY (`benutzer_id`) REFERENCES `benutzer` (`id`);
-
---
--- Constraints der Tabelle `warenkorb_position`
---
-ALTER TABLE `warenkorb_position`
-  ADD CONSTRAINT `warenkorb_position_ibfk_1` FOREIGN KEY (`warenkorb_id`) REFERENCES `warenkorb` (`id`),
-  ADD CONSTRAINT `warenkorb_position_ibfk_2` FOREIGN KEY (`artikel_id`) REFERENCES `artikel` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
