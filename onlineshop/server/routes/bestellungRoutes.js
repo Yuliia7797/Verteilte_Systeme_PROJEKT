@@ -3,8 +3,11 @@
  * Sie stellt folgende Endpunkte bereit:
  * - GET   /bestellung              – alle Bestellungen mit Benutzerdaten laden
  * - GET   /bestellung/:id          – einzelne Bestellung mit Lieferadresse und Positionen laden
- * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen
- *                                    und Worker-Aufgaben für Lager, Warenkorb und Bestellstatus anlegen
+ * - POST  /bestellung              – neue Bestellung erstellen, Preise serverseitig berechnen,
+ *                                    Lagerbestand direkt im Bestellprozess aktualisieren,
+ *                                    Socket.IO-Ereignisse für die Lageranzeige senden
+ *                                    und Worker-Aufgaben für Warenkorb, Bestellstatus,
+ *                                    Bestellbestätigung und Rechnung anlegen
  * - PATCH /bestellung/:id/status   – Bestellstatus aktualisieren
  */
 
@@ -16,6 +19,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../db');
 const istAdmin = require('../istAdmin');
+const { getIo } = require('../socket');
 
 const RECHNUNGEN_DIR = '/usr/src/rechnungen';
 
@@ -308,9 +312,32 @@ async function aktualisiereLagerbestand(conn, positionen) {
 }
 
 /**
- * Legt die zwei Standard-Aufgaben für eine neue Bestellung an.
+ * Sendet nach erfolgreichem Commit für alle betroffenen Artikel
+ * ein Socket.IO-Ereignis an die verbundenen Clients, damit die
+ * Lageranzeige in Echtzeit aktualisiert werden kann.
+ *
+ * @function sendeLagerbestandEvents
+ * @param {Array<Object>} positionen - Bestellpositionen aus dem Request
+ * @returns {void}
+ */
+function sendeLagerbestandEvents(positionen) {
+  const io = getIo();
+
+  for (const pos of positionen) {
+    io.emit('lager_aktualisiert', {
+      artikelId: Number.parseInt(pos.artikel_id, 10)
+    });
+  }
+}
+
+/**
+ * Legt die Standard-Aufgaben für eine neue Bestellung an.
  * Die Aufgaben werden bewusst nur als "wartend" angelegt.
  * Der Controller übernimmt später die Verteilung an freie Worker.
+ *
+ * Hinweis:
+ * Die Aktualisierung des Lagerbestands gehört nicht zu den Worker-Aufgaben,
+ * sondern erfolgt bereits direkt im Bestellprozess.
  *
  * @async
  * @function legeAufgabenAn
@@ -427,8 +454,11 @@ router.get('/:id', (req, res) => {
 
 /**
  * POST /bestellung
- * Erstellt eine neue Bestellung mit allen Positionen
- * und legt danach Worker-Aufgaben für Lager, Warenkorb und Bestellstatus an.
+ * Erstellt eine neue Bestellung mit allen Positionen,
+ * aktualisiert den Lagerbestand direkt in der Transaktion,
+ * sendet danach Socket.IO-Ereignisse für die Lageranzeige
+ * und legt anschließend Worker-Aufgaben für Warenkorb,
+ * Bestellstatus, Bestellbestätigung und Rechnung an.
  */
 router.post('/', requireLogin, async (req, res) => {
   const benutzerId = req.session.benutzer.id;
@@ -490,6 +520,7 @@ router.post('/', requireLogin, async (req, res) => {
     await legeAufgabenAn(conn, bestellungId);
 
     await commitTransaction(conn);
+    sendeLagerbestandEvents(positionen);
     conn.release();
 
     res.status(201).json({

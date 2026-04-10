@@ -8,14 +8,17 @@
 
     Folgende Aufgaben werden verarbeitet:
     - Warenkorb eines Benutzers nach erfolgreicher Bestellung leeren
-    - Lagerbestand nach erfolgreicher Bestellung aktualisieren
     - Bestellstatus nach erfolgreicher Bestellung aktualisieren
     - Bestellbestätigung per E-Mail an den Kunden senden
     - PDF-Rechnung generieren und im gemeinsamen Volume ablegen
 
     Zusätzlich meldet der Worker Statusänderungen in Echtzeit an den
-    Socket.IO-Server, damit Admin-Bereich, Benutzerkonto und Lageranzeige
+    Socket.IO-Server, damit Admin-Bereich und Benutzerkonto
     sofort aktualisiert werden können.
+
+    Hinweis:
+    Die Aktualisierung des Lagerbestands erfolgt derzeit nicht im Worker,
+    sondern direkt im Bestellprozess.
 
     Der Worker verwendet ein Transaktionssystem, um sicherzustellen,
     dass jede Aufgabe nur von einem Worker gleichzeitig verarbeitet wird.

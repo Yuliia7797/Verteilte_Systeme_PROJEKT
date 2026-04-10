@@ -283,11 +283,6 @@ function registerSocketEvents() {
       io.emit('bestellung_aktualisiert', daten);
     });
 
-    // Wird aufgerufen, wenn sich der Lagerbestand geändert hat
-    socket.on('lager_event', function (daten) {
-      io.emit('lager_aktualisiert', daten);
-    });
-
     socket.on('disconnect', function () {
       console.log(`Socket getrennt: ${socket.id}`);
     });
