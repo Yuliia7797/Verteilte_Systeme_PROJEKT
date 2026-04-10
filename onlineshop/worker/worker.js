@@ -422,45 +422,6 @@ async function markAsFailed(taskId, bestellungId, taskTyp, fehlermeldung) {
 // =========================
 
 /**
- * Reduziert den Lagerbestand aller Artikel einer Bestellung.
- *
- * @async
- * @function lagerAktualisieren
- * @param {number} bestellungId - ID der Bestellung
- * @returns {Promise<void>}
- */
-async function lagerAktualisieren(bestellungId) {
-  console.log('  -> Lagerbestand aktualisieren für Bestellung:', bestellungId);
-
-  const positionen = await query(
-    "SELECT artikel_id, anzahl FROM bestellposition WHERE bestellung_id = ?",
-    [bestellungId]
-  );
-
-  for (const pos of positionen) {
-    await query(
-      "UPDATE lagerbestand SET anzahl = anzahl - ? WHERE artikel_id = ?",
-      [pos.anzahl, pos.artikel_id]
-    );
-
-    const lagerResult = await query(
-      "SELECT anzahl FROM lagerbestand WHERE artikel_id = ? LIMIT 1",
-      [pos.artikel_id]
-    );
-
-    const neuerBestand = lagerResult.length ? lagerResult[0].anzahl : 0;
-
-    console.log('  ✓ Lager reduziert:', pos.artikel_id, pos.anzahl);
-
-    sendeSocketEvent('lager_event', {
-      artikelId: pos.artikel_id,
-      lagerbestand: neuerBestand,
-      bestellungId: bestellungId
-    });
-  }
-}
-
-/**
  * Leert den Warenkorb des Benutzers, der die Bestellung aufgegeben hat.
  *
  * @async
@@ -748,10 +709,6 @@ async function processTask(task) {
 
       case 'bestellstatus_aktualisieren':
         await bestellstatusAktualisieren(task.bestellung_id);
-        break;
-
-      case 'lager_aktualisieren':
-        await lagerAktualisieren(task.bestellung_id);
         break;
 
       default:
