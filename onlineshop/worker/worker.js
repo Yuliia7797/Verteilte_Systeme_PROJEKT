@@ -620,6 +620,17 @@ async function rechnungErstellen(bestellungId) {
 async function bestellBestaetigungSenden(bestellungId) {
   console.log('  -> Bestellbestätigung senden für Bestellung:', bestellungId);
 
+  // Idempotenz-Check: E-Mail nur senden wenn noch nicht gesendet
+  const flagResult = await query(
+    'SELECT email_gesendet FROM bestellung WHERE id = ? LIMIT 1',
+    [bestellungId]
+  );
+
+  if (flagResult.length && flagResult[0].email_gesendet) {
+    console.log('  ✓ E-Mail bereits gesendet, wird übersprungen.');
+    return;
+  }
+
   const bestellungResult = await query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.erstellungszeitpunkt,
             bn.vorname, bn.nachname, bn.email
@@ -670,6 +681,12 @@ async function bestellBestaetigungSenden(bestellungId) {
       <p>Zahlungsmethode: ${bestellung.zahlungsmethode}</p>
     `
   });
+
+  // Flag setzen – verhindert erneutes Senden bei Worker-Neustart
+  await query(
+    'UPDATE bestellung SET email_gesendet = 1 WHERE id = ?',
+    [bestellungId]
+  );
 
   console.log('  ✓ Bestätigungs-E-Mail gesendet an:', bestellung.email);
 }

@@ -178,6 +178,7 @@ CREATE TABLE `bestellung` (
   `zahlungsmethode` varchar(50) NOT NULL,
   `zahlungsstatus` varchar(50) NOT NULL,
   `bestellstatus` varchar(50) NOT NULL,
+  `email_gesendet` tinyint(1) NOT NULL DEFAULT 0,
   `erstellungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp(),
   `aenderungszeitpunkt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
