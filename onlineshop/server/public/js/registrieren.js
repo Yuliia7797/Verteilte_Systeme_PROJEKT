@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         meldung.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt anmelden.';
         meldung.style.color = 'green';
         formular.reset();
+        setTimeout(() => { window.location.href = '/static/login.html'; }, 2000);
       } else {
         meldung.textContent = ergebnis.message || 'Registrierung fehlgeschlagen.';
         meldung.style.color = 'red';

@@ -556,12 +556,13 @@ async function rechnungErstellen(bestellungId) {
     doc.moveDown(2);
 
     // Tabellenkopf
-    const colX = [50, 280, 360, 440];
+    const colX = [50, 260, 345, 425];
     doc.font('Helvetica-Bold').fontSize(10);
-    doc.text('Artikel', colX[0], doc.y, { width: 220, continued: true });
-    doc.text('Anzahl', colX[1], doc.y, { width: 70, continued: true });
-    doc.text('Einzelpreis', colX[2], doc.y, { width: 80, continued: true });
-    doc.text('Gesamt', colX[3], doc.y);
+    const headerY = doc.y;
+    doc.text('Artikel',     colX[0], headerY, { width: 200, lineBreak: false });
+    doc.text('Anzahl',      colX[1], headerY, { width: 75,  lineBreak: false });
+    doc.text('Einzelpreis', colX[2], headerY, { width: 75,  lineBreak: false });
+    doc.text('Gesamt',      colX[3], headerY, { width: 125 });
     doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(0.3);
 
@@ -569,10 +570,10 @@ async function rechnungErstellen(bestellungId) {
     doc.font('Helvetica').fontSize(10);
     for (const pos of positionen) {
       const y = doc.y;
-      doc.text(pos.bezeichnung, colX[0], y, { width: 220, continued: true });
-      doc.text(String(pos.anzahl), colX[1], y, { width: 70, continued: true });
-      doc.text(`${Number(pos.einzelpreis).toFixed(2)} EUR`, colX[2], y, { width: 80, continued: true });
-      doc.text(`${Number(pos.gesamtpreis).toFixed(2)} EUR`, colX[3], y);
+      doc.text(escapeHtml(pos.bezeichnung),                          colX[0], y, { width: 200, lineBreak: false });
+      doc.text(String(Number(pos.anzahl)),                           colX[1], y, { width: 75,  lineBreak: false });
+      doc.text(`${Number(pos.einzelpreis).toFixed(2)} EUR`,          colX[2], y, { width: 75,  lineBreak: false });
+      doc.text(`${Number(pos.gesamtpreis).toFixed(2)} EUR`,          colX[3], y, { width: 125 });
     }
 
     doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
