@@ -173,7 +173,8 @@ async function ladeArtikelDaten(conn, artikelIds) {
      FROM artikel a
      LEFT JOIN lagerbestand l ON a.id = l.artikel_id
      WHERE a.id IN (?)
-       AND a.ist_aktiv = 1`,
+       AND a.ist_aktiv = 1
+     FOR UPDATE`,
     [artikelIds]
   );
 }
@@ -303,11 +304,15 @@ async function aktualisiereLagerbestand(conn, positionen) {
     const artikelId = Number.parseInt(pos.artikel_id, 10);
     const anzahl = Number.parseInt(pos.anzahl, 10);
 
-    await queryWithConnection(
+    const result = await queryWithConnection(
       conn,
-      "UPDATE lagerbestand SET anzahl = anzahl - ? WHERE artikel_id = ?",
-      [anzahl, artikelId]
+      "UPDATE lagerbestand SET anzahl = anzahl - ? WHERE artikel_id = ? AND anzahl >= ?",
+      [anzahl, artikelId, anzahl]
     );
+
+    if (result.affectedRows === 0) {
+      throw new Error(`Für Artikel ${artikelId} ist nicht genügend Lagerbestand vorhanden`);
+    }
   }
 }
 
@@ -366,7 +371,7 @@ async function legeAufgabenAn(conn, bestellungId) {
  * Lädt alle Bestellungen mit Benutzerdaten.
  * Dieser Endpunkt darf nur von Admins genutzt werden.
  */
-router.get('/', istAdmin, (req, res) => {
+router.get('/', istAdmin, (_req, res) => {
   connection.query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.zahlungsstatus,
             b.bestellstatus, b.erstellungszeitpunkt,
@@ -533,7 +538,7 @@ router.post('/', requireLogin, async (req, res) => {
 
     if (conn) {
       await rollbackTransaction(conn);
-      conn.release();
+      try { conn.release(); } catch (_) { /* ignore */ }
     }
 
     if (
@@ -545,6 +550,18 @@ router.post('/', requireLogin, async (req, res) => {
       )
     ) {
       return res.status(400).json({ message: error.message });
+    }
+
+    // Datenbankfehler bei gleichzeitigen Transaktionen:
+    // ER_LOCK_DEADLOCK   – klassischer Deadlock
+    // ER_LOCK_WAIT_TIMEOUT – Wartezeit überschritten
+    // ER_CHECKREAD       – MariaDB: Zeile wurde seit dem letzten Lesen geändert
+    if (
+      error.code === 'ER_LOCK_DEADLOCK' ||
+      error.code === 'ER_LOCK_WAIT_TIMEOUT' ||
+      error.code === 'ER_CHECKREAD'
+    ) {
+      return res.status(409).json({ message: 'Bestellung konnte wegen gleichzeitiger Anfragen nicht verarbeitet werden. Bitte erneut versuchen.' });
     }
 
     res.status(500).json({ message: 'Fehler beim Erstellen der Bestellung' });

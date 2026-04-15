@@ -64,37 +64,51 @@ router.get('/', istAdmin, (_req, res) => {
   POST /benutzer
   Legt einen neuen Benutzer an.
   Dieser Endpunkt ist nur für Admin-Zwecke gedacht.
+  Das Passwort wird serverseitig mit bcrypt gehasht – niemals den Hash direkt übergeben.
 */
-router.post('/', istAdmin, (req, res) => {
-  const { vorname, nachname, email, passwort_hash, rolle } = req.body;
+router.post('/', istAdmin, async (req, res) => {
+  const { vorname, nachname, email, passwort, rolle } = req.body;
 
   // Alle Felder sind Pflicht
-  if (!vorname || !nachname || !email || !passwort_hash || !rolle) {
+  if (!vorname || !nachname || !email || !passwort || !rolle) {
     return res.status(400).json({
-      message: 'Alle Felder sind Pflicht: vorname, nachname, email, passwort_hash, rolle'
+      message: 'Alle Felder sind Pflicht: vorname, nachname, email, passwort, rolle'
     });
   }
 
-  connection.query(
-    'INSERT INTO benutzer (vorname, nachname, email, passwort_hash, rolle) VALUES (?, ?, ?, ?, ?)',
-    [vorname, nachname, email, passwort_hash, rolle],
-    (error, results) => {
-      if (error) {
-        // Doppelte E-Mail-Adresse erkennen (UNIQUE-Constraint in der DB)
-        if (error.code === 'ER_DUP_ENTRY') {
-          return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
+  // Rolle gegen erlaubte Werte prüfen
+  const erlaubteRollen = ['kunde', 'admin'];
+  if (!erlaubteRollen.includes(rolle)) {
+    return res.status(400).json({ message: 'Ungültige Rolle. Erlaubt: kunde, admin' });
+  }
+
+  try {
+    const passwortHash = await bcrypt.hash(passwort, 10);
+
+    connection.query(
+      'INSERT INTO benutzer (vorname, nachname, email, passwort_hash, rolle) VALUES (?, ?, ?, ?, ?)',
+      [vorname, nachname, email.trim().toLowerCase(), passwortHash, rolle],
+      (error, results) => {
+        if (error) {
+          // Doppelte E-Mail-Adresse erkennen (UNIQUE-Constraint in der DB)
+          if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: 'E-Mail-Adresse bereits vergeben' });
+          }
+
+          console.error(error);
+          return res.status(500).json({ message: 'Fehler beim Registrieren' });
         }
 
-        console.error(error);
-        return res.status(500).json({ message: 'Fehler beim Registrieren' });
+        res.status(201).json({
+          message: 'Benutzer registriert',
+          id: results.insertId
+        });
       }
-
-      res.status(201).json({
-        message: 'Benutzer registriert',
-        id: results.insertId
-      });
-    }
-  );
+    );
+  } catch (hashError) {
+    console.error(hashError);
+    return res.status(500).json({ message: 'Fehler beim Hashen des Passworts' });
+  }
 });
 
 /*

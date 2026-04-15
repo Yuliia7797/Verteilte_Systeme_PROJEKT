@@ -52,7 +52,7 @@ test('Kategorien Route ist definiert', () => {
 // ─── Warenkorb Routen ───────────────────────────────────────────────────────
 test('Warenkorb Routen sind definiert', () => {
     assert.match(warenkorbSource, /router\.get\(/);
-    assert.match(warenkorbSource, /router\.post\('\/'/);
+    assert.match(warenkorbSource, /router\.post\('\/positionen'/);
     assert.match(warenkorbSource, /router\.delete\(/);
 });
 
@@ -61,6 +61,15 @@ test('Bestellung Routen sind definiert', () => {
     assert.match(bestellungSource, /router\.get\('\/'/);
     assert.match(bestellungSource, /router\.post\('\/'/);
     assert.match(bestellungSource, /router\.patch\(/);
+});
+
+test('ladeArtikelDaten verwendet FOR UPDATE (Race-Condition-Schutz)', () => {
+    assert.match(bestellungSource, /FOR UPDATE/);
+});
+
+test('aktualisiereLagerbestand prüft Mindestbestand im UPDATE (negativer Bestand verhindert)', () => {
+    assert.match(bestellungSource, /AND anzahl >= \?/);
+    assert.match(bestellungSource, /affectedRows === 0/);
 });
 
 // ─── Lagerbestand Routen ────────────────────────────────────────────────────
@@ -78,6 +87,17 @@ test('Worker Routen sind definiert', () => {
 test('Benutzer Routen sind definiert', () => {
     assert.match(benutzerSource, /router\.get\('\/'/);
     assert.match(benutzerSource, /router\.post\('\/'/);
+});
+
+test('POST /benutzer hasht das Passwort mit bcrypt (kein Klartext in DB)', () => {
+    assert.match(benutzerSource, /const \{ .* passwort,.* \} = req\.body/);
+    assert.match(benutzerSource, /bcrypt\.hash\(passwort,/);
+    assert.doesNotMatch(benutzerSource, /INSERT.*passwort_hash.*VALUES.*passwort_hash/);
+});
+
+test('POST /benutzer validiert die Rolle gegen eine Whitelist', () => {
+    assert.match(benutzerSource, /erlaubteRollen/);
+    assert.match(benutzerSource, /'kunde'.*'admin'|'admin'.*'kunde'/);
 });
 
 // ─── Adresse Routen ─────────────────────────────────────────────────────────

@@ -167,7 +167,7 @@ function registerMiddleware(app, sessionStore) {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // Auf true setzen, wenn HTTPS verwendet wird
+      secure: false, 
       maxAge: 1000 * 60 * 60 // 1 Stunde
     }
   }));

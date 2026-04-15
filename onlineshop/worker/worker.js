@@ -74,6 +74,23 @@ console.log('Worker startet und verbindet sich mit der Datenbank...');
 // =========================
 
 /**
+ * Maskiert HTML-Sonderzeichen in einem String, um XSS in E-Mail-Templates zu verhindern.
+ * Muss auf alle Datenbankwerte angewendet werden, die in HTML eingebettet werden.
+ *
+ * @function escapeHtml
+ * @param {string} text - Zu maskierender Text
+ * @returns {string} HTML-sicherer Text
+ */
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
  * Sendet ein Echtzeit-Ereignis an den Socket.IO-Server.
  *
  * @function sendeSocketEvent
@@ -621,8 +638,8 @@ async function bestellBestaetigungSenden(bestellungId) {
 
   const positionenHtml = positionen.map(pos =>
     `<tr>
-       <td>${pos.bezeichnung}</td>
-       <td>${pos.anzahl}</td>
+       <td>${escapeHtml(pos.bezeichnung)}</td>
+       <td>${Number(pos.anzahl)}</td>
        <td>${Number(pos.einzelpreis).toFixed(2)} €</td>
        <td>${Number(pos.gesamtpreis).toFixed(2)} €</td>
      </tr>`
@@ -633,7 +650,7 @@ async function bestellBestaetigungSenden(bestellungId) {
     to: bestellung.email,
     subject: `Bestellbestätigung #${bestellungId}`,
     html: `
-      <h2>Vielen Dank für deine Bestellung, ${bestellung.vorname}!</h2>
+      <h2>Vielen Dank für deine Bestellung, ${escapeHtml(bestellung.vorname)}!</h2>
       <p>Deine Bestellung <strong>#${bestellungId}</strong> ist eingegangen.</p>
       <table border="1" cellpadding="6" cellspacing="0">
         <thead>
@@ -642,7 +659,7 @@ async function bestellBestaetigungSenden(bestellungId) {
         <tbody>${positionenHtml}</tbody>
       </table>
       <p><strong>Gesamtbetrag: ${Number(bestellung.gesamtpreis).toFixed(2)} €</strong></p>
-      <p>Zahlungsmethode: ${bestellung.zahlungsmethode}</p>
+      <p>Zahlungsmethode: ${escapeHtml(bestellung.zahlungsmethode)}</p>
     `
   });
 
