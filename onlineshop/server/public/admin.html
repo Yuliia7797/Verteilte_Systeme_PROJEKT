@@ -2,7 +2,7 @@
   Datei: admin.html
   Beschreibung: Hauptseite des Admin-Bereichs.
     Bietet eine zentrale Übersicht über alle Verwaltungsbereiche
-    (Lager, Artikel, Bestellungen, Kategorien, Worker).
+    (Lager, Artikel, Bestellungen, Kategorien, Benutzer, Worker).
   Hinweise:
     - Verwendet Bootstrap für Layout und Design
     - Navigation erfolgt über Karten (Cards)
@@ -53,13 +53,12 @@
   <main class="py-5">
     <div class="container">
 
-      
       <!-- Titel der Seite -->
       <h1 class="section-title text-center mb-5">Admin-Bereich</h1>
 
       <!-- =========================
-       NAVIGATIONSKARTEN (ADMIN)
-  ========================= -->
+           NAVIGATIONSKARTEN (ADMIN)
+      ========================= -->
       <div class="row g-4">
 
         <!-- ===== Lagerverwaltung ===== -->
@@ -130,6 +129,23 @@
           </div>
         </div>
 
+        <!-- ===== Benutzerverwaltung ===== -->
+        <div class="col-md-4">
+          <div class="card shadow-sm h-100 text-center">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div>
+                <h3 class="card-title mb-3">Benutzerverwaltung</h3>
+                <p class="card-text">
+                  Registrierte Benutzer ansehen und neue Admins anlegen.
+                </p>
+              </div>
+              <a href="adminbenutzer.html" class="btn btn-main mt-3">
+                Zur Benutzerverwaltung
+              </a>
+            </div>
+          </div>
+        </div>
+
         <!-- ===== Worker-Status ===== -->
         <div class="col-md-4">
           <div class="card shadow-sm h-100 text-center">
@@ -149,8 +165,6 @@
 
       </div>
     </div>
-    
-
   </main>
 
   <!-- =========================

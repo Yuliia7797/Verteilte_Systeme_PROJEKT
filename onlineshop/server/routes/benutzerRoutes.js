@@ -1,7 +1,7 @@
 /**
  * Diese Datei definiert die API-Routen für die Benutzerverwaltung und Authentifizierung.
  * Sie stellt folgende Endpunkte bereit:
- * - GET  /benutzer                    – alle Benutzer laden
+ * - GET  /benutzer                    – alle Benutzer inklusive Adressdaten laden
  * - POST /benutzer                    – neuen Benutzer anlegen (Admin)
  * - POST /benutzer/registrieren       – Registrierung mit Passwort-Hashing und Adresse
  * - POST /benutzer/login              – Login mit Session-Erstellung
@@ -42,13 +42,32 @@ const adresseValidierung = [
 
 /*
   GET /benutzer
-  Lädt alle Benutzer aus der Datenbank.
+  Lädt alle Benutzer aus der Datenbank inklusive Adressdaten.
   Der Passwort-Hash wird bewusst nicht zurückgegeben.
   Dieser Endpunkt darf nur von Admins genutzt werden.
+
+  Hinweis:
+  Es wird ein LEFT JOIN verwendet, damit auch Benutzer angezeigt werden,
+  für die noch keine Adresse in der Tabelle "adresse" gespeichert wurde.
 */
 router.get('/', istAdmin, (_req, res) => {
   connection.query(
-    'SELECT id, vorname, nachname, email, rolle, erstellungszeitpunkt FROM benutzer',
+    `SELECT
+      b.id,
+      b.vorname,
+      b.nachname,
+      b.email,
+      b.rolle,
+      b.erstellungszeitpunkt,
+      a.strasse,
+      a.hausnummer,
+      a.adresszusatz,
+      a.postleitzahl,
+      a.ort,
+      a.land
+     FROM benutzer b
+     LEFT JOIN adresse a ON b.id = a.benutzer_id
+     ORDER BY b.erstellungszeitpunkt DESC`,
     (error, results) => {
       if (error) {
         console.error(error);
@@ -65,6 +84,12 @@ router.get('/', istAdmin, (_req, res) => {
   Legt einen neuen Benutzer an.
   Dieser Endpunkt ist nur für Admin-Zwecke gedacht.
   Das Passwort wird serverseitig mit bcrypt gehasht – niemals den Hash direkt übergeben.
+
+  Hinweis:
+  Über diesen Endpunkt kann ein Admin aktuell Benutzer mit den Rollen
+  "kunde" oder "admin" anlegen. Eine Adresse wird hier bewusst noch nicht
+  gespeichert, da der Schwerpunkt auf der schnellen Anlage eines Benutzers
+  über die Admin-Oberfläche liegt.
 */
 router.post('/', istAdmin, async (req, res) => {
   const { vorname, nachname, email, passwort, rolle } = req.body;
