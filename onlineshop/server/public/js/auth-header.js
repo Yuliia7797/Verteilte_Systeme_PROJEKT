@@ -72,18 +72,22 @@ async function aktualisiereHeader() {
     return;
   }
 
+  // Aktuelle Session vom Server abrufen
   const benutzer = await holeSession();
 
   if (benutzer) {
+    // Eingeloggter Benutzer: Login/Registrieren ausblenden, Konto/Logout einblenden
     loginButton.style.display = 'none';
     registrierenButton.style.display = 'none';
     kontoItem.style.display = '';
     logoutButton.style.display = '';
 
+    // Admin-Link nur für Benutzer mit Admin-Rolle einblenden
     if (adminItem) {
       adminItem.style.display = benutzer.rolle === 'admin' ? '' : 'none';
     }
   } else {
+    // Nicht eingeloggter Benutzer: Login/Registrieren einblenden, geschützte Elemente ausblenden
     loginButton.style.display = '';
     registrierenButton.style.display = '';
     kontoItem.style.display = 'none';
@@ -97,6 +101,7 @@ async function aktualisiereHeader() {
   authWrapper.style.display = 'flex';
   authWrapper.classList.add('align-items-center');
 
+  // Logout-Handler nur einmalig registrieren, um Doppelregistrierungen zu vermeiden
   if (!logoutButton.dataset.logoutRegistriert) {
     logoutButton.addEventListener('click', async (event) => {
       event.preventDefault();

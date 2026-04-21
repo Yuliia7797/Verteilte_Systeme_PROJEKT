@@ -36,8 +36,10 @@ async function ladeBestelldetails() {
   const lieferadresseInfo = document.getElementById('lieferadresse-info');
   const positionenTabelle = document.getElementById('positionen-tabelle');
 
+  // Bestell-ID aus dem URL-Parameter auslesen
   const bestellungId = getQueryParam('id');
 
+  // Ohne ID können keine Daten geladen werden
   if (!bestellungId) {
     bestellungInfo.innerHTML = '<p class="text-danger mb-0">Keine Bestell-ID angegeben.</p>';
     lieferadresseInfo.innerHTML = '<p class="text-danger mb-0">Keine Lieferadresse verfügbar.</p>';
@@ -46,6 +48,7 @@ async function ladeBestelldetails() {
   }
 
   try {
+    // Bestelldaten inklusive Positionen vom Backend laden
     const antwort = await fetch(`/bestellung/${bestellungId}`, {
       credentials: 'same-origin'
     });
@@ -55,9 +58,11 @@ async function ladeBestelldetails() {
       throw new Error('Fehler beim Laden der Bestelldetails.');
     }
 
+    // Bestellkopf und Positionen aus der Antwort trennen
     const bestellung = daten.bestellung;
     const positionen = daten.positionen;
 
+    // Allgemeine Bestellinformationen in den Infobereich schreiben
     bestellungInfo.innerHTML = `
       <p><strong>Bestell-ID:</strong> ${bestellung.id ?? '-'}</p>
       <p><strong>Kunde:</strong> ${bestellung.vorname ?? '-'} ${bestellung.nachname ?? '-'}</p>
@@ -75,6 +80,7 @@ async function ladeBestelldetails() {
       <p class="mb-0"><strong>Land:</strong> ${bestellung.land ?? '-'}</p>
     `;
 
+    // Leer-Zeile anzeigen, wenn keine Positionen vorhanden sind
     if (!Array.isArray(positionen) || positionen.length === 0) {
       renderTableEmpty(positionenTabelle, 5, 'Keine Positionen gefunden.');
       return;
@@ -82,6 +88,7 @@ async function ladeBestelldetails() {
 
     positionenTabelle.innerHTML = '';
 
+    // Für jede Bestellposition eine Tabellenzeile mit Artikel und Preisen erstellen
     positionen.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 

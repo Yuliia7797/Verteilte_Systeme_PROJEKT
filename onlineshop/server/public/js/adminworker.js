@@ -161,6 +161,7 @@ async function ladeWorker() {
   const workerTabelle = document.getElementById('worker-tabelle');
 
   try {
+    // Workerliste vom Backend abrufen
     const antwort = await fetch('/worker', {
       credentials: 'same-origin'
     });
@@ -171,6 +172,7 @@ async function ladeWorker() {
       throw new Error(worker.message || 'Fehler beim Laden der Worker.');
     }
 
+    // Tabelle leeren oder Leer-Zeile anzeigen, wenn keine Worker vorhanden sind
     if (!Array.isArray(worker) || worker.length === 0) {
       renderTableEmpty(workerTabelle, 5, 'Keine Worker gefunden.');
       return;
@@ -178,9 +180,11 @@ async function ladeWorker() {
 
     workerTabelle.innerHTML = '';
 
+    // Für jeden Worker eine Tabellenzeile mit Statusbutton erstellen
     worker.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 
+      // Button-Text und -Stil je nach aktuellem Arbeiterstatus bestimmen
       const istAktiv = eintrag.status === 'aktiv';
       const buttonText = istAktiv ? 'Deaktivieren' : 'Aktivieren';
       const neuerStatus = istAktiv ? 'inaktiv' : 'aktiv';
@@ -221,6 +225,7 @@ async function ladeAufgaben() {
   const aufgabenTabelle = document.getElementById('aufgaben-tabelle');
 
   try {
+    // Aufgabenliste vom Backend abrufen
     const antwort = await fetch('/worker/aufgaben', {
       credentials: 'same-origin'
     });
@@ -231,6 +236,7 @@ async function ladeAufgaben() {
       throw new Error(aufgaben.message || 'Fehler beim Laden der Aufgaben.');
     }
 
+    // Tabelle leeren oder Leer-Zeile anzeigen, wenn keine Aufgaben vorliegen
     if (!Array.isArray(aufgaben) || aufgaben.length === 0) {
       renderTableEmpty(aufgabenTabelle, 7, 'Keine Aufgaben gefunden.');
       return;
@@ -238,9 +244,11 @@ async function ladeAufgaben() {
 
     aufgabenTabelle.innerHTML = '';
 
+    // Für jede Aufgabe eine Tabellenzeile mit Status-Badge und Fehlertext erstellen
     aufgaben.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 
+      // Fehlermeldung sicher als String darstellen; Leerzeichen als Fallback
       const fehlermeldung = eintrag.fehlermeldung
         ? String(eintrag.fehlermeldung)
         : '-';

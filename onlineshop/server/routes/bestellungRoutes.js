@@ -397,18 +397,21 @@ router.get('/', istAdmin, (_req, res) => {
  * Admins sehen alle Bestellungen, Kunden nur ihre eigenen.
  */
 router.get('/:id', (req, res) => {
+  // Bestellungs-ID aus der URL lesen und auf Ganzzahligkeit prüfen.
   const id = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(id)) {
     return res.status(400).json({ message: 'Ungültige ID' });
   }
 
+  // Zugriffsschutz: Nur eingeloggte Benutzer dürfen Bestellungen abrufen.
   const benutzer = req.session && req.session.benutzer;
 
   if (!benutzer) {
     return res.status(401).json({ message: 'Nicht eingeloggt' });
   }
 
+  // Bestellung mit Benutzer- und Adressdaten per JOIN laden.
   connection.query(
     `SELECT b.*, bn.vorname, bn.nachname, bn.email,
             a.strasse, a.hausnummer, a.postleitzahl, a.ort, a.land
@@ -427,6 +430,8 @@ router.get('/:id', (req, res) => {
         return res.status(404).json({ message: 'Bestellung nicht gefunden' });
       }
 
+      // Autorisierung: Kunden dürfen nur ihre eigenen Bestellungen sehen,
+      // Admins haben Zugriff auf alle.
       const istEigeneBestellung = bestellungResult[0].benutzer_id === benutzer.id;
       const istAdminBenutzer = benutzer.rolle === 'admin';
 
@@ -434,6 +439,7 @@ router.get('/:id', (req, res) => {
         return res.status(403).json({ message: 'Kein Zugriff auf diese Bestellung' });
       }
 
+      // Zugehörige Bestellpositionen mit Artikeldetails laden.
       connection.query(
         `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis,
                 ar.id AS artikel_id, ar.bezeichnung AS artikel, ar.bild_url
@@ -471,12 +477,14 @@ router.post('/', requireLogin, async (req, res) => {
   const zahlungsmethode = req.body.zahlungsmethode;
   const positionen = Array.isArray(req.body.positionen) ? req.body.positionen : [];
 
+  // Pflichtfelder prüfen – alle drei Angaben sind für eine Bestellung erforderlich.
   if (!Number.isInteger(lieferadresseId) || !zahlungsmethode || positionen.length === 0) {
     return res.status(400).json({
       message: 'lieferadresse_id, zahlungsmethode und positionen sind Pflichtfelder'
     });
   }
 
+  // Zahlungsmethode gegen eine Whitelist validieren.
   const erlaubteZahlungsmethoden = ['bankkonto', 'paypal'];
 
   if (!erlaubteZahlungsmethoden.includes(zahlungsmethode)) {
@@ -494,9 +502,11 @@ router.post('/', requireLogin, async (req, res) => {
   let conn;
 
   try {
+    // Transaktion starten – alle Datenbankschritte müssen gemeinsam gelingen oder scheitern.
     conn = await getConnection();
     await beginTransaction(conn);
 
+    // Sicherstellen, dass die Lieferadresse dem eingeloggten Benutzer gehört.
     const adresseGueltig = await pruefeLieferadresse(conn, lieferadresseId, benutzerId);
 
     if (!adresseGueltig) {
@@ -508,10 +518,13 @@ router.post('/', requireLogin, async (req, res) => {
       });
     }
 
+    // Aktuelle Preise und Lagerbestände mit exklusivem Lock laden,
+    // damit kein anderer Request dazwischenfunken kann.
     const artikelResult = await ladeArtikelDaten(conn, artikelIds);
     const { artikelMap, gesamtpreis } =
       await validierePositionenUndBerechneGesamtpreis(positionen, artikelResult);
 
+    // Bestellung, Positionen, Lagerbestand und Worker-Aufgaben in die Datenbank schreiben.
     const bestellungId = await erstelleBestellung(
       conn,
       benutzerId,
@@ -524,7 +537,9 @@ router.post('/', requireLogin, async (req, res) => {
     await aktualisiereLagerbestand(conn, positionen);
     await legeAufgabenAn(conn, bestellungId);
 
+    // Alle Schritte erfolgreich – Transaktion bestätigen.
     await commitTransaction(conn);
+    // Nach dem Commit Echtzeit-Ereignisse für die Lageranzeige senden.
     sendeLagerbestandEvents(positionen);
     conn.release();
 
@@ -541,6 +556,7 @@ router.post('/', requireLogin, async (req, res) => {
       try { conn.release(); } catch (_) { /* ignore */ }
     }
 
+    // Fachliche Fehler (ungültige Artikel, fehlender Lagerbestand) als 400 zurückgeben.
     if (
       error.message &&
       (
@@ -601,18 +617,21 @@ router.patch('/:id/status', istAdmin, (req, res) => {
  * Eigene Bestellungen: eingeloggter Benutzer. Alle: nur Admin.
  */
 router.get('/:id/rechnung', (req, res) => {
+  // Bestellungs-ID aus der URL lesen und auf Ganzzahligkeit prüfen.
   const id = Number.parseInt(req.params.id, 10);
 
   if (!Number.isInteger(id)) {
     return res.status(400).json({ message: 'Ungültige ID' });
   }
 
+  // Zugriffsschutz: Nur eingeloggte Benutzer dürfen Rechnungen abrufen.
   const benutzer = req.session && req.session.benutzer;
 
   if (!benutzer) {
     return res.status(401).json({ message: 'Nicht eingeloggt' });
   }
 
+  // Nur den Bestellinhaber laden – sensible Felder werden nicht benötigt.
   connection.query(
     'SELECT benutzer_id FROM bestellung WHERE id = ? LIMIT 1',
     [id],
@@ -626,6 +645,7 @@ router.get('/:id/rechnung', (req, res) => {
         return res.status(404).json({ message: 'Bestellung nicht gefunden' });
       }
 
+      // Autorisierung: Nur eigene Bestellungen oder Admin-Zugriff erlaubt.
       const istEigeneBestellung = results[0].benutzer_id === benutzer.id;
       const istAdminBenutzer = benutzer.rolle === 'admin';
 
@@ -633,8 +653,10 @@ router.get('/:id/rechnung', (req, res) => {
         return res.status(403).json({ message: 'Kein Zugriff auf diese Rechnung' });
       }
 
+      // Pfad zur gespeicherten PDF-Rechnung aufbauen.
       const dateiPfad = path.join(RECHNUNGEN_DIR, `rechnung_${id}.pdf`);
 
+      // Prüfen ob der Worker die Rechnung bereits erstellt hat.
       if (!fs.existsSync(dateiPfad)) {
         return res.status(404).json({ message: 'Rechnung noch nicht verfügbar' });
       }

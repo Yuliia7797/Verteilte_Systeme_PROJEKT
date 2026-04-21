@@ -33,6 +33,7 @@ async function ladeBestellungen() {
   const bestellungenTabelle = document.getElementById('bestellungen-tabelle');
 
   try {
+    // Bestellliste vom Backend abrufen
     const antwort = await fetch('/bestellung', {
       credentials: 'same-origin'
     });
@@ -42,6 +43,7 @@ async function ladeBestellungen() {
       throw new Error('Fehler beim Laden der Bestellungen.');
     }
 
+    // Tabelle leeren oder Leer-Zeile anzeigen, wenn keine Bestellungen vorliegen
     if (!Array.isArray(bestellungen) || bestellungen.length === 0) {
       renderTableEmpty(bestellungenTabelle, 9, 'Keine Bestellungen gefunden.');
       return;
@@ -49,9 +51,11 @@ async function ladeBestellungen() {
 
     bestellungenTabelle.innerHTML = '';
 
+    // Für jede Bestellung eine Tabellenzeile mit Link zur Detailseite erstellen
     bestellungen.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 
+      // Vor- und Nachname zu einem lesbaren Kundennamen zusammenführen
       const kunde = `${eintrag.vorname ?? ''} ${eintrag.nachname ?? ''}`.trim() || '-';
 
       zeile.innerHTML = `

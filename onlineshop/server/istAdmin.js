@@ -1,8 +1,15 @@
-/**
- * Diese Datei enthält eine Middleware zur Prüfung von Administratorrechten.
- * Sie stellt sicher, dass nur eingeloggte Benutzer mit der Rolle "admin"
- * auf bestimmte geschützte Routen zugreifen dürfen.
- */
+/*
+  Datei: istAdmin.js
+  Beschreibung:
+    Diese Datei enthält eine Middleware zur Prüfung von Administratorrechten.
+
+    Sie stellt sicher, dass nur eingeloggte Benutzer mit der Rolle "admin"
+    auf bestimmte geschützte Routen zugreifen dürfen. Nicht eingeloggte
+    Benutzer erhalten Status 401, Benutzer ohne Admin-Rolle Status 403.
+
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 
@@ -10,6 +17,12 @@
  * Prüft, ob ein Benutzer eingeloggt ist und die Rolle "admin" besitzt.
  * Wenn kein Benutzer eingeloggt ist, wird Status 401 zurückgegeben.
  * Wenn der Benutzer kein Admin ist, wird Status 403 zurückgegeben.
+ *
+ * @function istAdmin
+ * @param {Object} req - Express Request
+ * @param {Object} res - Express Response
+ * @param {Function} next - Express Next-Funktion
+ * @returns {void}
  */
 function istAdmin(req, res, next) {
   // Prüfen, ob eine Session und ein eingeloggter Benutzer vorhanden sind

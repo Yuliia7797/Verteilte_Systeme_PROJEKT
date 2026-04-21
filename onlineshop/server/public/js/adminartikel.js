@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const bildDateiInput = document.getElementById('bild-datei');
   const artikelFormular = document.getElementById('artikel-formular');
 
+  // Abbrechen: Formular ausblenden, zurücksetzen und Bildvorschau entfernen
   if (abbrechenButton) {
     abbrechenButton.addEventListener('click', () => {
       document.getElementById('artikel-formular-bereich').style.display = 'none';
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Neuer Artikel: Formular einblenden, für neuen Eintrag leeren und scrollen
   if (neuerArtikelButton) {
     neuerArtikelButton.addEventListener('click', () => {
       document.getElementById('artikel-formular-bereich').style.display = 'block';
@@ -53,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Bildvorschau aktualisieren, wenn eine neue Datei ausgewählt oder entfernt wird
   if (bildDateiInput) {
     bildDateiInput.addEventListener('change', () => {
       const datei = bildDateiInput.files[0];
@@ -73,10 +76,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Formular-Submit: Artikel anlegen (POST) oder bestehenden aktualisieren (PUT)
   if (artikelFormular) {
     artikelFormular.addEventListener('submit', async (event) => {
       event.preventDefault();
 
+      // Formulardaten auslesen
       const artikelId = document.getElementById('artikel-id').value;
       const kategorieId = document.getElementById('kategorie-id').value;
       const bezeichnung = document.getElementById('bezeichnung').value;
@@ -89,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         let response;
 
+        // Multipart-FormData für den Upload zusammenbauen
         const formData = new FormData();
         formData.append('kategorie_id', Number(kategorieId));
         formData.append('bezeichnung', bezeichnung);
@@ -102,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           formData.append('bild', bildDatei);
         }
 
+        // Je nach vorhandener ID aktualisieren oder neu anlegen
         if (artikelId) {
           response = await fetch(`/artikel/${artikelId}`, {
             method: 'PUT',
@@ -181,6 +188,7 @@ async function ladeArtikel() {
   const tbody = document.getElementById('artikel-tabelle');
 
   try {
+    // Artikelliste vom Backend laden
     const response = await fetch('/artikel');
     const daten = await response.json();
 
@@ -188,11 +196,13 @@ async function ladeArtikel() {
 
     tbody.innerHTML = '';
 
+    // Leer-Zeile anzeigen, wenn keine Artikel vorhanden sind
     if (!Array.isArray(daten) || daten.length === 0) {
       renderTableEmpty(tbody, 6, 'Keine Artikel vorhanden.');
       return;
     }
 
+    // Für jeden Artikel eine Tabellenzeile mit Bild, Preis und Aktionsbuttons erzeugen
     daten.forEach((artikel) => {
       const zeile = document.createElement('tr');
 
@@ -219,6 +229,7 @@ async function ladeArtikel() {
       const bearbeitenButton = zeile.querySelector('.bearbeiten-button');
       const loeschenButton = zeile.querySelector('.loeschen-button');
 
+      // Bearbeiten: Artikel-Details laden und Formular vorausfüllen
       bearbeitenButton.addEventListener('click', async () => {
         try {
           const response = await fetch(`/artikel/${artikel.id}`);
@@ -251,6 +262,7 @@ async function ladeArtikel() {
         }
       });
 
+      // Deaktivieren: Bestätigung einholen und Artikel per DELETE-Aufruf deaktivieren
       loeschenButton.addEventListener('click', async () => {
         const bestaetigt = confirm(`Soll der Artikel "${artikel.bezeichnung}" wirklich deaktiviert werden?`);
 

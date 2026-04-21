@@ -36,6 +36,7 @@ async function initialisiereWarenkorb() {
   const zurKasseButton = document.getElementById('zur-kasse-button');
   const positionenContainer = document.getElementById('warenkorb-positionen');
 
+  // Warenkorb leeren: Bestätigung einholen und DELETE-Request senden
   if (leerenButton) {
     leerenButton.addEventListener('click', async () => {
       const bestaetigt = window.confirm('Möchtest du wirklich alle Artikel aus dem Warenkorb entfernen?');
@@ -65,18 +66,21 @@ async function initialisiereWarenkorb() {
     });
   }
 
+  // Zur Kasse: direkt zur Kassenseite weiterleiten
   if (zurKasseButton) {
     zurKasseButton.addEventListener('click', () => {
       window.location.href = '/static/kasse.html';
     });
   }
 
+  // Event-Delegation für Plus-, Minus- und Entfernen-Buttons in der Positionsliste
   if (positionenContainer) {
     positionenContainer.addEventListener('click', async (event) => {
       const plusButton = event.target.closest('.js-menge-erhoehen');
       const minusButton = event.target.closest('.js-menge-verringern');
       const entfernenButton = event.target.closest('.js-artikel-entfernen');
 
+      // Plus: Lagerbestand prüfen und Menge erhöhen
       if (plusButton) {
         const artikelId = Number.parseInt(plusButton.dataset.artikelId, 10);
         const aktuelleAnzahl = Number.parseInt(plusButton.dataset.anzahl, 10);
@@ -94,6 +98,7 @@ async function initialisiereWarenkorb() {
         return;
       }
 
+      // Minus: bei Anzahl 1 Artikel entfernen, sonst Menge verringern
       if (minusButton) {
         const artikelId = Number.parseInt(minusButton.dataset.artikelId, 10);
         const aktuelleAnzahl = Number.parseInt(minusButton.dataset.anzahl, 10);
@@ -115,6 +120,7 @@ async function initialisiereWarenkorb() {
         return;
       }
 
+      // Entfernen: Bestätigung einholen und Artikel aus dem Warenkorb löschen
       if (entfernenButton) {
         const artikelId = Number.parseInt(entfernenButton.dataset.artikelId, 10);
 
@@ -151,6 +157,7 @@ async function ladeWarenkorb() {
   const leerenButton = document.getElementById('warenkorb-leeren-button');
   const zurKasseButton = document.getElementById('zur-kasse-button');
 
+  // Ladezustand anzeigen und Inhalt ausblenden, bis die Daten vorliegen
   if (ladeanzeige) {
     ladeanzeige.style.display = '';
   }
@@ -173,6 +180,7 @@ async function ladeWarenkorb() {
   }
 
   try {
+    // Warenkorbdaten vom Backend abrufen
     const response = await fetch('/warenkorb', {
       method: 'GET',
       credentials: 'same-origin'
@@ -180,6 +188,7 @@ async function ladeWarenkorb() {
 
     const data = await response.json();
 
+    // Nicht eingeloggten Benutzer separat behandeln
     if (response.status === 401) {
       renderNichtEingeloggt();
       return;
@@ -254,12 +263,14 @@ function renderWarenkorb(data) {
   const leerenButton = document.getElementById('warenkorb-leeren-button');
   const zurKasseButton = document.getElementById('zur-kasse-button');
 
+  // Ladeindikator ausblenden, da Daten nun vorliegen
   if (ladeanzeige) {
     ladeanzeige.style.display = 'none';
   }
 
   const positionen = Array.isArray(data.positionen) ? data.positionen : [];
 
+  // Leerer Warenkorb: Leer-Hinweis anzeigen und Aktionen deaktivieren
   if (positionen.length === 0) {
     if (leerContainer) {
       leerContainer.style.display = '';
@@ -284,7 +295,9 @@ function renderWarenkorb(data) {
 
     if (positionenContainer) {
       positionenContainer.style.display = '';
+      // Für jede Position eine Karte mit Bild, Mengensteuerung und Preis rendern
       positionenContainer.innerHTML = positionen.map((position) => {
+        // Lagerbestand prüfen, um Plus-Button bei Maximalbestand grau darzustellen
         const aktuelleAnzahl = Number(position.anzahl) || 0;
         const lagerbestand = Number(position.lagerbestand) || 0;
         const maxBestandErreicht = aktuelleAnzahl >= lagerbestand && lagerbestand > 0;

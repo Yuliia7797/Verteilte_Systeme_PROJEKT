@@ -36,6 +36,7 @@ async function ladeLagerbestand() {
   const tbody = document.getElementById('lagerbestand-tabelle');
 
   try {
+    // Lagerbestand aller Artikel vom Backend laden
     const response = await fetch('/lagerbestand');
     const daten = await response.json();
 
@@ -43,11 +44,13 @@ async function ladeLagerbestand() {
 
     tbody.innerHTML = '';
 
+    // Leer-Zeile anzeigen, wenn keine Lagerdaten vorhanden sind
     if (!Array.isArray(daten) || daten.length === 0) {
       renderTableEmpty(tbody, 5, 'Keine Lagerdaten vorhanden.');
       return;
     }
 
+    // Für jeden Eintrag eine Tabellenzeile mit Eingabefeld und Speichern-Button erstellen
     daten.forEach((eintrag) => {
       const zeile = document.createElement('tr');
 
@@ -68,6 +71,7 @@ async function ladeLagerbestand() {
       const inputFeld = zeile.querySelector('input');
       const speichernButton = zeile.querySelector('button');
 
+      // Speichern-Button: neuen Bestand validieren und per PATCH an das Backend senden
       speichernButton.addEventListener('click', async () => {
         const neuerBestand = parseInt(inputFeld.value, 10);
 

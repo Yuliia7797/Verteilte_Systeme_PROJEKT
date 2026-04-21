@@ -16,9 +16,16 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../db');
 
-/*
-  Prüft, ob ein Benutzer eingeloggt ist.
-*/
+/**
+ * Prüft, ob ein Benutzer eingeloggt ist.
+ * Wenn kein Benutzer in der Session vorhanden ist, wird Status 401 zurückgegeben.
+ *
+ * @function requireLogin
+ * @param {Object} req - Express Request
+ * @param {Object} res - Express Response
+ * @param {Function} next - Express Next-Funktion
+ * @returns {void}
+ */
 function requireLogin(req, res, next) {
   if (!req.session || !req.session.benutzer || !req.session.benutzer.id) {
     return res.status(401).json({ message: 'Nicht eingeloggt' });
@@ -27,10 +34,15 @@ function requireLogin(req, res, next) {
   next();
 }
 
-/*
-  Berechnet den Gesamtpreis aller Positionen eines Warenkorbs
-  und speichert ihn in der Tabelle warenkorb.
-*/
+/**
+ * Berechnet den Gesamtpreis aller Positionen eines Warenkorbs
+ * und speichert ihn in der Tabelle warenkorb.
+ *
+ * @function calculateTotal
+ * @param {number} warenkorbId - ID des Warenkorbs
+ * @param {Function} callback - Callback mit (error, total)
+ * @returns {void}
+ */
 function calculateTotal(warenkorbId, callback) {
   connection.query(
     `SELECT COALESCE(SUM(gesamtpreis), 0) AS total
@@ -61,15 +73,20 @@ function calculateTotal(warenkorbId, callback) {
   );
 }
 
-/*
-  Liefert den neuesten Warenkorb eines Benutzers.
-  Falls noch kein Warenkorb existiert, wird ein neuer erstellt.
-
-  Wichtig:
-  Es kann vorkommen, dass für einen Benutzer mehrere Warenkörbe
-  in der Datenbank existieren. Deshalb wird hier gezielt der
-  neueste Warenkorb über die höchste ID geladen.
-*/
+/**
+ * Liefert den neuesten Warenkorb eines Benutzers.
+ * Falls noch kein Warenkorb existiert, wird ein neuer erstellt.
+ *
+ * Wichtig:
+ * Es kann vorkommen, dass für einen Benutzer mehrere Warenkörbe
+ * in der Datenbank existieren. Deshalb wird hier gezielt der
+ * neueste Warenkorb über die höchste ID geladen.
+ *
+ * @function getOrCreateWarenkorb
+ * @param {number} benutzerId - ID des Benutzers
+ * @param {Function} callback - Callback mit (error, warenkorb)
+ * @returns {void}
+ */
 function getOrCreateWarenkorb(benutzerId, callback) {
   connection.query(
     `SELECT id, benutzer_id, gesamtpreis
@@ -109,10 +126,17 @@ function getOrCreateWarenkorb(benutzerId, callback) {
   );
 }
 
-/*
-  Liefert die Zusammenfassung des Warenkorbs.
-*/
+/**
+ * Liefert die Zusammenfassung des Warenkorbs.
+ * Enthält Artikelanzahl, Zwischensumme, Versandkosten und Gesamtsumme.
+ *
+ * @function getWarenkorbZusammenfassung
+ * @param {number} warenkorbId - ID des Warenkorbs
+ * @param {Function} callback - Callback mit (error, zusammenfassung)
+ * @returns {void}
+ */
 function getWarenkorbZusammenfassung(warenkorbId, callback) {
+  // Gesamte Artikelanzahl aus allen Positionen des Warenkorbs summieren.
   connection.query(
     `SELECT
        COALESCE(SUM(anzahl), 0) AS artikelanzahl
@@ -126,6 +150,7 @@ function getWarenkorbZusammenfassung(warenkorbId, callback) {
 
       const artikelanzahl = Number(countResults[0].artikelanzahl) || 0;
 
+      // Aktuellen Gesamtpreis des Warenkorbs aus der warenkorb-Tabelle laden.
       connection.query(
         `SELECT gesamtpreis
          FROM warenkorb
@@ -141,6 +166,7 @@ function getWarenkorbZusammenfassung(warenkorbId, callback) {
             ? Number(basketResults[0].gesamtpreis) || 0
             : 0;
 
+          // Versandkosten sind derzeit 0 – Ergebnis zusammenstellen und zurückgeben.
           const versand = 0;
           const gesamtsumme = zwischensumme + versand;
 
@@ -162,6 +188,7 @@ function getWarenkorbZusammenfassung(warenkorbId, callback) {
   inklusive aller Positionen und Zusammenfassung.
 */
 router.get('/', requireLogin, (req, res) => {
+  // Warenkorb des Benutzers laden oder bei erstem Aufruf neu anlegen.
   const benutzerId = req.session.benutzer.id;
 
   getOrCreateWarenkorb(benutzerId, (warenkorbError, warenkorb) => {
@@ -170,12 +197,14 @@ router.get('/', requireLogin, (req, res) => {
       return res.status(500).json({ message: 'Fehler beim Laden des Warenkorbs' });
     }
 
+    // Gesamtpreis neu berechnen, damit der Wert in der DB stets aktuell ist.
     calculateTotal(warenkorb.id, (totalError) => {
       if (totalError) {
         console.error(totalError);
         return res.status(500).json({ message: 'Fehler beim Berechnen des Gesamtpreises' });
       }
 
+      // Alle Positionen mit Artikeldaten und aktuellem Lagerbestand laden.
       connection.query(
         `SELECT
            wp.id,
@@ -200,6 +229,7 @@ router.get('/', requireLogin, (req, res) => {
             return res.status(500).json({ message: 'Fehler beim Laden der Warenkorb-Positionen' });
           }
 
+          // Zusammenfassung mit Artikelanzahl, Zwischen- und Gesamtsumme berechnen.
           getWarenkorbZusammenfassung(warenkorb.id, (sumError, zusammenfassung) => {
             if (sumError) {
               console.error(sumError);
@@ -224,6 +254,7 @@ router.get('/', requireLogin, (req, res) => {
   Existiert der Artikel bereits, wird die Menge erhöht.
 */
 router.post('/positionen', requireLogin, (req, res) => {
+  // Artikel-ID und Anzahl aus dem Request lesen und grundlegend prüfen.
   const benutzerId = req.session.benutzer.id;
   const artikelId = Number.parseInt(req.body.artikel_id, 10);
   const anzahl = Number.parseInt(req.body.anzahl, 10);
@@ -232,12 +263,14 @@ router.post('/positionen', requireLogin, (req, res) => {
     return res.status(400).json({ message: 'Ungültige Artikel-ID oder Anzahl' });
   }
 
+  // Warenkorb des Benutzers laden oder neu erstellen.
   getOrCreateWarenkorb(benutzerId, (warenkorbError, warenkorb) => {
     if (warenkorbError) {
       console.error(warenkorbError);
       return res.status(500).json({ message: 'Fehler beim Laden des Warenkorbs' });
     }
 
+    // Aktuellen Preis und Lagerbestand des Artikels aus der Datenbank laden.
     connection.query(
       `SELECT a.id, a.preis, lb.anzahl AS lagerbestand
        FROM artikel a
@@ -256,16 +289,19 @@ router.post('/positionen', requireLogin, (req, res) => {
           return res.status(404).json({ message: 'Artikel nicht gefunden oder nicht aktiv' });
         }
 
+        // Preis, Lagerbestand und vorläufigen Gesamtpreis berechnen.
         const einzelpreis = Number(artikelResults[0].preis);
         const lagerbestand = Number(artikelResults[0].lagerbestand) || 0;
         const gesamtpreis = einzelpreis * anzahl;
 
+        // Lagerbestandsgrenze prüfen, bevor der Artikel hinzugefügt wird.
         if (anzahl > lagerbestand) {
           return res.status(400).json({
             message: 'Die gewünschte Menge überschreitet den Lagerbestand'
           });
         }
 
+        // Prüfen ob der Artikel bereits im Warenkorb vorhanden ist.
         connection.query(
           `SELECT id, anzahl
            FROM warenkorb_position
@@ -279,6 +315,7 @@ router.post('/positionen', requireLogin, (req, res) => {
             }
 
             if (positionResults.length > 0) {
+              // Artikel bereits im Warenkorb – Menge erhöhen statt neu einfügen.
               const vorhandenePosition = positionResults[0];
               const neueAnzahl = Number(vorhandenePosition.anzahl) + anzahl;
 
@@ -312,6 +349,7 @@ router.post('/positionen', requireLogin, (req, res) => {
                 }
               );
             } else {
+              // Artikel noch nicht im Warenkorb – neue Position anlegen.
               connection.query(
                 `INSERT INTO warenkorb_position
                  (warenkorb_id, artikel_id, anzahl, einzelpreis, gesamtpreis)
@@ -346,6 +384,7 @@ router.post('/positionen', requireLogin, (req, res) => {
   Aktualisiert die Menge eines Artikels im Warenkorb.
 */
 router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
+  // Artikel-ID aus der URL und neue Menge aus dem Body lesen.
   const benutzerId = req.session.benutzer.id;
   const artikelId = Number.parseInt(req.params.artikel_id, 10);
   const anzahl = Number.parseInt(req.body.anzahl, 10);
@@ -354,12 +393,14 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
     return res.status(400).json({ message: 'Ungültige Artikel-ID oder Anzahl' });
   }
 
+  // Warenkorb des Benutzers laden.
   getOrCreateWarenkorb(benutzerId, (warenkorbError, warenkorb) => {
     if (warenkorbError) {
       console.error(warenkorbError);
       return res.status(500).json({ message: 'Fehler beim Laden des Warenkorbs' });
     }
 
+    // Aktuellen Preis und Lagerbestand des Artikels laden.
     connection.query(
       `SELECT a.id, a.preis, lb.anzahl AS lagerbestand
        FROM artikel a
@@ -378,6 +419,7 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
           return res.status(404).json({ message: 'Artikel nicht gefunden oder nicht aktiv' });
         }
 
+        // Neue Menge gegen den verfügbaren Lagerbestand prüfen.
         const einzelpreis = Number(artikelResults[0].preis);
         const lagerbestand = Number(artikelResults[0].lagerbestand) || 0;
         const gesamtpreis = einzelpreis * anzahl;
@@ -388,6 +430,7 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
           });
         }
 
+        // Position mit neuer Menge und berechnetem Gesamtpreis aktualisieren.
         connection.query(
           `UPDATE warenkorb_position
            SET anzahl = ?, einzelpreis = ?, gesamtpreis = ?, aenderungszeitpunkt = NOW()
@@ -403,6 +446,7 @@ router.put('/positionen/:artikel_id', requireLogin, (req, res) => {
               return res.status(404).json({ message: 'Artikel nicht im Warenkorb gefunden' });
             }
 
+            // Warenkorb-Gesamtpreis nach der Änderung neu berechnen.
             calculateTotal(warenkorb.id, (totalError) => {
               if (totalError) {
                 console.error(totalError);

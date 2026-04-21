@@ -256,16 +256,19 @@ async function bestellungAbsenden() {
 
   entferneMeldung('kasse-meldung');
 
+  // AGB-Zustimmung prüfen, bevor die Bestellung abgeschickt wird
   if (!agbCheckbox || !agbCheckbox.checked) {
     zeigeFehler('kasse-meldung', 'Bitte akzeptiere die AGB und Datenschutzbestimmungen.');
     return;
   }
 
+  // Leeren Warenkorb abfangen
   if (!warenkorbDaten || !Array.isArray(warenkorbDaten.positionen) || warenkorbDaten.positionen.length === 0) {
     zeigeFehler('kasse-meldung', 'Dein Warenkorb ist leer.');
     return;
   }
 
+  // Zahlungsmethode aus den Radio-Buttons auslesen
   const zahlungsmethode = leseZahlungsmethode();
 
   if (!zahlungsmethode) {
@@ -274,10 +277,12 @@ async function bestellungAbsenden() {
   }
 
   try {
+    // Button während des Requests deaktivieren, um Doppelklick zu verhindern
     if (bestellungAbsendenButton) {
       bestellungAbsendenButton.disabled = true;
     }
 
+    // Lieferadresse ermitteln und Bestellpositionen aus dem Warenkorb zusammenstellen
     const lieferadresseId = await ermittleLieferadresseId();
     const positionen = erstelleBestellpositionen();
 
@@ -288,6 +293,7 @@ async function bestellungAbsenden() {
       positionen
     };
 
+    // Bestellung an das Backend senden
     const response = await fetch('/bestellung', {
       method: 'POST',
       headers: {
@@ -314,6 +320,7 @@ async function bestellungAbsenden() {
       throw new Error(data.message || 'Bestellung konnte nicht abgeschlossen werden.');
     }
 
+    // Erfolgsmeldung anzeigen und nach kurzer Verzögerung weiterleiten
     zeigeErfolg('kasse-meldung', data.message || 'Deine Bestellung wurde erfolgreich aufgegeben.');
 
     window.setTimeout(() => {
@@ -344,6 +351,7 @@ async function ermittleLieferadresseId() {
     throw new Error('Benutzer nicht gefunden.');
   }
 
+  // Ohne abweichende Adresse die hinterlegte Standardadresse verwenden
   if (!checkbox || !checkbox.checked) {
     if (!standardAdresse || !standardAdresse.id) {
       throw new Error('Keine hinterlegte Lieferadresse gefunden.');
@@ -352,12 +360,14 @@ async function ermittleLieferadresseId() {
     return standardAdresse.id;
   }
 
+  // Abweichende Adresse aus dem Formular auslesen und validieren
   const neueAdresse = leseLieferadresseAusFormular();
 
   if (!istLieferadresseGueltig(neueAdresse)) {
     throw new Error('Bitte fülle alle Pflichtfelder der Lieferadresse aus.');
   }
 
+  // Neue Adresse im Backend anlegen und die vergebene ID zurückgeben
   const response = await fetch('/adresse', {
     method: 'POST',
     headers: {

@@ -183,6 +183,8 @@ async function assignNextTaskToFreeWorker() {
                 return reject(err);
             }
 
+            // Schritt 1: Freien Worker mit exklusivem Zeilenlock reservieren,
+            // damit kein zweiter Zyklus denselben Worker gleichzeitig selektiert.
             conn.query(
                 `SELECT *
                  FROM worker
@@ -214,6 +216,8 @@ async function assignNextTaskToFreeWorker() {
 
                     const worker = workerResults[0];
 
+                    // Schritt 2: Wartende Aufgabe mit exklusivem Zeilenlock reservieren,
+                    // damit dieselbe Aufgabe nicht von zwei Zyklen gleichzeitig vergeben wird.
                     conn.query(
                         `SELECT *
                          FROM aufgabe
@@ -239,6 +243,9 @@ async function assignNextTaskToFreeWorker() {
 
                             const task = taskResults[0];
 
+                            // Schritt 3: Aufgabe atomar dem Worker zuweisen.
+                            // Die WHERE-Bedingung verhindert eine Doppelzuweisung,
+                            // falls sich der Datenbankzustand seit dem SELECT geändert hat.
                             conn.query(
                                 `UPDATE aufgabe
                                  SET worker_id = ?, status = 'zugewiesen'
@@ -261,6 +268,8 @@ async function assignNextTaskToFreeWorker() {
                                         });
                                     }
 
+                                    // Schritt 4: Transaktion abschließen und
+                                    // die erfolgreiche Zuweisung als Ergebnis zurückgeben.
                                     conn.commit(function (err) {
                                         conn.release();
 

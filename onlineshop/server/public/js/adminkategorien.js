@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const bezeichnungInput = document.getElementById('bezeichnung');
   const abbrechenButton = document.getElementById('abbrechen-button');
 
+  // Beim Start die Kategorieliste sofort laden
   ladeKategorien();
 
   // Öffnet das Formular zum Anlegen einer neuen Kategorie
@@ -47,12 +48,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     formularBereich.style.display = 'none';
   });
 
-  // Speichert eine neue Kategorie
+  // Speichert eine neue Kategorie per POST-Request an das Backend
   formular.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const bezeichnung = bezeichnungInput.value.trim();
 
+    // Eingabe validieren, bevor der Request abgeschickt wird
     if (!bezeichnung) {
       alert('Bitte eine Bezeichnung eingeben.');
       return;
@@ -74,6 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
+      // Nach Erfolg Formular zurücksetzen und Liste neu laden
       alert('Kategorie erfolgreich erstellt.');
       formular.reset();
       formularBereich.style.display = 'none';
@@ -94,16 +97,19 @@ document.addEventListener('DOMContentLoaded', async () => {
    */
   async function ladeKategorien() {
     try {
+      // Kategorieliste vom Backend laden
       const response = await fetch('/kategorien');
       const kategorien = await response.json();
 
       kategorienTabelle.innerHTML = '';
 
+      // Leer-Zeile anzeigen, wenn keine Kategorien vorhanden sind
       if (!Array.isArray(kategorien) || kategorien.length === 0) {
         renderTableEmpty(kategorienTabelle, 3, 'Keine Kategorien vorhanden.');
         return;
       }
 
+      // Für jede Kategorie eine Tabellenzeile mit Lösch-Button erstellen
       kategorien.forEach((kategorie) => {
         const zeile = document.createElement('tr');
 
@@ -125,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         button.addEventListener('click', async () => {
           const id = button.dataset.id;
 
+          // Bestätigung vor dem Löschen einholen
           const bestaetigt = confirm('Möchten Sie diese Kategorie wirklich löschen?');
 
           if (!bestaetigt) {

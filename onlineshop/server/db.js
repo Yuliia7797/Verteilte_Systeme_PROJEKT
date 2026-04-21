@@ -1,6 +1,15 @@
-/**
- * Diese Datei erstellt die zentrale Datenbankverbindung für den gesamten Server.
- */
+/*
+  Datei: db.js
+  Beschreibung:
+    Diese Datei erstellt die zentrale Datenbankverbindung für den gesamten Server.
+
+    Es wird ein gemeinsamer Connection-Pool angelegt, der von allen Routen
+    und Modulen des Servers genutzt wird. Die Zugangsdaten werden ausschließlich
+    aus Umgebungsvariablen gelesen.
+
+  Autor: Anastasiia Mavrodi, Yuliia Shostak, Lea Seiler
+  Erstellt: 05.04.2026
+*/
 
 'use strict';
 

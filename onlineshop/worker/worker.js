@@ -278,12 +278,16 @@ async function workerAbmelden() {
  * @returns {Promise<Object|null>} Zugewiesene Aufgabe oder null
  */
 async function getAssignedTask() {
+  // Inaktive Worker werden vom Controller aus der Rotation genommen
+  // und sollen keine Aufgaben mehr übernehmen.
   const workerAktiv = await istWorkerAktiv();
 
   if (!workerAktiv) {
     return null;
   }
 
+  // Exklusive Verbindung für die Transaktion holen –
+  // Poolverbindungen dürfen nicht zwischen Transaktionsschritten wechseln.
   const conn = await getConnection();
 
   return new Promise((resolve, reject) => {
@@ -293,6 +297,8 @@ async function getAssignedTask() {
         return reject(err);
       }
 
+      // Bereits zugewiesene Aufgabe mit exklusivem Lock selektieren,
+      // damit kein anderer Prozess dieselbe Aufgabe gleichzeitig übernimmt.
       conn.query(
         `SELECT *
          FROM aufgabe
@@ -319,6 +325,9 @@ async function getAssignedTask() {
 
           const task = results[0];
 
+          // Status atomar auf 'in_bearbeitung' setzen, bevor die Verarbeitung beginnt.
+          // Die WHERE-Bedingung verhindert, dass eine bereits gestartete Aufgabe
+          // ein zweites Mal übernommen wird.
           conn.query(
             `UPDATE aufgabe
              SET status = 'in_bearbeitung',
@@ -497,6 +506,7 @@ async function warenkorbLeeren(bestellungId) {
 async function rechnungErstellen(bestellungId) {
   console.log('  -> Rechnung erstellen für Bestellung:', bestellungId);
 
+  // Bestelldaten, Kundendaten und Lieferadresse für die Rechnung laden.
   const bestellungResult = await query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.erstellungszeitpunkt,
             bn.vorname, bn.nachname, bn.email,
@@ -515,6 +525,7 @@ async function rechnungErstellen(bestellungId) {
 
   const b = bestellungResult[0];
 
+  // Alle Bestellpositionen mit den zugehörigen Artikelbezeichnungen laden.
   const positionen = await query(
     `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis, a.bezeichnung
      FROM bestellposition bp
@@ -523,10 +534,13 @@ async function rechnungErstellen(bestellungId) {
     [bestellungId]
   );
 
+  // Zielverzeichnis erstellen, falls es noch nicht existiert.
   await fs.promises.mkdir(RECHNUNGEN_DIR, { recursive: true });
 
   const dateiPfad = path.join(RECHNUNGEN_DIR, `rechnung_${bestellungId}.pdf`);
 
+  // PDF-Dokument aufbauen. Die Daten werden per Stream direkt in die Datei geschrieben,
+  // damit kein vollständiges Dokument im Arbeitsspeicher gehalten werden muss.
   await new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 });
     const stream = fs.createWriteStream(dateiPfad);
@@ -555,7 +569,7 @@ async function rechnungErstellen(bestellungId) {
     doc.text(b.land);
     doc.moveDown(2);
 
-    // Tabellenkopf
+    // Positionstabelle mit festen Spaltenbreiten für Artikel, Anzahl, Einzel- und Gesamtpreis.
     const colX = [50, 260, 345, 425];
     doc.font('Helvetica-Bold').fontSize(10);
     const headerY = doc.y;
@@ -566,7 +580,8 @@ async function rechnungErstellen(bestellungId) {
     doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(0.3);
 
-    // Positionen
+    // Jede Bestellposition als eigene Tabellenzeile einfügen.
+    // escapeHtml schützt dabei vor XSS durch schadhafte Artikelbezeichnungen.
     doc.font('Helvetica').fontSize(10);
     for (const pos of positionen) {
       const y = doc.y;
@@ -579,7 +594,7 @@ async function rechnungErstellen(bestellungId) {
     doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(0.5);
 
-    // Gesamtbetrag
+    // Gesamtbetrag und Zahlungsmethode rechtsbündig unterhalb der Tabelle ausgeben.
     doc.font('Helvetica-Bold').fontSize(11)
       .text(`Gesamtbetrag: ${Number(b.gesamtpreis).toFixed(2)} EUR`, { align: 'right' });
     doc.font('Helvetica').fontSize(10)
@@ -613,6 +628,7 @@ async function bestellBestaetigungSenden(bestellungId) {
     return;
   }
 
+  // Bestelldaten und Kundendaten für den E-Mail-Inhalt laden.
   const bestellungResult = await query(
     `SELECT b.id, b.gesamtpreis, b.zahlungsmethode, b.erstellungszeitpunkt,
             bn.vorname, bn.nachname, bn.email
@@ -629,6 +645,7 @@ async function bestellBestaetigungSenden(bestellungId) {
 
   const bestellung = bestellungResult[0];
 
+  // Bestellpositionen mit Artikelbezeichnungen für die Tabelle im E-Mail-Body laden.
   const positionen = await query(
     `SELECT bp.anzahl, bp.einzelpreis, bp.gesamtpreis, a.bezeichnung
      FROM bestellposition bp
@@ -637,6 +654,8 @@ async function bestellBestaetigungSenden(bestellungId) {
     [bestellungId]
   );
 
+  // HTML-Tabellenzeilen für jede Position generieren.
+  // escapeHtml schützt vor XSS durch schadhafte Werte aus der Datenbank.
   const positionenHtml = positionen.map(pos =>
     `<tr>
        <td>${escapeHtml(pos.bezeichnung)}</td>
@@ -646,6 +665,7 @@ async function bestellBestaetigungSenden(bestellungId) {
      </tr>`
   ).join('');
 
+  // Bestätigungs-E-Mail mit vollständiger Bestellübersicht versenden.
   await transporter.sendMail({
     from: '"Onlineshop" <noreply@onlineshop.de>',
     to: bestellung.email,

@@ -114,10 +114,12 @@ function renderArtikelDetail(artikel) {
     return;
   }
 
+  // Verfügbarkeitsstatus aus dem Lagerbestand ableiten
   const lagerbestand = artikel.lagerbestand ?? 0;
   const istVerfuegbar = lagerbestand > 0;
   const verfuegbarkeitText = istVerfuegbar ? 'Auf Lager' : 'Nicht verfügbar';
 
+  // Artikeldetails als HTML in den Container schreiben
   container.innerHTML = `
     <div class="row g-5 align-items-start">
       <div class="col-md-6">

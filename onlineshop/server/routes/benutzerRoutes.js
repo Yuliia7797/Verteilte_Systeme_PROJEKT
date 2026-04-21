@@ -21,7 +21,14 @@ const bcrypt = require('bcrypt'); // Für sicheres Passwort-Hashing und -Verglei
 const { body, validationResult } = require('express-validator');
 const istAdmin = require('../istAdmin');
 
-// Gibt bei Validierungsfehlern eine 400-Antwort zurück
+/**
+ * Gibt bei Validierungsfehlern eine 400-Antwort zurück.
+ *
+ * @function pruefeFehler
+ * @param {Object} req - Express Request
+ * @param {Object} res - Express Response
+ * @returns {Object|null} Response-Objekt bei Fehler, sonst null
+ */
 function pruefeFehler(req, res) {
   const fehler = validationResult(req);
   if (!fehler.isEmpty()) {

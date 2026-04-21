@@ -37,9 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const abbrechenButton = document.getElementById('abbrechen-button');
   const meldung = document.getElementById('meldung');
 
+  // Kontodaten laden und Echtzeit-Verbindung aufbauen
   ladeKontodaten();
   initialisiereSocketVerbindung();
 
+  // Bearbeiten-Button: in den Bearbeitungsmodus wechseln
   bearbeitenButton.addEventListener('click', () => {
     kontoForm.style.display = 'block';
     anzeigeBereich.style.display = 'none';
@@ -47,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     meldung.textContent = '';
   });
 
+  // Abbrechen-Button: ursprüngliche Daten wiederherstellen und Anzeigemodus aktivieren
   abbrechenButton.addEventListener('click', () => {
     if (!urspruenglicheDaten) {
       return;
@@ -57,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wechsleInAnzeigemodus();
   });
 
+  // Formular-Submit: Kontodaten und optionales neues Passwort speichern
   kontoForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -68,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const passwortRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
 
+    // Passwortfelder nur prüfen, wenn mindestens eines ausgefüllt wurde
     if (neuesPasswort || passwortBestaetigen) {
       if (!neuesPasswort || !passwortBestaetigen) {
         meldung.textContent = 'Bitte beide Passwortfelder ausfüllen.';
@@ -88,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Alle Formularfelder auslesen und zum Anfrage-Payload zusammenstellen
     const daten = {
       vorname: document.getElementById('vorname').value.trim(),
       nachname: document.getElementById('nachname').value.trim(),
@@ -102,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
+      // Geänderte Daten an das Backend senden
       const response = await fetch('/benutzer/mein-konto', {
         method: 'PUT',
         headers: {
@@ -122,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       meldung.textContent = 'Änderungen erfolgreich gespeichert.';
       meldung.classList.add('text-success');
 
+      // Nach Erfolg Kontodaten neu laden und zurück in den Anzeigemodus wechseln
       await ladeKontodaten();
       wechsleInAnzeigemodus();
     } catch (error) {
@@ -329,7 +337,9 @@ function zeigeBestellungen(bestellungen) {
     return;
   }
 
+  // Für jede Bestellung eine aufklappbare Karte mit allen relevanten Daten rendern
   container.innerHTML = bestellungen.map((bestellung) => {
+    // Datum, Preis und Adresse für die Anzeige vorformatieren
     const datum = formatDatum(bestellung.erstellungszeitpunkt);
     const preis = formatPreis(bestellung.gesamtpreis);
     const adresse = formatiereAdresse(bestellung);

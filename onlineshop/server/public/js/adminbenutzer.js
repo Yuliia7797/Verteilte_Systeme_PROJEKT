@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const neuerBenutzerButton = document.getElementById('neuer-benutzer-button');
   const benutzerFormular = document.getElementById('benutzer-formular');
 
+  // Abbrechen: Formular ausblenden und zurücksetzen
   if (abbrechenButton) {
     abbrechenButton.addEventListener('click', () => {
       document.getElementById('benutzer-formular-bereich').style.display = 'none';
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Neuer Benutzer: Formular einblenden und zum Formular scrollen
   if (neuerBenutzerButton) {
     neuerBenutzerButton.addEventListener('click', () => {
       document.getElementById('benutzer-formular-bereich').style.display = 'block';
@@ -43,10 +45,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Formular-Submit: Neuen Benutzer mit Rolle per POST anlegen
   if (benutzerFormular) {
     benutzerFormular.addEventListener('submit', async (event) => {
       event.preventDefault();
 
+      // Formulardaten auslesen und bereinigen
       const vorname = document.getElementById('vorname').value.trim();
       const nachname = document.getElementById('nachname').value.trim();
       const email = document.getElementById('email').value.trim();
