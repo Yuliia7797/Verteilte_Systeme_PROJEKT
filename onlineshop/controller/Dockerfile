@@ -1,18 +1,19 @@
-FROM node:lts-alpine
+FROM node:22-alpine
 
-# Create app directory
+# Erstelle das Arbeitsverzeichnis im Container
 WORKDIR /usr/src/app
 
+# Kopiere zuerst package.json und package-lock.json
 COPY package*.json ./
 
-RUN npm install
+# Installiere die Abhängigkeiten sauber und exakt aus package-lock.json
+RUN npm ci --omit=dev
 
+# Kopiere danach den restlichen Projektcode
 COPY . .
 
+# Dokumentiere den Port der Anwendung
 EXPOSE 8080
 
-# Workaround - wait for db to start about 30 sec.
-# Fast PCs should be done in less than 20 sec.
-# Increase number if it does not work on your PC.
-# When the database is already created it should be 5 seconds.
+# Warte kurz, bis die Datenbank gestartet ist, und starte dann den Controller
 CMD sleep 30; node controller.js

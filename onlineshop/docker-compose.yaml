@@ -15,7 +15,8 @@ services:
 
   # ── Server ─────────────────────────────────────────────────────────────────
   server:
-    build: server
+    build:
+      context: ./server
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
@@ -26,8 +27,6 @@ services:
       RATE_LIMIT_MAX: 10000
       REDIS_URL: redis://redis:6379
     volumes:
-      - ./server:/usr/src/app
-      - /usr/src/app/node_modules
       - rechnungen:/usr/src/rechnungen
     depends_on:
       onlinebestellsystem:
@@ -55,7 +54,8 @@ services:
 
   # ── Worker ─────────────────────────────────────────────────────────────────
   worker:
-    build: worker
+    build:
+      context: ./worker
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
@@ -80,23 +80,22 @@ services:
   # ── Controller ─────────────────────────────────────────────────────────────
   controller:
     container_name: controller
-    build: controller
+    build:
+      context: ./controller
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
       MYSQL_HOSTNAME: onlinebestellsystem
-    volumes:
-      - ./controller:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
       - onlinebestellsystem
 
   # ── Datenbank ──────────────────────────────────────────────────────────────
   onlinebestellsystem:
     container_name: onlinebestellsystem
-    build: db
+    build:
+      context: ./db
     restart: always
     environment:
       MYSQL_DATABASE: onlinebestellsystem
